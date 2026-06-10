@@ -6,11 +6,13 @@ server
 .superpowers/
 .trae/
 .worktrees/
+openspec/
 docs/
 docs/*
 images/
 CLAUDE.md
 AGENTS.md
+.pytest_cache/
 
 # Images
 images/
