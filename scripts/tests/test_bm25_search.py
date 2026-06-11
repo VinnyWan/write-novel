@@ -90,3 +90,40 @@ def test_is_index_stale():
         save_index(tmpdir)
         # Index just created -> not stale
         assert is_index_stale(tmpdir) is False
+
+
+def test_tokenize_chinese_no_spaces():
+    """Real Chinese text without artificial spaces should tokenize into multiple words."""
+    tokens = _tokenize("林动从青阳镇走出踏上征途经历数百次战斗最后成为武祖")
+    # Should produce many tokens via jieba, not just one
+    assert len(tokens) > 5
+
+
+def test_search_with_unsegmented_chinese():
+    """Search should work on natural Chinese text (no spaces between words)."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        char_dir = os.path.join(tmpdir, '人物')
+        os.makedirs(char_dir)
+        with open(os.path.join(char_dir, '林动.md'), 'w', encoding='utf-8') as f:
+            f.write('---\n姓名: 林动\n---\n\n林动从青阳镇走出踏上征途经历数百次战斗。')
+
+        with open(os.path.join(char_dir, '萧炎.md'), 'w', encoding='utf-8') as f:
+            f.write('---\n姓名: 萧炎\n---\n\n萧炎是加玛帝国的炼药师。')
+
+        # Third file needed so BM25 IDF is non-zero (need N>=3 for IDF>0 with df=1)
+        with open(os.path.join(tmpdir, '杂项.md'), 'w', encoding='utf-8') as f:
+            f.write('---\ntype: misc\n---\n\n无关内容。')
+
+        data = build_index(tmpdir)
+        idx_dir = os.path.join(tmpdir, '.write-novel')
+        os.makedirs(idx_dir)
+        with open(os.path.join(idx_dir, 'search_index.json'), 'w', encoding='utf-8') as f:
+            json.dump({
+                'files': data['files'],
+                'tokenized': data['tokenized'],
+                'built_at': data['built_at'],
+            }, f, ensure_ascii=False)
+
+        results = search(tmpdir, '林动')
+        assert len(results) > 0, 'Should find 林动 in natural Chinese text'
+        assert any('林动' in r['file'] for r in results)

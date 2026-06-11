@@ -12,7 +12,7 @@ import json
 import os
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from rank_bm25 import BM25Okapi
 
@@ -20,13 +20,27 @@ from scripts.encoding_utils import ensure_nfc
 from scripts.frontmatter_parser import parse_frontmatter
 
 
-# Simple Chinese tokenizer: split on Chinese character boundaries + whitespace
-_WORD_RE = re.compile(r'[一-鿿㐀-䶿]+|[a-zA-Z0-9]+')
-
-
 def _tokenize(text: str) -> List[str]:
-    """Tokenize text by extracting Chinese words and alphanumeric tokens."""
-    return [m.group(0).lower() for m in _WORD_RE.finditer(text)]
+    """Tokenize text using jieba for Chinese word segmentation + alphanumeric splitting."""
+    tokens = []
+    # Split on ASCII word boundaries, keep each segment
+    for segment in re.split(r'([a-zA-Z0-9]+)', text):
+        segment = segment.strip()
+        if not segment:
+            continue
+        if re.match(r'^[a-zA-Z0-9]+$', segment):
+            # Alphanumeric token, lowercase it
+            tokens.append(segment.lower())
+        else:
+            # Chinese segment — use jieba for word segmentation
+            try:
+                import jieba
+                words = jieba.cut(segment)
+                tokens.extend(w.strip().lower() for w in words if w.strip())
+            except ImportError:
+                # Fallback: character-by-character
+                tokens.extend(ch for ch in segment if ch.strip())
+    return tokens
 
 
 def _walk_md_files(root: str) -> List[str]:
@@ -91,17 +105,28 @@ def search(
     project_root: str,
     query: str,
     limit: int = 10,
+    reload_if_stale: bool = True,
 ) -> List[Dict[str, Any]]:
     """
     Search project Markdown files using BM25.
+
+    Args:
+        project_root: Project root directory.
+        query: Search query string.
+        limit: Max results to return.
+        reload_if_stale: If True (default), rebuild index if stale.
 
     Returns list of dicts with 'file', 'score'.
     """
     root = ensure_nfc(os.path.abspath(project_root))
 
-    # Try loading cached index first
+    # Defend against empty queries
+    query_tokens = _tokenize(query)
+    if not query_tokens:
+        return []
+
     index_path = ensure_nfc(os.path.join(root, '.write-novel', 'search_index.json'))
-    if os.path.isfile(index_path):
+    if os.path.isfile(index_path) and (not reload_if_stale or not is_index_stale(root)):
         with open(index_path, 'r', encoding='utf-8') as f:
             cached = json.load(f)
         files = cached['files']
@@ -115,14 +140,13 @@ def search(
         return []
 
     bm25 = BM25Okapi(tokenized)
-    query_tokens = _tokenize(query)
     scores = bm25.get_scores(query_tokens)
 
-    ranked = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
+    # Filter zero scores before applying limit
+    positive = [(i, s) for i, s in enumerate(scores) if s > 0]
+    ranked = sorted(positive, key=lambda x: x[1], reverse=True)
     results = []
     for idx, score in ranked[:limit]:
-        if score <= 0:
-            break
         results.append({
             'file': files[idx],
             'score': round(float(score), 2),
