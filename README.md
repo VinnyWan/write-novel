@@ -25,7 +25,7 @@ python scripts/main.py init --project ./我的小说
 打开并编辑以下文件：
 
 - `全局写作状态.md` — 填入主角信息、写作风格、高压线禁用词
-- `世界设定/世界设定模板.md` — 设计世界观和力量体系
+- `世界设定/世界观.md` — 设计世界观和力量体系
 - `人物/人物卡片模板.md` — 创建角色（支持 `[[人物/角色名]]` 双向链接）
 
 ### 4. 写大纲
@@ -35,39 +35,45 @@ python scripts/main.py init --project ./我的小说
 - `分卷大纲/第1卷_大纲.md` — 分卷主线与章节列表
 - `分卷大纲/第1卷_细纲_第1章.md` — 单章硬性剧本任务
 
-### 5. 组装 Prompt
+### 5. 检索写作上下文
 
 ```bash
-python scripts/main.py assemble --chapter 1 --volume 1
+# 关键词检索——自动找到相关角色/设定/伏笔/章节
+python scripts/main.py search 打脸 --project ./我的小说
+
+# 基于章节细纲自动检索（用于写前准备）
+python scripts/main.py search --chapter 5 --volume 1 --project ./我的小说
 ```
 
-生成的 `当前Prompt.xml` 可直接发送给大模型。
-
-### 6. 执行续航闭环
+### 6. 写前预检与写门校验
 
 ```bash
-# 模型生成章节后，将正文保存为文件
-python scripts/main.py continue --chapter-body-file ./第1章正文.txt --chapter 1 --volume 1 --title "序章"
+# 写前预检：细纲是否就绪、索引是否最新
+python scripts/main.py preflight --chapter 5 --volume 1 --project ./我的小说
+
+# 三段写门校验（gate-1 写前 / gate-2 提交前 / gate-3 提交后）
+python scripts/main.py write-gate --stage gate-1 --chapter 5 --project ./我的小说
 ```
 
-续航闭环自动完成：章节存档 → 摘要生成 → 状态更新 → 伏笔追踪。
-
-### 7. 查看状态与诊断
+### 7. 项目健康诊断与状态
 
 ```bash
-python scripts/main.py status
-python scripts/main.py doctor
-python scripts/main.py report --json
+# 全面诊断：文件结构、Wikilink、伏笔逾期、索引状态
+python scripts/main.py doctor --project ./我的小说
+
+# 速览进度
+python scripts/main.py status --project ./我的小说
 ```
 
-### 8. 查询参考资料与生成只读面板
+### 8. 重建派生数据与看板
 
 ```bash
-python scripts/main.py query 打脸 --genre 玄幻
-python scripts/main.py dashboard
-```
+# 从 Markdown 重建所有 .write-novel/ 派生数据
+python scripts/main.py project --project ./我的小说
 
-`dashboard` 会在 `.write-novel/` 下生成只读派生视图，不会修改源 Markdown 文件。
+# 生成只读 HTML 面板
+python scripts/main.py dashboard --project ./我的小说
+```
 
 ## 项目目录结构
 
@@ -75,44 +81,43 @@ python scripts/main.py dashboard
 项目根目录/
 ├── README.md
 ├── 全局写作状态.md          # 宏观注意力控制中枢（含系统提示词、高压线）
-├── 当前Prompt.xml            # 最新一次组装的 Prompt（自动生成）
 │
-├── skills/                   # Claude Code skill 定义（6 个）
-│   ├── write-novel/          # 路由入口
-│   ├── write-novel-long-write/  # 长篇写作主流程
+├── skills/                   # Claude Code skill 定义
+│   ├── write-novel-setup/    # 环境部署 + 题材模板选择
+│   ├── write-novel-review/   # 6 维度审查（3 blocking + 3 warning）
 │   ├── write-novel-deslop/   # 去 AI 味
-│   ├── write-novel-review/   # 多视角审查 + 质量管道
-│   ├── write-novel-setup/    # 环境部署
 │   └── write-novel-cover/    # 封面生成
 │
-├── agents/                   # Agent 定义（5 个）
+├── agents/                   # Agent 定义
 │   ├── write-novel-explorer.md
 │   ├── write-novel-researcher.md
 │   ├── write-novel-deslop-agent.md
 │   ├── write-novel-senior-editor.md
 │   └── write-novel-picky-reader.md
 │
-├── 全局设定/                 # 跨卷全局设定（预留）
+├── 题材模板/                 # 所选题材的写作框架参考
 │
 ├── 世界设定/                 # 世界观 & 力量体系
 │   └── 世界观.md
 │
-├── 人物/                     # 角色卡片（双向链接目标）
+├── 人物/                     # 角色卡片（Wikilink 双向链接）
 │   ├── 林动.md
 │   └── 沈清雪.md
 │
 ├── 分卷大纲/                 # 分卷 & 单章细纲
-│   ├── 分卷大纲模板.md
 │   ├── 第1卷_大纲.md
 │   └── 第1卷_细纲_第1章.md
 │
 ├── 章节草稿/                 # 已生成的章节正文
 │   └── 第1章_序章.md
 │
-├── 伏笔与线索回收池.md       # 伏笔生命周期追踪（状态机）
+├── 章节提交记录/             # 每章提交时的新增设定记录
 │
-└── 历史章节摘要/             # 每章 ~200 字摘要
-    └── 第1章_摘要.md
+├── 历史章节摘要/             # 每章 ~200 字摘要
+│
+├── 伏笔与线索回收池.md       # 伏笔生命周期追踪（🟡已埋 → 🟠发展中 → 🟢已回收）
+│
+└── .write-novel/              # 派生数据（搜索索引/状态/伏笔状态 JSON，可重建）
 ```
 
 ## 核心文件模板
@@ -161,44 +166,51 @@ python scripts/main.py dashboard
 🟡已埋 → 🟠发展中 → 🟢已回收
 ```
 
-## 三项护城河功能
+## 核心能力
 
-### 1. 双向链接按需加载
+### 1. Markdown 事实源 + 派生索引
 
-正文或细纲中出现 `[[人物/林动]]` 时，脚本自动加载对应文件内容到 Prompt `<参考文件>` 区域。精准控制上下文窗口，避免无关信息污染。
+所有写作数据以 `.md` 文件存储，人类和 AI 均可直接阅读编辑。`python scripts/main.py project` 一键从 Markdown 重建 `.write-novel/` 下的搜索索引和状态快照。Markdown 是唯一真相源，JSON 只是可再生缓存。
 
-### 2. 伏笔生命周期追踪
+### 2. BM25 上下文检索
 
-`伏笔与线索回收池.md` 自动追踪每条伏笔的状态转换：
-- 新伏笔 → `🟡已埋`
-- 后续章节引用 → `🟠发展中`
-- 揭晓完成 → `🟢已回收`
-- 超过预期回收章节 → 下次 Prompt 中加入回收提醒
+写新章节前，`search` 命令自动检索相关角色、设定、伏笔、历史章节，注入写作上下文。中文分词基于 jieba，纯本地运行，无需外部 API。
 
-### 3. 全局写作状态中枢
+### 3. 三段写门校验
 
-`全局写作状态.md` 是 AI 行为的单一真相来源。包含：
-- Frontmatter 进度字段（自动更新）
-- 全局系统提示词（注入每章 Prompt）
-- 高压线禁用词（硬性过滤）
-- 用户自定义指令区（`<!-- USER_AREA_START -->` 保护，脚本永不修改）
+```
+gate-1（写前）→ gate-2（提交前）→ gate-3（提交后）
+```
+
+每道门校验必需的 Markdown 文件（细纲/草稿/审查结论/提交记录），不通过则阻断流程。
+
+### 4. 伏笔生命周期追踪
+
+`伏笔与线索回收池.md` 追踪每条伏笔的完整状态转换：
+- 🟡已埋 → 🟠发展中 → 🟢已回收
+- `doctor` 命令自动检测逾期未回收的伏笔
+
+### 5. 六维度章节审查
+
+审查覆盖 6 个维度：事实一致性、角色 OOC、伏笔合规（Blocking）+ 节奏感、追读力、AI 味（Warning）。Blocking 全通过才能标记 `审查通过: true`。
+
+### 6. 题材模板库
+
+支持 6 大题材（修仙/系统流/都市异能/种田基建/规则怪谈/宫斗宅斗），初始化时按选题自动注入对应写作框架。
 
 ## 命令行参考
 
 | 命令 | 说明 |
 |------|------|
-| `python scripts/main.py init --project ./项目` | 初始化新项目 |
-| `python scripts/main.py assemble -c 5 -v 1` | 组装第1卷第5章的 XML Prompt |
-| `python scripts/main.py assemble -c 5 -v 1 --reference-keyword 打脸` | 组装 Prompt 并注入结构化参考资料 |
-| `python scripts/main.py continue -f ch5.txt -c 5 -v 1` | 执行续航闭环 |
-| `python scripts/main.py status --json` | 查看写作进度与风险 |
-| `python scripts/main.py doctor` | 检查项目结构、Frontmatter、Wikilink、依赖与测试环境 |
-| `python scripts/main.py report` | 生成写作状态报告 |
-| `python scripts/main.py query 伏笔 --category glossary` | 查询结构化写作参考资料 |
-| `python scripts/main.py state -v 1 -c 5` | 查看章节写作阶段状态 |
-| `python scripts/main.py dashboard` | 生成只读 dashboard |
-| `python scripts/main.py preflight` | 显示运行时护栏摘要 |
-| `python scripts/main.py validate-plugin` | 校验插件元数据和资产清单 |
+| `python scripts/main.py init --project ./项目` | 初始化新项目（目录 + 模板文件） |
+| `python scripts/main.py search 打脸 --project ./项目` | BM25 关键词检索上下文 |
+| `python scripts/main.py search -c 5 -v 1 --project ./项目` | 基于章纲自动检索上下文 |
+| `python scripts/main.py project --project ./项目` | 从 Markdown 重建所有 `.write-novel/` 派生数据 |
+| `python scripts/main.py doctor --project ./项目` | 全面项目健康诊断 |
+| `python scripts/main.py preflight -c 5 -v 1 --project ./项目` | 写前预检（细纲/索引就绪） |
+| `python scripts/main.py write-gate -s gate-2 -c 5 --project ./项目` | 三段写门校验 |
+| `python scripts/main.py dashboard --project ./项目` | 生成只读 HTML 面板 |
+| `python scripts/main.py status --project ./项目` | 查看项目进度与状态 |
 
 ## 技术栈
 
