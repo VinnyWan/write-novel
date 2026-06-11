@@ -8,6 +8,7 @@ Key features:
 """
 
 import os
+import shutil
 import re
 import yaml
 from typing import Tuple, Dict, Any, Optional
@@ -134,8 +135,6 @@ def preserve_user_area(original_body: str, new_body: str) -> str:
 
 def backup_file(filepath: str) -> Optional[str]:
     """Create a .bak backup of a file. Returns backup path or None."""
-    import shutil
-
     filepath = ensure_nfc(filepath)
     if not os.path.isfile(filepath):
         return None
@@ -153,28 +152,21 @@ def write_md_with_frontmatter(
     Args:
         filepath: Absolute path to the .md file.
         fm: Dict of frontmatter key-value pairs.
-        body: Markdown body text.
+        body: Markdown body text (must be a string).
         backup: If True (default), create a .bak before overwriting.
     """
+    if not isinstance(body, str):
+        raise TypeError(f'body must be str, got {type(body).__name__}')
+
     if backup:
         backup_file(filepath)
 
-    lines = []
-    for key, value in fm.items():
-        if value is None:
-            lines.append(f'{key}: ')
-        elif isinstance(value, list):
-            lines.append(f'{key}:')
-            for item in value:
-                lines.append(f'  - {item}')
-        elif isinstance(value, str) and '\n' in value:
-            lines.append(f'{key}: |')
-            for line in value.split('\n'):
-                lines.append(f'  {line}')
-        else:
-            lines.append(f'{key}: {value}')
-
-    fm_text = '\n'.join(lines)
+    fm_text = yaml.safe_dump(
+        fm,
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=False,
+    ).strip()
     content = f'---\n{fm_text}\n---\n\n{body}'
 
     with safe_open(filepath, 'w', encoding='utf-8') as f:
