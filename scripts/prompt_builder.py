@@ -16,10 +16,12 @@ Key sections:
 import os
 import re
 import glob
+from html import escape
 from typing import List, Dict, Optional, Tuple
 from scripts.encoding_utils import ensure_nfc, safe_open
 from scripts.frontmatter_parser import parse_frontmatter, extract_user_area
 from scripts.wikilink_resolver import resolve_wikilinks
+from scripts.reference_store import build_reference_prompt_context, query_references
 
 
 def read_file_text(filepath: str) -> Optional[str]:
@@ -248,6 +250,10 @@ def assemble_prompt(
     volume_num: int,
     chapter_num: int,
     max_wikilink_depth: int = 1,
+    reference_keyword: str = '',
+    reference_category: str = '',
+    reference_genre: str = '',
+    reference_situation: str = '',
 ) -> str:
     """
     Main entry point: assemble the complete XML prompt for generating a chapter.
@@ -257,6 +263,10 @@ def assemble_prompt(
         volume_num: Current volume number.
         chapter_num: Current chapter number within the volume.
         max_wikilink_depth: Max depth for wikilink resolution.
+        reference_keyword: Optional keyword for structured writing references.
+        reference_category: Optional reference category filter.
+        reference_genre: Optional genre tag filter.
+        reference_situation: Optional writing situation filter.
 
     Returns:
         Complete XML prompt string ready to send to the LLM.
@@ -273,6 +283,18 @@ def assemble_prompt(
         _, outline_body = parse_frontmatter(outline_path)
 
     all_text_for_links = state_body + '\n' + outline_body
+
+    reference_context = '<写作参考资料>无</写作参考资料>'
+    if any([reference_keyword, reference_category, reference_genre, reference_situation]):
+        references = query_references(
+            project_root,
+            keyword=reference_keyword,
+            category=reference_category,
+            genre=reference_genre,
+            situation=reference_situation,
+            limit=3,
+        )
+        reference_context = build_reference_prompt_context(references)
 
     parts = []
     parts.append('<写书Prompt>')
@@ -294,6 +316,8 @@ def assemble_prompt(
     parts.append(build_constraints(project_root, chapter_num))
     parts.append('')
     parts.append(build_reference_section(all_text_for_links, project_root, max_wikilink_depth))
+    parts.append('')
+    parts.append(reference_context)
     parts.append('')
     parts.append('</写书Prompt>')
 

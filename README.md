@@ -52,11 +52,22 @@ python scripts/main.py continue --chapter-body-file ./第1章正文.txt --chapte
 
 续航闭环自动完成：章节存档 → 摘要生成 → 状态更新 → 伏笔追踪。
 
-### 7. 查看状态
+### 7. 查看状态与诊断
 
 ```bash
 python scripts/main.py status
+python scripts/main.py doctor
+python scripts/main.py report --json
 ```
+
+### 8. 查询参考资料与生成只读面板
+
+```bash
+python scripts/main.py query 打脸 --genre 玄幻
+python scripts/main.py dashboard
+```
+
+`dashboard` 会在 `.write-novel/` 下生成只读派生视图，不会修改源 Markdown 文件。
 
 ## 项目目录结构
 
@@ -178,13 +189,21 @@ python scripts/main.py status
 |------|------|
 | `python scripts/main.py init --project ./项目` | 初始化新项目 |
 | `python scripts/main.py assemble -c 5 -v 1` | 组装第1卷第5章的 XML Prompt |
+| `python scripts/main.py assemble -c 5 -v 1 --reference-keyword 打脸` | 组装 Prompt 并注入结构化参考资料 |
 | `python scripts/main.py continue -f ch5.txt -c 5 -v 1` | 执行续航闭环 |
-| `python scripts/main.py status` | 查看写作进度 |
+| `python scripts/main.py status --json` | 查看写作进度与风险 |
+| `python scripts/main.py doctor` | 检查项目结构、Frontmatter、Wikilink、依赖与测试环境 |
+| `python scripts/main.py report` | 生成写作状态报告 |
+| `python scripts/main.py query 伏笔 --category glossary` | 查询结构化写作参考资料 |
+| `python scripts/main.py state -v 1 -c 5` | 查看章节写作阶段状态 |
+| `python scripts/main.py dashboard` | 生成只读 dashboard |
+| `python scripts/main.py preflight` | 显示运行时护栏摘要 |
+| `python scripts/main.py validate-plugin` | 校验插件元数据和资产清单 |
 
 ## 技术栈
 
 - **语言**：Python 3.10+
-- **依赖**：PyYAML、python-frontmatter
+- **依赖**：PyYAML
 - **存储**：纯 Markdown 文件（YAML Frontmatter）
 - **编码**：NFC/NFD 自动兼容，中文路径安全
 

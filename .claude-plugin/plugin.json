@@ -1,0 +1,63 @@
+{
+  "name": "write-novel",
+  "version": "1.1.0",
+  "description": "中文 Markdown-First 长篇网文创作工作台，支持诊断、参考查询、状态机、只读 dashboard 与多 Agent 审稿。",
+  "keywords": ["webnovel", "writing", "markdown-first", "中文网文", "claude-code"],
+  "compatibility": {
+    "python": ">=3.10",
+    "claudeCode": ">=1.0.0"
+  },
+  "commands": [
+    "init",
+    "assemble",
+    "continue",
+    "status",
+    "doctor",
+    "report",
+    "query",
+    "state",
+    "dashboard",
+    "preflight",
+    "validate-plugin"
+  ],
+  "skills": [
+    "skills/write-novel/SKILL.md",
+    "skills/write-novel-long-write/SKILL.md",
+    "skills/write-novel-deslop/SKILL.md",
+    "skills/write-novel-review/SKILL.md",
+    "skills/write-novel-setup/SKILL.md",
+    "skills/write-novel-cover/SKILL.md"
+  ],
+  "agents": [
+    "agents/write-novel-explorer.md",
+    "agents/write-novel-researcher.md",
+    "agents/write-novel-deslop-agent.md",
+    "agents/write-novel-senior-editor.md",
+    "agents/write-novel-picky-reader.md"
+  ],
+  "files": [
+    "README.md",
+    "scripts/main.py",
+    "scripts/encoding_utils.py",
+    "scripts/frontmatter_parser.py",
+    "scripts/wikilink_resolver.py",
+    "scripts/foreshadowing_tracker.py",
+    "scripts/chapter_summarizer.py",
+    "scripts/state_updater.py",
+    "scripts/prompt_builder.py",
+    "scripts/diagnostics.py",
+    "scripts/project_assets.py",
+    "scripts/reference_store.py",
+    "scripts/writing_state_machine.py",
+    "scripts/dashboard.py",
+    "scripts/guardrails.py",
+    "scripts/plugin_validator.py",
+    "references/writing_references.json",
+    "全局写作状态.md",
+    "伏笔与线索回收池.md",
+    "人物卡片模板.md",
+    "分卷与单章细纲模板.md",
+    "分卷大纲模板.md",
+    "世界设定模板.md"
+  ]
+}

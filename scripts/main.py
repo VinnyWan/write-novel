@@ -17,8 +17,8 @@ import argparse
 import os
 import sys
 
-# Add parent directory for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root directory for package imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.encoding_utils import ensure_nfc
 from scripts.frontmatter_parser import parse_frontmatter
@@ -26,11 +26,21 @@ from scripts.prompt_builder import assemble_prompt, save_prompt
 from scripts.chapter_summarizer import generate_summary
 from scripts.state_updater import run_continuation_loop
 from scripts.foreshadowing_tracker import run_foreshadowing_pipeline
+from scripts.diagnostics import build_status_report, dump_json, format_doctor_text, format_status_text, run_doctor
+from scripts.reference_store import format_query_results, query_references
+from scripts.writing_state_machine import check_stage_transition, explain_state, format_state_text, mark_stage, record_override
+from scripts.dashboard import write_dashboard_data, write_dashboard_html
+from scripts.guardrails import format_preflight_text, preflight_summary
+from scripts.plugin_validator import format_validation_text, validate_plugin_metadata
+
+
+def get_project_root(args):
+    return ensure_nfc(getattr(args, 'subproject', None) or getattr(args, 'project', None) or os.getcwd())
 
 
 def cmd_assemble(args):
     """Assemble the XML Prompt for a chapter and save to 当前Prompt.xml."""
-    project_root = ensure_nfc(args.project or os.getcwd())
+    project_root = get_project_root(args)
 
     # Validate project structure
     state_path = os.path.join(project_root, '全局写作状态.md')
@@ -39,12 +49,20 @@ def cmd_assemble(args):
         sys.exit(1)
 
     print(f"正在组装第{args.chapter}章的 Prompt...")
-    prompt = assemble_prompt(
-        project_root=project_root,
-        volume_num=args.volume,
-        chapter_num=args.chapter,
-        max_wikilink_depth=args.max_depth,
-    )
+    try:
+        prompt = assemble_prompt(
+            project_root=project_root,
+            volume_num=args.volume,
+            chapter_num=args.chapter,
+            max_wikilink_depth=args.max_depth,
+            reference_keyword=getattr(args, 'reference_keyword', '') or '',
+            reference_category=getattr(args, 'reference_category', '') or '',
+            reference_genre=getattr(args, 'reference_genre', '') or '',
+            reference_situation=getattr(args, 'reference_situation', '') or '',
+        )
+    except ValueError as exc:
+        print(f"错误：{exc}")
+        sys.exit(1)
 
     output_path = save_prompt(prompt, project_root)
     print(f"Prompt 已保存至：{output_path}")
@@ -53,7 +71,7 @@ def cmd_assemble(args):
 
 def cmd_continue(args):
     """Run the continuation loop after a chapter is generated."""
-    project_root = ensure_nfc(args.project or os.getcwd())
+    project_root = get_project_root(args)
 
     # Read chapter body
     if args.chapter_body_file:
@@ -120,39 +138,94 @@ def cmd_continue(args):
 
 def cmd_status(args):
     """Show project writing status."""
-    project_root = ensure_nfc(args.project or os.getcwd())
-    state_path = os.path.join(project_root, '全局写作状态.md')
+    project_root = get_project_root(args)
+    report = build_status_report(project_root)
+    if getattr(args, 'json', False):
+        print(dump_json(report))
+    else:
+        print(format_status_text(report))
 
-    if not os.path.isfile(state_path):
-        print("未找到项目文件。请先初始化项目或指定正确的路径。")
+
+def cmd_doctor(args):
+    project_root = get_project_root(args)
+    result = run_doctor(project_root)
+    print(dump_json(result) if args.json else format_doctor_text(result))
+    if result['status'] == 'error':
         sys.exit(1)
 
-    fm, body = parse_frontmatter(state_path)
 
-    print("=" * 50)
-    print("  write-novel 项目写作状态")
-    print("=" * 50)
-    print(f"  当前分卷：第{fm.get('当前分卷', '?')}卷")
-    print(f"  当前章节：第{fm.get('当前章节', '?')}章")
-    print(f"  进度：{fm.get('已完成章数', 0)} 章 / {fm.get('已完成字数', 0)} 字")
-    print(f"  总目标：{fm.get('总目标字数', '?')} 字")
-    print(f"  主角：{fm.get('主角姓名', '?')}（{fm.get('主角当前境界', '?')}）")
-    print(f"  最后更新：{fm.get('最后更新时间', '?')}")
-    print("=" * 50)
+def cmd_report(args):
+    project_root = get_project_root(args)
+    report = build_status_report(project_root)
+    print(dump_json(report) if args.json else format_status_text(report))
 
-    # Show foreshadowing stats if available
-    fs_path = os.path.join(project_root, '伏笔与线索回收池.md')
-    if os.path.isfile(fs_path):
-        fs_fm, _ = parse_frontmatter(fs_path)
-        print(f"  伏笔总数：{fs_fm.get('总伏笔数', 0)}")
-        print(f"  已回收：{fs_fm.get('已回收数', 0)}")
-        print(f"  发展中：{fs_fm.get('发展中数', 0)}")
-        print("=" * 50)
 
+def cmd_query(args):
+    project_root = get_project_root(args)
+    try:
+        results = query_references(
+            project_root,
+            keyword=args.keyword or '',
+            category=args.category or '',
+            genre=args.genre or '',
+            situation=args.situation or '',
+            limit=args.limit,
+        )
+    except ValueError as exc:
+        print(f"错误：{exc}")
+        sys.exit(1)
+    if args.json:
+        print(dump_json({'results': results}))
+    else:
+        print(format_query_results(results))
+
+
+def cmd_state(args):
+    project_root = get_project_root(args)
+    if args.override:
+        if not args.reason:
+            print('错误：--override 需要同时提供 --reason')
+            sys.exit(1)
+        path = record_override(project_root, args.volume, args.chapter, args.override, args.reason)
+        print(f'override 已记录：{path}')
+        return
+    if args.mark:
+        ok, missing = check_stage_transition(project_root, args.volume, args.chapter, args.mark)
+        if not ok:
+            print(f"错误：阶段 {args.mark} 缺少前置阶段：{', '.join(missing)}")
+            sys.exit(1)
+        path = mark_stage(project_root, args.volume, args.chapter, args.mark)
+        print(f'阶段已标记：{args.mark} -> {path}')
+        return
+    state = explain_state(project_root, args.volume, args.chapter)
+    print(dump_json(state) if args.json else format_state_text(state))
+
+
+def cmd_dashboard(args):
+    project_root = get_project_root(args)
+    if args.data_only:
+        path = write_dashboard_data(project_root)
+    else:
+        path = write_dashboard_html(project_root)
+    print(f'dashboard 已生成：{path}')
+
+
+def cmd_preflight(args):
+    project_root = get_project_root(args)
+    summary = preflight_summary(project_root)
+    print(dump_json(summary) if args.json else format_preflight_text(summary))
+
+
+def cmd_validate_plugin(args):
+    project_root = get_project_root(args)
+    result = validate_plugin_metadata(project_root)
+    print(dump_json(result) if args.json else format_validation_text(result))
+    if result['status'] == 'error':
+        sys.exit(1)
 
 def cmd_init(args):
     """Initialize a new book project with skeleton files."""
-    project_root = ensure_nfc(args.project or os.getcwd())
+    project_root = get_project_root(args)
 
     # Create directory structure
     dirs = ['全局设定', '分卷大纲', '章节草稿', '人物', '世界设定', '伏笔与线索', '历史章节摘要']
@@ -220,15 +293,22 @@ def main():
 
     # init
     parser_init = subparsers.add_parser('init', help='初始化新项目')
+    parser_init.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
 
     # assemble
     parser_asm = subparsers.add_parser('assemble', help='组装 XML Prompt')
+    parser_asm.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
     parser_asm.add_argument('--chapter', '-c', type=int, required=True, help='章节序号')
     parser_asm.add_argument('--volume', '-v', type=int, required=True, help='分卷序号')
     parser_asm.add_argument('--max-depth', '-d', type=int, default=1, help='双向链接最大加载深度')
+    parser_asm.add_argument('--reference-keyword', help='注入结构化参考资料的关键词')
+    parser_asm.add_argument('--reference-category', help='参考资料类别过滤')
+    parser_asm.add_argument('--reference-genre', help='参考资料题材标签过滤')
+    parser_asm.add_argument('--reference-situation', help='参考资料写作场景过滤')
 
     # continue
     parser_cont = subparsers.add_parser('continue', help='执行续航闭环')
+    parser_cont.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
     parser_cont.add_argument('--chapter', '-c', type=int, required=True, help='章节序号')
     parser_cont.add_argument('--volume', '-v', type=int, required=True, help='分卷序号')
     parser_cont.add_argument('--title', '-t', help='章节标题')
@@ -237,6 +317,53 @@ def main():
 
     # status
     parser_stat = subparsers.add_parser('status', help='查看项目写作状态')
+    parser_stat.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
+    parser_stat.add_argument('--json', action='store_true', help='输出 JSON')
+
+    # doctor
+    parser_doc = subparsers.add_parser('doctor', help='诊断项目健康状态')
+    parser_doc.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
+    parser_doc.add_argument('--json', action='store_true', help='输出 JSON')
+
+    # report
+    parser_report = subparsers.add_parser('report', help='生成写作状态报告')
+    parser_report.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
+    parser_report.add_argument('--json', action='store_true', help='输出 JSON')
+
+    # query
+    parser_query = subparsers.add_parser('query', help='查询结构化写作参考资料')
+    parser_query.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
+    parser_query.add_argument('keyword', nargs='?', help='关键词')
+    parser_query.add_argument('--category', help='类别过滤')
+    parser_query.add_argument('--genre', help='题材标签过滤')
+    parser_query.add_argument('--situation', help='写作场景')
+    parser_query.add_argument('--limit', type=int, default=5, help='返回数量')
+    parser_query.add_argument('--json', action='store_true', help='输出 JSON')
+
+    # state
+    parser_state = subparsers.add_parser('state', help='查看或更新写作阶段状态')
+    parser_state.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
+    parser_state.add_argument('--chapter', '-c', type=int, required=True, help='章节序号')
+    parser_state.add_argument('--volume', '-v', type=int, required=True, help='分卷序号')
+    parser_state.add_argument('--mark', help='标记完成的阶段 ID')
+    parser_state.add_argument('--override', help='记录 override 的目标阶段 ID')
+    parser_state.add_argument('--reason', help='override 原因')
+    parser_state.add_argument('--json', action='store_true', help='输出 JSON')
+
+    # dashboard
+    parser_dashboard = subparsers.add_parser('dashboard', help='生成只读写作状态面板')
+    parser_dashboard.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
+    parser_dashboard.add_argument('--data-only', action='store_true', help='只生成 dashboard JSON 数据')
+
+    # preflight
+    parser_preflight = subparsers.add_parser('preflight', help='显示运行时护栏摘要')
+    parser_preflight.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
+    parser_preflight.add_argument('--json', action='store_true', help='输出 JSON')
+
+    # validate-plugin
+    parser_validate = subparsers.add_parser('validate-plugin', help='校验插件元数据和资产清单')
+    parser_validate.add_argument('--project', '-p', dest='subproject', help='项目根目录（覆盖全局 --project）')
+    parser_validate.add_argument('--json', action='store_true', help='输出 JSON')
 
     args = parser.parse_args()
 
@@ -248,6 +375,20 @@ def main():
         cmd_continue(args)
     elif args.command == 'status':
         cmd_status(args)
+    elif args.command == 'doctor':
+        cmd_doctor(args)
+    elif args.command == 'report':
+        cmd_report(args)
+    elif args.command == 'query':
+        cmd_query(args)
+    elif args.command == 'state':
+        cmd_state(args)
+    elif args.command == 'dashboard':
+        cmd_dashboard(args)
+    elif args.command == 'preflight':
+        cmd_preflight(args)
+    elif args.command == 'validate-plugin':
+        cmd_validate_plugin(args)
     else:
         parser.print_help()
 
