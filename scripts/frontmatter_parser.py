@@ -7,10 +7,11 @@ Key features:
 - Separates frontmatter metadata from body content
 """
 
+import os
 import re
 import yaml
 from typing import Tuple, Dict, Any, Optional
-from scripts.encoding_utils import safe_open
+from scripts.encoding_utils import safe_open, ensure_nfc
 
 
 # Regex to match YAML frontmatter delimited by ---
@@ -127,3 +128,54 @@ def preserve_user_area(original_body: str, new_body: str) -> str:
 
     # Replace the user area in new_body with the one from original_body
     return new_body.replace(new_user, original_user)
+
+
+# ─── File I/O helpers (migrated from state_updater) ──────────
+
+def backup_file(filepath: str) -> Optional[str]:
+    """Create a .bak backup of a file. Returns backup path or None."""
+    import shutil
+
+    filepath = ensure_nfc(filepath)
+    if not os.path.isfile(filepath):
+        return None
+    backup_path = ensure_nfc(filepath + '.bak')
+    shutil.copy2(filepath, backup_path)
+    return backup_path
+
+
+def write_md_with_frontmatter(
+    filepath: str, fm: Dict[str, Any], body: str, backup: bool = True
+) -> None:
+    """
+    Write a Markdown file with YAML frontmatter and body. Optionally creates .bak first.
+
+    Args:
+        filepath: Absolute path to the .md file.
+        fm: Dict of frontmatter key-value pairs.
+        body: Markdown body text.
+        backup: If True (default), create a .bak before overwriting.
+    """
+    if backup:
+        backup_file(filepath)
+
+    lines = []
+    for key, value in fm.items():
+        if value is None:
+            lines.append(f'{key}: ')
+        elif isinstance(value, list):
+            lines.append(f'{key}:')
+            for item in value:
+                lines.append(f'  - {item}')
+        elif isinstance(value, str) and '\n' in value:
+            lines.append(f'{key}: |')
+            for line in value.split('\n'):
+                lines.append(f'  {line}')
+        else:
+            lines.append(f'{key}: {value}')
+
+    fm_text = '\n'.join(lines)
+    content = f'---\n{fm_text}\n---\n\n{body}'
+
+    with safe_open(filepath, 'w', encoding='utf-8') as f:
+        f.write(content)
