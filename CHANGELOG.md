@@ -2,6 +2,35 @@
 
 这里记录每个正式版本对作者和维护者的影响。发布说明优先面向中文网文作者：先说写作体验有什么变化，再补维护者关心的技术细节。
 
+## v0.2.0 (2026-06-12) — 目录整合与竞品优势注入
+
+### 新增
+- 根目录文档层补齐（CHANGELOG、LICENSE、pytest.ini、sitecustomize.py、requirements.txt、releases/）
+- docs/ 扩展为 7 个子目录（architecture/archive/guides/memory/operations/research/superpowers）
+- 新增 evals/ 行为评估模块（从 webnovel-writer 移植）
+- 新增 hooks/ 自动化体系（7 hooks：session_start/end、pre/post_compact、guard_runtime_write、detect_story_gaps、validate_story_commit）
+- 新增 templates/ 题材模板模块（37 题材 + 输出模板）
+- 新增短篇写作 skill（write-novel-short-write）
+- 新增短篇拆文 skill（write-novel-short-analyze）
+- 新增学习 skill（webnovel-learn）+ Dashboard skill（webnovel-dashboard）
+- 项目文件结构升级为四维分离 + 对标联动 + 分层追踪
+- Dashboard 注入 React 前端 + watcher + server
+- references 方法论扩充（oh-story 25 方法论 + 4 rules）
+
+### 变更
+- skills 三方全量合并（当前 11 + webnovel 8 + oh-story 12 → 31 个目录）
+- agents 三方合并（当前 7 + webnovel 4 + oh-story 7 → 15 个，按 Opus/Sonnet/Haiku 三级分工）
+- scripts 三方整合（webnovel 25 独有脚本 + oh-story 6 校验脚本）
+- 项目初始化模板更新（`世界设定/`+`人物/` → `设定/`，`分卷大纲/` → `大纲/`，`章节草稿/` → `正文/`，新增 `对标/`+`追踪/`）
+- init/doctor/dashboard 脚本适配新目录结构
+- README.md 同步更新所有模块说明
+
+### 来源
+- webnovel-writer v6.2.0
+- oh-story-claudecode
+
+---
+
 ## v6.2.0 - 写章结果更清楚，失败后更好恢复
 
 发版范围：`v6.1.0..v6.2.0`。

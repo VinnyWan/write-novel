@@ -42,115 +42,123 @@ python scripts/main.py init --project ./我的小说
 
 ---
 
-## Skill 体系（11 Skills）
+## Skill 体系（15 Skills）
 
 | Skill | 触发 | 功能 |
 |-------|------|------|
 | `write-novel` | `/write-novel` | 路由入口，按意图自动分发到子 skill |
-| `write-novel-setup` | `/write-novel-setup` | 环境部署 + 35题材模板选择 |
+| `write-novel-setup` | `/write-novel-setup` | 环境部署 + 38题材模板选择 |
 | `write-novel-plan` | `/write-novel-plan` | 10步卷纲规划（节拍表/时间线/CBN-CPNs-CEN章纲） |
 | `write-novel-long-write` | `/write-novel-long-write` | 5 Phase 长篇写作主流程 |
+| `write-novel-short-write` | `/write-novel-short-write` | 短篇写作（情绪设计/反转构思/精修出稿） |
 | `write-novel-query` | `/write-novel-query` | 查角色/伏笔/进度/实体关系 |
-| `write-novel-review` | `/write-novel-review` | 6维审查 + 平台评分标准（起点/番茄/知乎） |
-| `write-novel-deslop` | `/write-novel-deslop` | 去 AI 味 |
+| `write-novel-review` | `/write-novel-review` | 6维审查 + 多Agent审稿 + 平台评分标准（起点/番茄/知乎） |
+| `write-novel-deslop` | `/write-novel-deslop` | 去 AI 味（三遍去AI法 + 禁用词表） |
 | `write-novel-analyze` | `/write-novel-analyze` | 6阶段深度拆文管道（概要→黄金三章→逐章摘要→聚合→设定→文风） |
+| `write-novel-short-analyze` | `/write-novel-short-analyze` | 短篇拆文（故事核/结构/情感线/反转/写作手法/共鸣） |
 | `write-novel-scan` | `/write-novel-scan` | 5平台扫榜（起点/番茄/晋江/七猫/刺猬猫） |
-| `write-novel-import` | `/write-novel-import` | 逆向导入已有小说，4 Phase 流程 |
+| `write-novel-import` | `/write-novel-import` | 逆向导入已有小说（逐章提取事件/角色/设定/伏笔） |
 | `write-novel-cover` | `/write-novel-cover` | 封面生成 |
+| `webnovel-learn` | `/webnovel-learn` | 项目经验记忆沉淀 |
+| `webnovel-dashboard` | `/webnovel-dashboard` | 启动只读可视化面板 |
 
-## Agent 体系（7 Agents）
+## Agent 体系（15 Agents，三级分工）
 
-| Agent | 功能 |
-|-------|------|
-| `write-novel-explorer` | 只读项目查询 |
-| `write-novel-researcher` | 外部资料搜索 |
-| `write-novel-context-agent` | 写前 research，输出上下文注入包 |
-| `write-novel-chapter-extractor` | 批量提取章节情节点和角色 |
-| `write-novel-deslop-agent` | 深度去 AI 味 |
-| `write-novel-senior-editor` | 资深编辑审稿 |
-| `write-novel-picky-reader` | 挑剔读者体验 |
+| 层级 | 模型 | Agent | 职责 |
+|------|------|-------|------|
+| 架构级 | Opus | `story-architect` | 故事架构、大纲结构、钩子/反转设计、情绪弧线 |
+| 架构级 | Opus | `context-agent` | 写前上下文策略组装，创作任务书生成 |
+| 创作级 | Sonnet | `narrative-writer` | 正文起草、去AI味、格式合规 |
+| 创作级 | Sonnet | `senior-editor` | 资深编辑审稿 |
+| 创作级 | Sonnet | `character-designer` | 角色设计、语言风格、动机链、对话创作 |
+| 创作级 | Sonnet | `data-agent` | 事实提取、投影驱动、state/index/summary 更新 |
+| 检查级 | Haiku | `reviewer` | 六维一致性审查（爽点/一致性/节奏/OOC/连贯性/追读力） |
+| 检查级 | Haiku | `picky-reader` | 挑剔读者体验 |
+| 检查级 | Haiku | `chapter-extractor` | 批量提取章节情节点和角色 |
+| 检查级 | Haiku | `explorer` | 项目内只读查询（角色/伏笔/设定/进度） |
+| 检查级 | Haiku | `researcher` | 外部资料搜索，多源交叉验证 |
+| 检查级 | Haiku | `deslop-agent` | 深度去 AI 味 |
+| 检查级 | Haiku | `deconstruction-agent` | 拆文分析 |
+| 检查级 | Haiku | `consistency-checker` | 事实冲突扫描、伏笔追踪、S1-S4 分级报告 |
+| — | — | `查询协议与契约.md` | Agent 协作协议定义 |
 
 ## 项目目录结构
 
+### 插件开发目录
+
 ```
-项目根目录/
+write-novel/
+├── CHANGELOG.md
+├── LICENSE
 ├── README.md
 ├── CLAUDE.md
-├── 全局写作状态.md              # 宏观注意力控制中枢
+├── pytest.ini
+├── sitecustomize.py
+├── requirements.txt
+├── docs/                         # 文档中心（本地保留，不提交 git）
+│   ├── architecture/             # 架构设计文档
+│   ├── guides/                   # 使用指南
+│   ├── operations/               # 运维文档
+│   └── superpowers/              # specs + plans
+├── releases/                     # 发版笔记
+└── write-novel/                  # 代码层
+    ├── agents/                   # Agent 定义（15 agents，三级分工）
+    ├── dashboard/                # FastAPI 实时看板 + 前端
+    │   └── frontend/             # React 前端（dist + src）
+    ├── evals/                    # 行为评估
+    ├── hooks/                    # 自动化 hooks（7 个）
+    ├── references/               # 共享引用数据
+    │   ├── csv/                  # 8 个 CSV 技法数据库
+    │   ├── shared/               # 共享参考文档
+    │   ├── taxonomy/             # 题材分类体系
+    │   ├── methodology/          # 写作方法论（27 文件）
+    │   └── rules/                # 写作规范（4 文件）
+    ├── scripts/                  # Python 脚本与 CLI
+    ├── skills/                   # Skill 定义（31 skills，后续去重）
+    └── templates/                # 题材模板（37 题材 + 输出模板）
+```
+
+### 用户写作项目目录（四维分离）
+
+```
+{书名}/
+├── 全局写作状态.md               # 宏观注意力控制中枢
 │
-├── skills/                       # Claude Code skill 定义（11 skills）
-│   ├── write-novel/              # 路由入口
-│   ├── write-novel-setup/        # 环境部署 + 35题材模板
-│   ├── write-novel-plan/         # 卷纲规划（10步流程）
-│   ├── write-novel-long-write/   # 长篇写作主流程（5 Phase）
-│   │   └── references/
-│   │       ├── character/        # 角色设计（3 文件）
-│   │       ├── plot/             # 剧情方法（7 文件）
-│   │       ├── hooks/            # 钩子技巧（3 文件）
-│   │       ├── style/            # 文风打磨（5 文件）
-│   │       ├── genre/            # 题材方法（7 文件）
-│   │       ├── outline/          # 大纲方法（5 文件）
-│   │       └── workflow/         # 写作流程（8 文件）
-│   ├── write-novel-query/        # 项目状态查询
-│   ├── write-novel-review/       # 多视角审查 + 质量管道
-│   │   └── references/
-│   │       ├── quality/          # 质量检查里程碑
-│   │       └── rubrics/          # 平台评分标准（起点/番茄/知乎）
-│   ├── write-novel-deslop/       # 去 AI 味
-│   ├── write-novel-analyze/      # 6阶段深度拆文管道
-│   ├── write-novel-scan/         # 5平台扫榜
-│   │   └── scripts/              # 平台爬虫脚本
-│   ├── write-novel-import/       # 逆向导入已有小说
-│   └── write-novel-cover/        # 封面生成
+├── 设定/                         # 世界观 + 角色 + 势力 + 关系
+│   ├── 世界观/                   # 背景、力量体系等
+│   ├── 角色/                     # 每人一个文件（[[双向链接]]）
+│   │   ├── 林动.md
+│   │   └── 沈清雪.md
+│   ├── 势力/                     # 每个势力/组织一个文件
+│   ├── 关系.md                   # 角色关系映射
+│   ├── 题材定位.md               # 题材核心梗 + 对标分析
+│   └── 文风.md                   # 日更前读取，保持文风一致
 │
-├── agents/                       # Agent 定义（7 agents）
-│   ├── write-novel-explorer.md
-│   ├── write-novel-researcher.md
-│   ├── write-novel-context-agent.md
-│   ├── write-novel-chapter-extractor.md
-│   ├── write-novel-deslop-agent.md
-│   ├── write-novel-senior-editor.md
-│   └── write-novel-picky-reader.md
+├── 大纲/                         # 大纲 + 卷纲 + 细纲
+│   ├── 大纲.md                   # 全书卷级结构
+│   ├── 卷纲_第1卷.md             # 爽点节奏 + 情绪弧线 + 伏笔 + 反转
+│   └── 细纲_第1章.md             # 事件 + 钩子 + 爽点 + 悬念
 │
-├── references/                   # 共享引用数据
-│   ├── csv/                      # 8 个 CSV 技法数据库
-│   ├── shared/                   # 共享参考文档（10 文件）
-│   └── 索引.md                   # 引用总索引
-│
-├── 题材模板/                     # 所选题材的写作框架参考
-│
-├── 世界设定/                     # 世界观 & 力量体系
-│   └── 世界观.md
-│
-├── 人物/                         # 角色卡片（Wikilink 双向链接）
-│   ├── 林动.md
-│   └── 沈清雪.md
-│
-├── 分卷大纲/                     # 分卷 & 单章细纲
-│   ├── 第1卷_大纲.md
-│   └── 第1卷_细纲_第1章.md
-│
-├── 章节草稿/                     # 已生成的章节正文
+├── 正文/                         # 章节正文
 │   └── 第1章_序章.md
 │
+├── 对标/                         # 从拆文库同步的结构化参考
+│   └── {对标书名}/
+│       ├── 文风.md
+│       ├── 角色/
+│       ├── 剧情/
+│       └── 拆文报告.md
+│
+├── 追踪/                         # 连续性管理（分层追踪）
+│   ├── 上下文.md                 # compact 恢复用上下文
+│   ├── 伏笔.md                   # 伏笔埋设/回收状态表
+│   ├── 时间线.md                 # 故事内时间线
+│   └── 角色状态.md               # 角色当前状态快照
+│
+├── 审查报告/                     # 章节审查报告
 ├── 章节提交记录/                 # 每章提交时的新增设定记录
-│
 ├── 历史章节摘要/                 # 每章 ~200 字摘要
-│
-├── 伏笔与线索回收池.md           # 伏笔生命周期追踪（🟡已埋 → 🟠发展中 → 🟢已回收）
-│
-├── dashboard/                    # FastAPI 实时看板服务器
-│   ├── app.py                    # API 端点 + 内嵌 HTML 面板
-│   └── __main__.py               # 启动入口
-│
-├── scripts/
-│   ├── main.py                   # 8 子命令 CLI
-│   ├── data_modules/             # 数据适配层
-│   │   ├── config.py             # 项目配置
-│   │   ├── state_manager.py      # 状态读写（Markdown ↔ JSON）
-│   │   ├── context_manager.py    # 写作上下文组装
-│   │   └── chapter_commit.py     # 章节提交服务
-│   └── ...
+├── 伏笔与线索回收池.md           # 伏笔生命周期追踪
 │
 └── .write-novel/                 # 派生数据（搜索索引/状态/伏笔状态 JSON，可重建）
 ```
@@ -191,9 +199,9 @@ gate-1（写前）→ gate-2（提交前）→ gate-3（提交后）
 
 支持起点/番茄/晋江/七猫/刺猬猫 5 大平台的排行榜扫描和趋势分析，辅助选题决策。
 
-### 8. 35 题材模板库
+### 8. 38 题材模板库
 
-覆盖修仙/系统流/都市异能/古言/末世/电竞/科幻/无限流/悬疑灵异等 35 大题材，初始化时按选题自动注入对应写作框架。
+覆盖修仙/系统流/都市异能/古言/末世/电竞/科幻/无限流/悬疑灵异/克苏鲁/规则怪谈等 38 大题材，初始化时按选题自动注入对应写作框架。
 
 ### 9. 实时写作看板
 
@@ -217,7 +225,7 @@ gate-1（写前）→ gate-2（提交前）→ gate-3（提交后）
 ## 技术栈
 
 - **语言**：Python 3.10+
-- **依赖**：PyYAML
+- **依赖**：PyYAML, rank-bm25, jieba
 - **存储**：纯 Markdown 文件（YAML Frontmatter）
 - **编码**：NFC/NFD 自动兼容，中文路径安全
 
