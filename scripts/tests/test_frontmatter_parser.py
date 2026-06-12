@@ -273,5 +273,81 @@ class TestChineseColonReplacement:
         assert '正文：' in body
 
 
+
+# ─── Tests for backup_file and write_md_with_frontmatter ─────
+
+
+def test_backup_file_creates_bak():
+    import tempfile
+    from scripts.frontmatter_parser import backup_file
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fpath = os.path.join(tmpdir, 'test.md')
+        with open(fpath, 'w') as f:
+            f.write('hello')
+
+        result = backup_file(fpath)
+        assert result is not None
+        assert result.endswith('.bak')
+        assert os.path.isfile(result)
+        with open(result, 'r') as f:
+            assert f.read() == 'hello'
+
+
+def test_backup_file_missing_returns_none():
+    from scripts.frontmatter_parser import backup_file
+
+    result = backup_file('/nonexistent/path/file.md')
+    assert result is None
+
+
+def test_write_md_roundtrip():
+    import tempfile
+    from scripts.frontmatter_parser import write_md_with_frontmatter, parse_frontmatter
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fpath = os.path.join(tmpdir, 'test.md')
+        fm = {'姓名': '林动', '境界': '筑基期', '年龄': 18, '标签': ['修仙', '打脸']}
+        body = '这是正文内容。'
+
+        write_md_with_frontmatter(fpath, fm, body, backup=False)
+        assert os.path.isfile(fpath)
+
+        parsed_fm, parsed_body = parse_frontmatter(fpath)
+        assert parsed_fm['姓名'] == '林动'
+        assert parsed_fm['境界'] == '筑基期'
+        assert parsed_fm['年龄'] == 18
+        assert parsed_fm['标签'] == ['修仙', '打脸']
+        assert parsed_body.strip() == '这是正文内容。'
+
+
+def test_write_md_special_chars():
+    """Values with # and : should survive round-trip."""
+    import tempfile
+    from scripts.frontmatter_parser import write_md_with_frontmatter, parse_frontmatter
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fpath = os.path.join(tmpdir, 'test.md')
+        fm = {'标签': '#修仙', '备注': '值:含冒号', 'id': '001'}
+        body = 'test'
+
+        write_md_with_frontmatter(fpath, fm, body, backup=False)
+        parsed_fm, _ = parse_frontmatter(fpath)
+        assert parsed_fm['标签'] == '#修仙'
+        assert parsed_fm['备注'] == '值:含冒号'
+        assert parsed_fm['id'] == '001'
+
+
+def test_write_md_rejects_non_string_body():
+    import tempfile
+    import pytest
+    from scripts.frontmatter_parser import write_md_with_frontmatter
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fpath = os.path.join(tmpdir, 'test.md')
+        with pytest.raises(TypeError):
+            write_md_with_frontmatter(fpath, {}, None, backup=False)
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

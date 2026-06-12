@@ -7,10 +7,12 @@ Key features:
 - Separates frontmatter metadata from body content
 """
 
+import os
+import shutil
 import re
 import yaml
 from typing import Tuple, Dict, Any, Optional
-from scripts.encoding_utils import safe_open
+from scripts.encoding_utils import safe_open, ensure_nfc
 
 
 # Regex to match YAML frontmatter delimited by ---
@@ -127,3 +129,45 @@ def preserve_user_area(original_body: str, new_body: str) -> str:
 
     # Replace the user area in new_body with the one from original_body
     return new_body.replace(new_user, original_user)
+
+
+# ─── File I/O helpers (migrated from state_updater) ──────────
+
+def backup_file(filepath: str) -> Optional[str]:
+    """Create a .bak backup of a file. Returns backup path or None."""
+    filepath = ensure_nfc(filepath)
+    if not os.path.isfile(filepath):
+        return None
+    backup_path = ensure_nfc(filepath + '.bak')
+    shutil.copy2(filepath, backup_path)
+    return backup_path
+
+
+def write_md_with_frontmatter(
+    filepath: str, fm: Dict[str, Any], body: str, backup: bool = True
+) -> None:
+    """
+    Write a Markdown file with YAML frontmatter and body. Optionally creates .bak first.
+
+    Args:
+        filepath: Absolute path to the .md file.
+        fm: Dict of frontmatter key-value pairs.
+        body: Markdown body text (must be a string).
+        backup: If True (default), create a .bak before overwriting.
+    """
+    if not isinstance(body, str):
+        raise TypeError(f'body must be str, got {type(body).__name__}')
+
+    if backup:
+        backup_file(filepath)
+
+    fm_text = yaml.safe_dump(
+        fm,
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=False,
+    ).strip()
+    content = f'---\n{fm_text}\n---\n\n{body}'
+
+    with safe_open(filepath, 'w', encoding='utf-8') as f:
+        f.write(content)

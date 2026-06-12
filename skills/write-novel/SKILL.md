@@ -15,10 +15,15 @@ description: |
 | 用户意图 | 关键词示例 | 路由到 |
 |----------|-----------|--------|
 | 写长篇 | 开书、写大纲、长篇、连载、续写、日更、修改、回炉、重写 | `write-novel-long-write` |
+| 卷纲规划 | 规划、卷纲、章纲、大纲、plan、拆章 | `write-novel-plan` |
+| 项目查询 | 查角色、查伏笔、查进度、什么状态 | `write-novel-query` |
 | 去 AI 味 | 去 AI 味、太 AI、去味、deslop | `write-novel-deslop` |
 | 多视角审查 | 审查、审稿、review | `write-novel-review` |
 | 环境部署 | 准备写书、搭环境、初始化、配置 | `write-novel-setup` |
 | 封面生成 | 封面、封面图 | `write-novel-cover` |
+| 长篇拆文 | 拆文、分析这本书、黄金三章 | `write-novel-analyze` |
+| 长篇扫榜 | 扫榜、排行、什么火 | `write-novel-scan` |
+| 导入小说 | 导入、反向解析、把我的书导进来 | `write-novel-import` |
 
 ## 路由流程
 
@@ -37,6 +42,11 @@ description: |
 - "去AI味" "去味" "这篇太AI了" 匹配 `write-novel-deslop`。
 - "审查" "帮我审一下" 匹配 `write-novel-review`。
 - "搭环境" "准备写书" "初始化" 匹配 `write-novel-setup`。
+- "规划" "卷纲" "章纲" "大纲" 匹配 `write-novel-plan`。
+- "查角色" "查伏笔" "什么状态" "写到哪了" 匹配 `write-novel-query`。
+- "拆文" "分析这本书" "黄金三章" 匹配 `write-novel-analyze`。
+- "扫榜" "排行" "什么火" 匹配 `write-novel-scan`。
+- "导入" "反向解析" "把我的书导进来" 匹配 `write-novel-import`。
 
 ## 项目状态感知
 
@@ -52,7 +62,12 @@ description: |
 | Skill 名称 | 文件路径 | 功能 |
 |-----------|---------|------|
 | `write-novel-long-write` | `write-novel-long-write/SKILL.md` | 长篇写作主流程 |
+| `write-novel-plan` | `write-novel-plan/SKILL.md` | 卷纲规划 |
+| `write-novel-query` | `write-novel-query/SKILL.md` | 项目状态查询 |
 | `write-novel-deslop` | `write-novel-deslop/SKILL.md` | 去 AI 味 |
 | `write-novel-review` | `write-novel-review/SKILL.md` | 多视角审查 + 质量管道 |
 | `write-novel-setup` | `write-novel-setup/SKILL.md` | 环境部署 |
 | `write-novel-cover` | `write-novel-cover/SKILL.md` | 封面生成 |
+| `write-novel-scan` | `write-novel-scan/SKILL.md` | 长篇扫榜 |
+| `write-novel-analyze` | `write-novel-analyze/SKILL.md` | 长篇拆文 |
+| `write-novel-import` | `write-novel-import/SKILL.md` | 逆向导入 |
