@@ -1,5 +1,5 @@
 {
-  "description": "Lightweight webnovel-writer runtime guardrails: short project status on session start and best-effort blocking for direct writes to Story System/read-model files.",
+  "description": "write-novel runtime guardrails: session lifecycle hooks, writing guards, story gap detection, and commit validation. Merged from webnovel-writer + oh-story-claudecode.",
   "hooks": {
     "SessionStart": [
       {
@@ -8,6 +8,52 @@
           {
             "type": "command",
             "command": "python -X utf8 \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/detect_story_gaps.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session_end.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_compact.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/post_compact.sh\"",
             "timeout": 5
           }
         ]
@@ -30,6 +76,18 @@
           {
             "type": "command",
             "command": "python -X utf8 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard_runtime_write.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCommit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/validate_story_commit.sh\"",
             "timeout": 5
           }
         ]
