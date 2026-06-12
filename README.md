@@ -139,6 +139,19 @@ python scripts/main.py init --project ./我的小说
 │
 ├── 伏笔与线索回收池.md           # 伏笔生命周期追踪（🟡已埋 → 🟠发展中 → 🟢已回收）
 │
+├── dashboard/                    # FastAPI 实时看板服务器
+│   ├── app.py                    # API 端点 + 内嵌 HTML 面板
+│   └── __main__.py               # 启动入口
+│
+├── scripts/
+│   ├── main.py                   # 8 子命令 CLI
+│   ├── data_modules/             # 数据适配层
+│   │   ├── config.py             # 项目配置
+│   │   ├── state_manager.py      # 状态读写（Markdown ↔ JSON）
+│   │   ├── context_manager.py    # 写作上下文组装
+│   │   └── chapter_commit.py     # 章节提交服务
+│   └── ...
+│
 └── .write-novel/                 # 派生数据（搜索索引/状态/伏笔状态 JSON，可重建）
 ```
 
@@ -182,6 +195,10 @@ gate-1（写前）→ gate-2（提交前）→ gate-3（提交后）
 
 覆盖修仙/系统流/都市异能/古言/末世/电竞/科幻/无限流/悬疑灵异等 35 大题材，初始化时按选题自动注入对应写作框架。
 
+### 9. 实时写作看板
+
+`python -m dashboard --project-root ./项目` 启动 FastAPI 实时看板，覆盖进度概览、角色状态、伏笔追踪、文件浏览、健康诊断 5 大板块。
+
 ## 命令行参考
 
 | 命令 | 说明 |
@@ -193,7 +210,8 @@ gate-1（写前）→ gate-2（提交前）→ gate-3（提交后）
 | `python scripts/main.py doctor --project ./项目` | 全面项目健康诊断 |
 | `python scripts/main.py preflight -c 5 -v 1 --project ./项目` | 写前预检（细纲/索引就绪） |
 | `python scripts/main.py write-gate -s gate-2 -c 5 --project ./项目` | 三段写门校验 |
-| `python scripts/main.py dashboard --project ./项目` | 生成只读 HTML 面板 |
+| `python scripts/main.py dashboard --project ./项目` | 生成静态 HTML 面板 |
+| `python -m dashboard --project-root ./项目` | 启动实时看板服务器（FastAPI） |
 | `python scripts/main.py status --project ./项目` | 查看项目进度与状态 |
 
 ## 技术栈
