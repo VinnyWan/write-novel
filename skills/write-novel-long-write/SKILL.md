@@ -23,11 +23,11 @@ description: |
 
 | 题材 | 核心情绪 | 参考文件 |
 |------|---------|---------|
-| 打脸/逆袭 | 爽感释放 | `references/genre-writing-formulas.md` |
-| 身份反转 | 震撼+痛快 | `references/reversal-toolkit.md` |
-| 感情拉扯 | 意难平 | `references/emotional-methods.md` |
-| 悬疑/惊悚 | 紧张+好奇 | `references/hooks-suspense.md` |
-| 日常装逼 | 期待感 | `references/hooks-chapter.md` |
+| 打脸/逆袭 | 爽感释放 | `references/genre/genre-writing-formulas.md` |
+| 身份反转 | 震撼+痛快 | `references/plot/reversal-toolkit.md` |
+| 感情拉扯 | 意难平 | `references/plot/emotional-methods.md` |
+| 悬疑/惊悚 | 紧张+好奇 | `references/hooks/hooks-suspense.md` |
+| 日常装逼 | 期待感 | `references/hooks/hooks-chapter.md` |
 
 ---
 
@@ -38,8 +38,8 @@ description: |
 | 场景 | 触发条件 | 执行流程 |
 |------|----------|----------|
 | **开书** | "帮我开书" / 项目目录为空 | 完整 Phase 1→2→3→4→5 |
-| **日更续写** | 关键词（"日更"/"续写"/"继续写"）**且**项目已有正文+摘要 | 加载 `references/workflow-daily.md` |
-| **大修** | "修改第X章" / "回炉" / "重写第X章" | 加载 `references/workflow-revision.md` |
+| **日更续写** | 关键词（"日更"/"续写"/"继续写"）**且**项目已有正文+摘要 | 加载 `references/workflow/workflow-daily.md` |
+| **大修** | "修改第X章" / "回炉" / "重写第X章" | 加载 `references/workflow/workflow-revision.md` |
 
 **匹配优先级**：日更续写 → 大修 → 开书。
 
@@ -83,15 +83,16 @@ description: |
 
 ### Phase 3：大纲细纲
 
-产出文件：
-- `分卷大纲/第{卷序号}卷_{卷标题}.md`（使用 `分卷大纲模板.md` 结构）
-- `分卷大纲/第{卷序号}卷_细纲_第{章序号}章.md`（使用 `分卷与单章细纲模板.md` 结构）
+委托给 `write-novel-plan` skill 执行完整的卷纲规划流程（10 步：加载数据 → 补齐设定基线 → 确认卷范围 → 节拍表 → 时间线 → 卷纲骨架 → 批量章纲 → 回写设定 → 验证 → 更新状态）。
 
-步骤：
-1. **分卷规划**：确定全书卷数，每卷 ~30 章，每章 ~3000-5000 字
-2. **卷级大纲**：每卷确定主线、关键转折点、情绪弧线
-3. **章级细纲**：每章确定硬性剧本任务（3-5 条）、核心冲突、出场角色、埋设伏笔
-4. **伏笔规划**：在细纲中标记伏笔 ID，在 `伏笔与线索回收池.md` 中预录入
+产出文件：
+- `分卷大纲/第{卷序号}卷_节拍表.md`
+- `分卷大纲/第{卷序号}卷_时间线.md`
+- `分卷大纲/第{卷序号}卷_详细大纲.md`（含逐章 CBN/CPNs/CEN 结构化节点）
+
+调用方式：`Skill("write-novel-plan")`
+
+若 write-novel-plan 还未部署，回退到内联执行（参考 `references/outline/` 下的大纲方法论文件）。
 
 ---
 
