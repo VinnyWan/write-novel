@@ -20,7 +20,7 @@
 
 ### 阶段 2：原子提取（并行 Agent 处理每章）
 
-优先使用 chapter-extractor agent 并行处理。每章 spawn 一个 agent，每次 5-8 个并发。
+优先使用 deconstruction-agent agent 并行处理。每章 spawn 一个 agent，每次 5-8 个并发。
 Agent 不可用时退回主线程串行处理。
 
 Agent 输出格式严格对齐本阶段 A/B/C 三部分的合并输出，详见 output-templates.md 的 Stage 2 模板。
@@ -421,7 +421,7 @@ Stage 2 的角色轻量提及数据在此阶段升级为完整档案。
 
 ### 分块策略
 
-Stage 2 使用 chapter-extractor agent 并行处理（每章一个 agent，每批 5-8 个），不分块。
+Stage 2 使用 deconstruction-agent agent 并行处理（每章一个 agent，每批 5-8 个），不分块。
 其他阶段（0、1、3、4、5）的分块策略如下：
 
 | 规模 | 策略 | 块大小 |

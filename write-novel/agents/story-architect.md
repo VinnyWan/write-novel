@@ -5,11 +5,11 @@ description: |
   钩子/悬念/反转等叙事工程、情绪弧线设计、范围控制审查。
   被 story-long-write（Phase 1-3）、story-short-write（Phase 1-2）调用。
   也可审查已有内容的结构问题。
+  合并自：story-architect + context-agent
 tools: [Read, Glob, Grep, Write, Edit]
 model: opus
+degrade: sonnet
 maxTurns: 30
-# maxTurns: 30 — 覆盖创作型场景（大纲排布、情绪弧线设计、反转工程）。
-# opus 模型单次推理较慢，30 turns 足以完成复杂创作任务。
 memory: project
 ---
 

@@ -7,6 +7,8 @@ description: |
   确认后从 Stage 2 续跑逐章摘要、聚合分析、设定关系、汇总报告，全程产物落盘 `拆文库/{书名}/`。
   触发方式：/story-long-analyze、/长篇拆文、「帮我拆这本书」「拆这本书」「分析黄金三章」
   「深度拆解」「完整拆解」「系统拆解」或提供小说文本文件路径——全部进入同一管道。
+  （旧触发词：/write-novel-analyze、「拆文」）
+  合并自：story-long-analyze + write-novel-analyze
 metadata:
   openclaw:
     source: https://github.com/worldwonderer/oh-story-claudecode
@@ -112,7 +114,7 @@ metadata:
 |------|------|------|------|----------|
 | 0 | 概要提取 | 原始文本 | 概要.md（**首版 200 字 thin first-pass** + 章节索引；full plot-aware 500-1000 字版在 Stage 5 落盘覆盖）+ **Stage 0.5 章节边界表写入 `_progress.md`**（详见下方说明） | 章节结构识别完成 + 章节边界落盘 |
 | 1 | 黄金三章 | 前3章原文 | 第1章_深度拆解.md / 第2章_深度拆解.md / 第3章_深度拆解.md（每章一个文件）。非人形反派（灵气复苏/末世/国运等抽象对抗型）出现在前三章时，在本阶段一并按抽象对抗型路由分析（核心对抗面/紧迫感来源/升级机制/叙事替代）。 | 3章拆解完成 → **停靠产出快速预览.md** |
-| 2 | 逐章摘要 | 分块章节文本 | 章节摘要.md（含情节点+角色）。角色过滤（龙套不提取、别名归类）。每章10-40情节点（密度150-200字/个，按字数动态调节；公式低于10时仍按硬下限10拆足关键步骤）。**并行模式：每章 spawn chapter-extractor agent**。**计数验证：摘要数 == 章节数，不等则标记失败章节**。 | 所有章节处理完成 |
+| 2 | 逐章摘要 | 分块章节文本 | 章节摘要.md（含情节点+角色）。角色过滤（龙套不提取、别名归类）。每章10-40情节点（密度150-200字/个，按字数动态调节；公式低于10时仍按硬下限10拆足关键步骤）。**并行模式：每章 spawn deconstruction-agent agent**。**计数验证：摘要数 == 章节数，不等则标记失败章节**。 | 所有章节处理完成 |
 | 3 | 聚合分析 | 全部章节摘要 | 剧情/*.md + 故事线.md。**故事框架识别**（前置，决定聚合策略）。**两步法剧情聚合**（先从摘要识别剧情大纲，再按大纲分配情节点）。**角色合并**（跨章节去重+别名归一）。**角色分级**（主角/反派/核心配角/功能角色）。**孤立情节兜底**（6步，含覆盖率验证）。**桥段标签**（每个剧情模块按 deconstruction-notes.md 桥段词表打标，best-effort，无匹配留空）。**质量门控**（阈值详见 material-decomposition.md 质量阈值体系）。 | 质量检查通过 |
 | 4 | 设定+关系（4a/4b/4c） | **4a**：Stage 2 情节点+章节摘要（不依赖 Stage 3，与 3 并行）；**4b/4c**：Stage 3 合并后角色数据+情节点 | 设定/*.md + 角色/*.md。**4a 设定**（世界观/金手指/势力，从 Stage 2 mention 数据归纳）。**4b 角色完整档案**（两阶段模型：Stage 2 轻量提及 → Stage 4b 完整档案；别名解析置信度≥0.85自动合并）。**4c 角色关系提取**（从情节点提取，不从原文；含演变追踪+最终状态合并+隐含推断）。非人形反派在 4a 做完整抽象对抗型分析。 | 4a/4b/4c 全部完成 |
 | 5 | 汇总报告 | 全部输出 | 拆文报告.md（含「写法技巧」清单，覆盖一笔两用/延迟揭示/视角欺骗/对比锚点/行为循环/身体反应替代心理描写/**跨章回扣**——物品/意象在不同章节承担不同功能）+ **概要.md 全书 500-1000 字版**（plot-aware，覆盖 Stage 0 的 200 字 thin first-pass） | 报告 + 全书概要生成完成 |
@@ -120,7 +122,7 @@ metadata:
 
 ### Stage 0.5 章节边界表（Stage 0 子步骤）
 
-Stage 0 完成概要 + 章节索引之后、转入 Stage 1 之前，**必须**额外产出一份「章节边界」表写入 `_progress.md`。这是后续 Stage 1（黄金三章原文切片）/ Stage 2（每章传给 chapter-extractor agent）/ Stage 6（文风采样）共用的**唯一切片来源**——避免每个阶段各跑一次 regex 切片，结果可能不一致。
+Stage 0 完成概要 + 章节索引之后、转入 Stage 1 之前，**必须**额外产出一份「章节边界」表写入 `_progress.md`。这是后续 Stage 1（黄金三章原文切片）/ Stage 2（每章传给 deconstruction-agent agent）/ Stage 6（文风采样）共用的**唯一切片来源**——避免每个阶段各跑一次 regex 切片，结果可能不一致。
 
 操作：
 - 用 `style-profile-generator.md` Step 4 的章节正则（已含 `千` / `两`，覆盖 1000+ 章长篇）grep 出全部章节行号
@@ -202,13 +204,13 @@ Stage 3-4 完成前需通过质量检查（置信度、覆盖率、重叠率）�
 
 ## Stage 2 并行 Agent 策略
 
-Stage 2 使用 chapter-extractor agent 并行处理每章，替代原来的串行分块。
+Stage 2 使用 deconstruction-agent agent 并行处理每章，替代原来的串行分块。
 
 ### 调用方式
 
 ```python
 Agent(
-  subagent_type: "chapter-extractor",
+  subagent_type: "deconstruction-agent",
   prompt: "章节编号：第{N}章\n章节标题：{标题}\n章节字数：{字数}\n\n章节原文：\n{原文文本}"
 )
 ```
@@ -229,7 +231,7 @@ Agent(
 
 **两类失败**：
 1. **执行失败**（agent crash / 超时 / 空输出）→ 同模型（haiku）重试 1 次
-2. **质量失败**（输出落盘后跑 chapter-extractor.md「质量检查」10 条自检，任一不达标——典型：情节点 < 10、原文引用缺失、类型/基调/主题标签超出枚举、`基调：` 漏全角冒号、角色名为昵称/通用称呼）→ **升级到 sonnet 重试 1 次**
+2. **质量失败**（输出落盘后跑 deconstruction-agent.md「质量检查」10 条自检，任一不达标——典型：情节点 < 10、原文引用缺失、类型/基调/主题标签超出枚举、`基调：` 漏全角冒号、角色名为昵称/通用称呼）→ **升级到 sonnet 重试 1 次**
 
 **可机械校验的硬门控**（主线程落盘后直接 grep，命中即判质量失败，不依赖 agent 自报）：
 - 情节点数 `N = grep -cE '^P[0-9]+ '`；`grep -c '基调：'` 必须 == N（少于 N = 有情节点漏 `基调：` 或漏全角冒号 → 下游 Stage 6 文风采样按全角 `基调：` grep，会静默漏章）
@@ -240,7 +242,7 @@ Agent(
 
 ```python
 Agent(
-  subagent_type: "chapter-extractor",
+  subagent_type: "deconstruction-agent",
   model: "sonnet",            # 显式覆盖 frontmatter 的 haiku
   prompt: "章节编号：第{N}章\n...（同首次 prompt，可追加：'上次校验失败原因：{自检失败项}'）"
 )
@@ -255,16 +257,16 @@ Agent(
 
 ### Agent 不可用降级
 
-以下任一情况，Stage 2 自动退回串行模式，由主线程按 chapter-extractor 方法论逐章处理（结果同样套 output-templates.md 的章节摘要模板，质量不受影响，只是改为串行、速度略慢）：
+以下任一情况，Stage 2 自动退回串行模式，由主线程按 deconstruction-agent 方法论逐章处理（结果同样套 output-templates.md 的章节摘要模板，质量不受影响，只是改为串行、速度略慢）：
 
-- **agent 未部署**：`.claude/agents/chapter-extractor.md` 不存在。`.claude/agents/` 通常不随仓库提交，由 `/story-setup` 部署；模板源在 `skills/story-setup/references/templates/agents/chapter-extractor.md`，必要时可手动复制部署。
+- **agent 未部署**：`.claude/agents/deconstruction-agent.md` 不存在。`.claude/agents/` 通常不随仓库提交，由 `/story-setup` 部署；模板源在 `skills/story-setup/references/templates/agents/deconstruction-agent.md`，必要时可手动复制部署。
 - **环境不支持 spawn 子代理**：本 skill 正运行在某个子代理上下文中，无法再起下一层 agent。
 
 ---
 
 ## 分块策略
 
-**路由级说明**：Stage 2 使用 chapter-extractor agent 按章节并行，**不分块**。
+**路由级说明**：Stage 2 使用 deconstruction-agent agent 按章节并行，**不分块**。
 
 Stage 3-5 的分块策略（规模分级、智能分块、跨块合并、输出长度上限）的唯一权威定义见 [material-decomposition.md](references/material-decomposition.md)。
 

@@ -2,6 +2,44 @@
 
 这里记录每个正式版本对作者和维护者的影响。发布说明优先面向中文网文作者：先说写作体验有什么变化，再补维护者关心的技术细节。
 
+## v0.3.0 (2026-06-13) — Skill/Agent 架构统一与故事系统 Markdown 化
+
+### 新增
+- **故事系统 Markdown 化**：Contract（设定→卷→章三层 YAML frontmatter 契约）→ Commit（正文 frontmatter 元数据）→ Projection（追踪/ 派生数据），详见 `story-long-write/references/story-system.md`
+- **三阶段写门校验**：Prewrite（写前爽点密度/线索冲突/伏笔逾期检测）→ Precommit（字数/contract_nodes/hook/去AI味）→ Postcommit（投影更新/ledger/strand 计数），详见 `story-long-write/references/write-gates.md`
+- **钩子五分类法**：危机/悬念/欲望/情绪/选择钩 + 分题材偏好参数，详见 `story-long-write/references/hooks-taxonomy.md`
+- **读者债务追踪**：`追踪/foreshadowing.md` 完整模板字段（计划回收章/实际回收章/逾期标记），详见 `story-long-write/references/reader-debt-tracking.md`
+- **三线叙事节奏**：Quest（主线）/ Fire（支线）/ Constellation（伏笔）标注体系 + 连续/间隔约束规则，详见 `story-long-write/references/strand-weave-rhythm.md`
+- **去AI味六关检测体系**：A（禁词）/ B（句式）/ C（心理外化）/ D（节奏）/ E（对话）/ F（结尾）+ 三级强度控制，详见 `story-deslop/references/deai-six-gates.md`
+- **去AI味自动检测脚本**：`scripts/deai_check.py`，支持 `--json` 和 `--intensity`，自动化 A/B/D 关
+- **断点续传**：`追踪/run-ledger.md` 操作日志 + 断点诊断与智能恢复流程，详见 `story-long-write/references/checkpoint-resume.md`
+- 端到端验证 checklist：`openspec/changes/absorb-competitor-advantages/validation-checklist.md`
+
+### 变更
+- **Skill 合并**：31 个 skill → 15 个规范 skill（`story-*` 统一命名空间）
+  - story + write-novel → story（路由入口）
+  - story-setup + write-novel-setup + webnovel-init → story-setup
+  - story-long-write + write-novel-long-write + write-novel-plan + webnovel-plan + webnovel-write → story-long-write
+  - 等 12 组合并（详见 tasks.md Phase 2）
+- **Agent 合并**：15 个 agent → 6 个规范 agent
+  - context-agent → story-architect
+  - chapter-extractor → deconstruction-agent
+  - consistency-checker → reviewer
+  - story-explorer + data-agent → story-researcher
+  - 所有 agent 标注模型分配（Opus/Sonnet/Haiku）和降级路径
+- **旧触发词兼容**：所有 `/write-novel-*`、`/webnovel-*` 作为别名保留在路由表中
+- **模板 agent 更新**：story-setup 部署模板的 frontmatter name 与规范 agent 名称统一
+- README.md 全面更新为 v0.3.0 架构说明
+- UPGRADING.md 新增 v11 条目
+
+### 删除
+- 19 个旧 skill 目录（write-novel-* / webnovel-*，已合并到 story-*）
+- 9 个旧 agent 文件（已合并到 6 个规范 agent）
+
+### 设计决策
+- **Skill > Script**：后续功能优先使用 SKILL.md + references 文档驱动，脚本仅做确定性自动化
+- **Contract → Commit → Projection**：三层 Markdown 契约链替代旧的 ad-hoc 文件结构
+
 ## v0.2.0 (2026-06-12) — 目录整合与竞品优势注入
 
 ### 新增

@@ -30,7 +30,7 @@
 
 ## Step 1：快速上下文加载
 
-**可选：使用 story-explorer agent 批量加载上下文**。如果项目已部署 story-explorer agent（检查 `.claude/agents/story-explorer.md` 是否存在），可以用 `Agent(subagent_type: "story-explorer", prompt: "项目目录：{dir}\n查询类型：context_load\n查询参数：准备写第 {N} 章")` 执行 `context_load` 查询，一次获取全部写作上下文。spawn 返回后直接使用其 results，跳过下方手动加载步骤。如果 agent 不可用或返回不完整，回退到下方手动加载。
+**可选：使用 story-researcher agent 批量加载上下文**。如果项目已部署 story-researcher agent（检查 `.claude/agents/story-researcher.md` 是否存在），可以用 `Agent(subagent_type: "story-researcher", prompt: "项目目录：{dir}\n查询类型：context_load\n查询参数：准备写第 {N} 章")` 执行 `context_load` 查询，一次获取全部写作上下文。spawn 返回后直接使用其 results，跳过下方手动加载步骤。如果 agent 不可用或返回不完整，回退到下方手动加载。
 
 手动加载（默认方式）：
 
@@ -93,13 +93,13 @@
    - **2.1 标题预检**：扫描既有章节标题；如本章标题同名或明显重复，先按本章核心事件改名，并同步细纲标题与正文文件名
    - **2.2 状态筛选**：每章开始前必须确认以下来源已经在本轮 workflow 中读取或刚更新：本章细纲、上一章正文（或上一章刚写入的正文）、`追踪/上下文.md`、`追踪/伏笔.md`、`追踪/时间线.md`；涉及角色时，还必须确认 `追踪/角色状态.md` 或对应 `设定/角色/{角色名}.md` 的来源。"已加载"只指本轮 workflow 内实际读取/更新过的文件，不得用未标明来源的聊天记忆替代。角色最新状态优先从 `追踪/角色状态.md` 筛选（如不存在则从角色设定推断），待回收/推进伏笔从 `追踪/伏笔.md` 筛选；细纲不存在时仍按下方补建流程处理，不允许直接写正文
    - **2.3 文风召回**：
-     - 调 story-explorer 的 `benchmark_style_load` query_type（输入：项目目录 + 本章目标情绪 + 本章爽点类型 + 本章目标字数）一次性拿到：`{style_profile_path, style_profile_summary, matched_chapter_K, matched_chapter_techniques, anchor_excerpts, gaps}`
+     - 调 story-researcher 的 `benchmark_style_load` query_type（输入：项目目录 + 本章目标情绪 + 本章爽点类型 + 本章目标字数）一次性拿到：`{style_profile_path, style_profile_summary, matched_chapter_K, matched_chapter_techniques, anchor_excerpts, gaps}`
      - 若 `gaps.no_benchmark: true` → 跳过文风召回，在 2.4 意图确认标记"无对标参考"
      - 若 `gaps.profile_missing: true` → 按上文 fail-fast 流程停止
      - 若 `gaps.profile_degenerate: true`（文风不可用） → 跳过文风、回到默认 Gates 写作
      - 若 `gaps.tone_match_failed: true` → 仅用整书文风写作，不喂 matched_chapter
      - 否则透传 `style_profile_path`、`style_profile_summary`、`matched_chapter_K`、`matched_chapter_techniques`、`anchor_excerpts` 给 Step 2 末尾的 narrative-writer spawn prompt；其中 `matched_chapter_techniques` 必须进入「文风召回指令」。准备层记录必须保留 `gaps` 原值，尤其 `gaps.matched_deep_dive_missing`；若为 true，文风召回指令中明确写“同章深度拆解缺失，已回退黄金三章/文风技巧”，不得在后续报告中反转为 false
-     - **无 story-explorer 时降级**：主会话手动按对标书路径查找读 `文风.md` + grep `章节/*_摘要.md` 的「基调」字段找匹配章，然后读对应 `第K章_摘要.md`；如 `第K章_深度拆解.md` 不存在，改读 `第1-3章_深度拆解.md` 中与本章基调最接近的一章
+     - **无 story-researcher 时降级**：主会话手动按对标书路径查找读 `文风.md` + grep `章节/*_摘要.md` 的「基调」字段找匹配章，然后读对应 `第K章_摘要.md`；如 `第K章_深度拆解.md` 不存在，改读 `第1-3章_深度拆解.md` 中与本章基调最接近的一章
    - **2.4 意图确认**：从细纲「目标情绪」字段确认本章情绪目标，综合状态筛选结果 + 文风召回输出，用一句话写本章意图（情绪+节奏+文风指令）。文风指令例：「标点照文风里的停顿节奏、对话潜台词用问非所答、情绪交替参考第 K 章爽点铺放比。」
    - 写正文 → **字数验证（优先 Python 字符统计，`wc -m` 仅作 Unix 备选，< 目标90%则强制扩充）** → 检查钩子/爽点 → 禁用词扫描
    - 每章写完后**立即更新**以下文件：

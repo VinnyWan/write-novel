@@ -4,6 +4,8 @@ version: 1.0.0
 description: |
   长篇网文写作。从大纲到正文，辅助长篇网络小说的创作，包括世界观、人物、情节线管理。
   触发方式：/story-long-write、/写长篇、「帮我开书」「写大纲」「日更」「续写」「继续写」「修改第X章」「回炉」「重写第X章」
+  （旧触发词：/write-novel-long-write、「规划第X卷」「写卷纲」「拆章纲」）
+  合并自：story-long-write + write-novel-long-write + write-novel-plan + webnovel-plan + webnovel-write
 metadata:
   openclaw:
     source: https://github.com/worldwonderer/oh-story-claudecode
@@ -228,47 +230,26 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 ```
 {书名}/
 ├── 设定/
-│   ├── 世界观/
-│   │   ├── 背景设定.md        # 时代背景、地理、历史
-│   │   ├── 力量体系.md        # 修炼/能力/等级体系
-│   │   └── ...
+│   ├── MASTER_SETTING.md       # 全局设定契约（YAML frontmatter）
 │   ├── 角色/
-│   │   ├── 沈栀.md            # 每个人物一个文件，文件名用角色名
-│   │   └── ...
+│   │   └── {角色名}.md
 │   ├── 势力/
-│   │   ├── 天机阁.md          # 每个势力/组织一个文件
-│   │   └── ...
-│   ├── 关系.md                # 角色关系映射
-│   └── 题材定位.md            # 题材核心梗+对标分析
+│   │   └── {势力名}.md
+│   └── 关系.md
 ├── 大纲/
-│   ├── 大纲.md                # 全书卷级结构
-│   ├── 卷纲_第一卷.md         # 每卷一个：爽点节奏+情绪弧线+人物弧线+伏笔+反转
-│   └── 细纲_第001章.md        # 每章一个：事件+钩子(章首/章尾/段落级)+爽点+悬念
-├── 正文/
-│   ├── 第001章_章名.md
+│   ├── Volume-1.md             # 卷契约（YAML frontmatter + 卷级大纲）
+│   ├── Chapter-001.md          # 章契约（YAML frontmatter + CBN/CPNs/CEN）
 │   └── ...
-├── 对标/                          ← 拆文产出的结构化资产
-│   └── {对标书名}/
-│       ├── 原文/
-│       │   ├── 第001章_章名.md
-│       │   └── ...
-│       ├── 角色/                  ← 从拆文库/结构化输出同步
-│       │   └── {角色名}.md
-│       ├── 剧情/                  ← 从拆文库/结构化输出同步
-│       │   ├── {剧情线名}.md
-│       │   └── 故事线.md
-│       ├── 设定/                  ← 从拆文库/结构化输出同步
-│       │   ├── 世界观/             ← 按主题拆分到子目录（早期单文件版本由 story-import 兜底转换）
-│       │   │   ├── 背景设定.md
-│       │   │   ├── 力量体系.md
-│       │   │   ├── 地理.md
-│       │   │   └── 金手指.md       ← 金手指现在放在 世界观/ 下，不再扁平
-│       │   └── 势力/
-│       │       └── {势力名}.md
-│       └── 拆文报告.md
-├── 追踪/                          ← 角色状态、伏笔、时间线
-│   ├── 伏笔.md                    ← 跨卷追踪
-│   ├── 时间线.md                  ← 全书时间线
+├── 正文/
+│   ├── Chapter-001.md          # 正文 commit（YAML frontmatter 记录词数/状态/完成节点）
+│   └── ...
+├── 追踪/                       # 投影层（从正文和设定派生）
+│   ├── state.md                # 当前状态
+│   ├── progress.md             # 进度摘要
+│   ├── characters.md           # 角色状态
+│   ├── foreshadowing.md        # 伏笔状态
+│   └── run-ledger.md           # 操作日志（断点续传）
+├── 对标/
 │   ├── 角色状态.md                ← 角色当前状态快照
 │   └── 上下文.md                  ← 正文级（日更进度摘要）
 ├── 参考资料/
@@ -308,12 +289,21 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 - **正文按章拆分**：每章一个文件，`第XXX章_章名.md`
 - 每章写完直接写入 `正文/` 目录，不要先输出到对话
 
+#### 断点诊断与恢复
+
+每次写作会话开始时，先执行断点诊断（详见 `references/checkpoint-resume.md`）：
+
+1. 读取 `追踪/run-ledger.md`，找到最后一条操作记录
+2. 若最后状态为 `completed` → 定位下一章
+3. 若最后状态为 `started` 或 `interrupted` → 验证章节文件，重建上下文，显示恢复摘要
+4. 显示恢复摘要：「上次写到第 N 章（{status}）。继续吗？」用户确认后继续
+
 #### 单章写作流程
 
 当用户准备写某一章时：
 
 1. **检查细纲**：读取 `大纲/细纲_第{N}章.md`。如果不存在，**必须先补建细纲再写正文**，不允许跳过细纲直接写作。补建时参考卷纲中本章对应的事件规划和上下文。
-2. **读取上下文**（按需加载，缺失则跳过。可选快捷路径：如果项目已部署 story-explorer agent（检查 `.claude/agents/story-explorer.md` 是否存在），可 spawn `Agent(subagent_type: "story-explorer", prompt: "项目目录：{dir}\n查询类型：context_load\n查询参数：准备写第 {N} 章")` 一次获取上下文）：
+2. **读取上下文**（按需加载，缺失则跳过。可选快捷路径：如果项目已部署 story-researcher agent（检查 `.claude/agents/story-researcher.md` 是否存在），可 spawn `Agent(subagent_type: "story-researcher", prompt: "项目目录：{dir}\n查询类型：context_load\n查询参数：准备写第 {N} 章")` 一次获取上下文）：
    - (1) `正文/第{N-1}章_*.md` — 上一章正文
    - (2) `大纲/细纲_第{N}章.md` — 本章细纲（含钩子设计）
    - (3) `追踪/伏笔.md`（如存在）— 待回收伏笔
@@ -325,25 +315,45 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
    - (9) 对标书路径下 `剧情/故事线.md`（按对标书路径查找）— 剧情线索引，用于确定本章涉及哪些剧情线
    - (10) 对标书路径下 `剧情/{相关剧情线}.md`（按对标书路径查找）— 从索引中选择与本章相关的剧情线文件
    - (11) 对标书路径下 `设定/世界观/*.md`（glob，按对标书路径查找）— 从拆文产出的设定中获取参考。**回退顺序**：① glob `设定/世界观/*.md`；② 若 `设定/世界观/` 子目录不存在则读单文件 `设定/世界观.md`（早期拆文库格式）；③ 若也无则读 `设定/金手指.md` 当作最低限度参考；④ 都没有则跳过本步骤（缺失不阻塞）
-3. **准备层**（下面的 3 步是核心方法在单章写作中的落地：筛选状态 → 召回模块 → 确认意图）：
-   - 3.1 **状态筛选**：从 `追踪/角色状态.md` 中筛选本章涉及角色的当前状态，从 `追踪/伏笔.md` 中筛选本章需要回收/推进的伏笔。输出最简记忆包（参考 state-tracking.md）。如果角色状态文件不存在，从角色设定和前文推断
-   - 3.2 **模块召回与文风召回**：
+   - (12) `追踪/foreshadowing.md`（如存在）— 伏笔状态与逾期检测
+3. **Prewrite Gate 校验**（写前必执行，详见 `references/write-gates.md` Gate 1）：
+   - 3a. **章契约完整性**：确认 `大纲/Chapter-{N}.md` frontmatter 中 `target_words`/`strand`/`contract_nodes`/`hook_type`/`payoff_density` 齐全
+   - 3b. **爽点密度预估**：按 `references/hooks-taxonomy.md` 分题材偏好参数计算本章应有微兑现数，章契约 `payoff_density` ≥ 题材最低要求（打脸/逆袭每 3000 字 ≥ 2 微兑现；日常/铺垫章 ≥ 1）
+   - 3c. **线索冲突检测**：若前一章 `strand` 同线索已连续达到上限（fire ≥ 2、constellation ≥ 1），提示切换
+   - 3d. **伏笔逾期检测**：读取 `追踪/foreshadowing.md`，有 `overdue: true` 伏笔时提示优先回收
+   - 输出 prewrite 检查报告（通过/警告/阻塞），阻塞项解决前不进入步骤 4
+4. **准备层**（下面的 3 步是核心方法在单章写作中的落地：筛选状态 → 召回模块 → 确认意图）：
+   - 4.1 **状态筛选**：从 `追踪/角色状态.md` 中筛选本章涉及角色的当前状态，从 `追踪/伏笔.md` 中筛选本章需要回收/推进的伏笔。输出最简记忆包（参考 state-tracking.md）。如果角色状态文件不存在，从角色设定和前文推断
+   - 4.2 **模块召回与文风召回**：
      - ① 本章目标情绪词？② 借鉴哪个参考文件的哪个技法？③ 用在哪些段落？答不出 → 先回读参考再动笔
      - (a) **文风召回**：按「对标书路径查找」规则读 `{对标书路径}/文风.md`（路径优先 `{项目}/对标/{书名}/`，回退 `拆文库/{书名}/`）；多本对标书时从 `设定/题材定位.md` 读 `主对标书` 字段。文风文件不存在 → **fail-fast 报错**：「对标书 X 缺少 文风.md。请用 `/story-long-analyze` 跑 Stage 6 生成文风，再 `/story-import` 同步。」不 inline 生成
      - (b) **匹配章节挑选**：从 `{对标书路径}/章节/*_摘要.md` grep `基调：(紧张|轻松|悲伤|热血|爽|甜|温馨|恐怖|压抑|其他)`（全角冒号），按本章目标情绪挑章 K——多章同基调时选择规则：先看爽点类型是否接近，再看情节点数量/原文章节估算字数是否接近本章目标字数，最后取章节号最小者；必读 `{对标书路径}/章节/第K章_摘要.md`，若同章存在 `第K章_深度拆解.md` 则加读，否则回退黄金三章深度拆解/文风文件里的可借鉴技巧，不因非黄金三章缺少深度拆解而失败
      - (c) **模块召回**：从对标的结构化子目录（角色/剧情/设定）中按本章情节检索相关模块
      - (d) <!-- cross-book-recall:trigger:execution-output --> 输出"对标召回摘要 + 文风召回指令 + 原文锚点片段引用"（合计 ≤10 条），作为 narrative-writer 的输入。**多对标书时**参 `references/cross-book-recall.md`，进 prompt 的只主对标（副对标不入正文）
-     - **快捷路径**：项目已部署 story-explorer agent 时（检查 `.claude/agents/story-explorer.md`），直接 spawn `Agent(subagent_type: "story-explorer", prompt: "项目目录：{dir}\n查询类型：benchmark_style_load\n查询参数：我要写第 {N} 章；这一章按细纲偏{紧张/热血/轻松等}，目标字数约 {N}，爽点类型={如有}")` 一次拿到 `{style_profile_path, style_profile_summary, matched_chapter_K, matched_chapter_techniques, anchor_excerpts, gaps}`；准备层必须原样保留 `gaps`，若 `gaps.matched_deep_dive_missing: true`，文风召回指令必须说明已用黄金三章/文风文件里的技巧回退
-   - 3.3 **指令确认**：综合细纲+最简记忆包+模块召回结果，确认本章节奏（快/慢）和情绪目标，用一句话概括本章写作意图。例：「快节奏打脸——读者等了三章，这章必须一拳到位。技法=信息差揭示（hooks-suspense.md），用于第2-4段。」
-4. **资料研究**（按需）：如果写作中遇到需要查证的外部事实（历史年代、地理方位、职业细节等），spawn `story-researcher` agent 搜索并输出到 `参考资料/` 目录。研究完成后再继续写作。
-5. **标题预检**：写正文前从细纲读取章名；如与既有章节同名或明显重复，先按本章核心事件改名，并同步细纲标题与正文文件名。
-6. **写作**：第 1 章如果以内心戏、设定认知或独处开场，必须先把内心变化外化为可见事件（决定、误判、对话、物件变化、外部压力），再按字数目标展开；不得用大段心理独白凑字。若第 1 章低于目标，优先补“外部事件/对话/选择代价”，不要补解释性内心戏。
-7. **正文执行**：如果项目已部署 narrative-writer agent（**必须先检查 `.claude/agents/narrative-writer.md` 是否存在**），spawn `Agent(subagent_type: "narrative-writer", prompt: "项目目录：{dir}\n任务描述：写正文\n章节：第{N}章\n细纲文件：大纲/细纲_第{N}章.md\n上一章：正文/第{N-1}章_*.md\n准备层输出：{3.1最简记忆包 + 3.2模块/文风召回结果 + 3.3写作意图}\n情绪目标：{从准备层3.3确认}\n涉及角色：{从准备层3.1筛选}\n参考技法：{从准备层3.2召回}\n对标/拆文路径：{本次查找到的 对标/{书名}/ 或 拆文库/{书名}/，没有则写 无}\n对标召回摘要：{准备层3.2(c)输出的相关角色/剧情/设定/章节模块，最多5条；没有则写 无}\n文风路径：{准备层3.2(a) 找到的 文风.md 绝对路径，没有则写 无}\n文风召回指令：{准备层3.2(b) 输出，含匹配章节号和 1-2 句技法指令——例如 '标点节奏照文风文件里的停顿节奏、对话潜台词用问非所答；情绪交替参考第K章爽点铺放比'。没有则写 无}\n原文锚点片段：{文风文件里 4-6 段中按本章情绪选 1-2 段，完整粘贴 300-500字 原文 — 用于 few-shot 模仿手法、非抄字句；没有则写 无}\n写作硬约束：按三维度织入写场景，但仍必须按镜头断段；一段只承载一个动作/信息变化，优先一段一句，避免一段到底。输出前做密度重排：段落 >60 字按句号/动作转折拆开，单句 >45 字拆短。**文风优先级**：与默认 Gates 冲突时按 narrative-writer.md 的优先级表决议（硬约束 banned-words/Gate F/万能比喻禁令/字数下限 不让位；句长/标点/对话潜台词/情绪交替由文风优先）。\n⚠️字数硬约束：本章必须达到细纲中设定的字数目标（{从细纲读取}字）。写完后立即用跨平台 Python 字符统计核对（命令见 narrative-writer 定义；勿直接用 python3——Windows 上会触发 Microsoft Store 占位程序、exit 49 失败，按 python3→python→py 探测可用解释器）；macOS/Linux 可用 wc -m 备选；禁止 wc -c 或模型估算。字数未达标禁止结束本章。")` 执行正文写作，输出写入 `正文/第XXX章_章名.md`。如 narrative-writer agent 未部署，由主线程直接写作。
-8. **字数验证**（写作完成后的第一件事）：优先用跨平台 Python 字符统计本章实际字数 `for PYBIN in python3 python py; do "$PYBIN" -c "" 2>/dev/null && break; done; "$PYBIN" -c "from pathlib import Path; print(len(Path('正文文件路径').read_text(encoding='utf-8')))"`（**勿直接用 `python3`**：Windows 上它会触发 Microsoft Store 占位程序、exit 49 失败，探测会按 `python3→python→py` 选可用解释器）；macOS/Linux 可用 `wc -m` 备选。如果字数 < 细纲目标的 90%，**回到细纲补充更多子事件/情节点**，然后用三维度织入将这些新子事件写成正文，并按镜头断段控制单段密度，直到字数达标后再进入步骤 9。
-9. **检查**：章尾是否有钩子、爽点是否到位
-10. **禁用词扫描**：对照 `references/banned-words.md` 检查本章，一级词（高频AI腔）命中即替换；二级词（低频/语境相关）高频出现时替换，偶发可参考 `references/anti-ai-writing.md` 定性裁定
-11. **更新追踪**：写完后即时更新 `追踪/伏笔.md`（新增/回收伏笔）、`追踪/时间线.md`（记录事件时序）和 `追踪/角色状态.md`（如本章引起角色状态变化——身份、能力、关系、公众形象——则更新对应角色条目并追加变更记录）。本章若首次引入会复用的具名角色/势力，按 Phase 3「细纲后设定补全」规则补建对应 `设定/` 档案。角色状态更新规则详见 state-tracking.md。
-12. **中途快照**（长篇写作安全网）：每连续写完 3 章，在继续前执行以下快照操作：
+     - **快捷路径**：项目已部署 story-researcher agent 时（检查 `.claude/agents/story-researcher.md`），直接 spawn `Agent(subagent_type: "story-researcher", prompt: "项目目录：{dir}\n查询类型：benchmark_style_load\n查询参数：我要写第 {N} 章；这一章按细纲偏{紧张/热血/轻松等}，目标字数约 {N}，爽点类型={如有}")` 一次拿到 `{style_profile_path, style_profile_summary, matched_chapter_K, matched_chapter_techniques, anchor_excerpts, gaps}`；准备层必须原样保留 `gaps`，若 `gaps.matched_deep_dive_missing: true`，文风召回指令必须说明已用黄金三章/文风文件里的技巧回退
+   - 4.3 **指令确认**：综合细纲+最简记忆包+模块召回结果，确认本章节奏（快/慢）和情绪目标，用一句话概括本章写作意图。例：「快节奏打脸——读者等了三章，这章必须一拳到位。技法=信息差揭示（hooks-suspense.md），用于第2-4段。」
+5. **资料研究**（按需）：如果写作中遇到需要查证的外部事实（历史年代、地理方位、职业细节等），spawn `story-researcher` agent 搜索并输出到 `参考资料/` 目录。研究完成后再继续写作。
+6. **标题预检**：写正文前从细纲读取章名；如与既有章节同名或明显重复，先按本章核心事件改名，并同步细纲标题与正文文件名。
+7. **写作**：第 1 章如果以内心戏、设定认知或独处开场，必须先把内心变化外化为可见事件（决定、误判、对话、物件变化、外部压力），再按字数目标展开；不得用大段心理独白凑字。若第 1 章低于目标，优先补“外部事件/对话/选择代价”，不要补解释性内心戏。
+8. **正文执行**：如果项目已部署 narrative-writer agent（**必须先检查 `.claude/agents/narrative-writer.md` 是否存在**），spawn `Agent(subagent_type: "narrative-writer", prompt: "项目目录：{dir}\n任务描述：写正文\n章节：第{N}章\n细纲文件：大纲/细纲_第{N}章.md\n上一章：正文/第{N-1}章_*.md\n准备层输出：{4.1最简记忆包 + 4.2模块/文风召回结果 + 4.3写作意图}\n情绪目标：{从准备层4.3确认}\n涉及角色：{从准备层4.1筛选}\n参考技法：{从准备层4.2召回}\n对标/拆文路径：{本次查找到的 对标/{书名}/ 或 拆文库/{书名}/，没有则写 无}\n对标召回摘要：{准备层4.2(c)输出的相关角色/剧情/设定/章节模块，最多5条；没有则写 无}\n文风路径：{准备层4.2(a) 找到的 文风.md 绝对路径，没有则写 无}\n文风召回指令：{准备层4.2(b) 输出，含匹配章节号和 1-2 句技法指令——例如 '标点节奏照文风文件里的停顿节奏、对话潜台词用问非所答；情绪交替参考第K章爽点铺放比'。没有则写 无}\n原文锚点片段：{文风文件里 4-6 段中按本章情绪选 1-2 段，完整粘贴 300-500字 原文 — 用于 few-shot 模仿手法、非抄字句；没有则写 无}\n写作硬约束：按三维度织入写场景，但仍必须按镜头断段；一段只承载一个动作/信息变化，优先一段一句，避免一段到底。输出前做密度重排：段落 >60 字按句号/动作转折拆开，单句 >45 字拆短。**文风优先级**：与默认 Gates 冲突时按 narrative-writer.md 的优先级表决议（硬约束 banned-words/Gate F/万能比喻禁令/字数下限 不让位；句长/标点/对话潜台词/情绪交替由文风优先）。\n⚠️字数硬约束：本章必须达到细纲中设定的字数目标（{从细纲读取}字）。写完后立即用跨平台 Python 字符统计核对（命令见 narrative-writer 定义；勿直接用 python3——Windows 上会触发 Microsoft Store 占位程序、exit 49 失败，按 python3→python→py 探测可用解释器）；macOS/Linux 可用 wc -m 备选；禁止 wc -c 或模型估算。字数未达标禁止结束本章。")` 执行正文写作，输出写入 `正文/第XXX章_章名.md`。如 narrative-writer agent 未部署，由主线程直接写作。
+9. **字数验证**（写作完成后的第一件事）：优先用跨平台 Python 字符统计本章实际字数 `for PYBIN in python3 python py; do "$PYBIN" -c "" 2>/dev/null && break; done; "$PYBIN" -c "from pathlib import Path; print(len(Path('正文文件路径').read_text(encoding='utf-8')))"`（**勿直接用 `python3`**：Windows 上它会触发 Microsoft Store 占位程序、exit 49 失败，探测会按 `python3→python→py` 选可用解释器）；macOS/Linux 可用 `wc -m` 备选。如果字数 < 细纲目标的 90%，**回到细纲补充更多子事件/情节点**，然后用三维度织入将这些新子事件写成正文，并按镜头断段控制单段密度，直到字数达标后再进入步骤 10。
+10. **检查**：章尾是否有钩子、爽点是否到位
+11. **禁用词扫描**：对照 `references/banned-words.md` 检查本章，一级词（高频AI腔）命中即替换；二级词（低频/语境相关）高频出现时替换，偶发可参考 `references/anti-ai-writing.md` 定性裁定
+12. **Precommit Gate**（落盘前校验，详见 `references/write-gates.md` Gate 2）：
+   - 字数达标：`word_count` vs `target_words`（±20% 容忍）
+   - contract_nodes 完成：CBN/CPNs/CEN 全部完成
+   - hook 有效：章尾非总结式结尾，含有效钩子
+   - 格式合规：段落长度、对话独立、无多余空行
+   - 去 AI 味：运行 `deai_check.py --json {正文文件}`（如脚本可用），否则手动对照 banned-words.md
+   - 投影一致性：角色状态与 `追踪/characters.md` 一致
+   - 有阻塞性错误（S1/S2）时禁止落盘，先修复再进入步骤 13
+14. **更新追踪**：写完后即时更新 `追踪/伏笔.md`（新增/回收伏笔）、`追踪/时间线.md`（记录事件时序）和 `追踪/角色状态.md`（如本章引起角色状态变化——身份、能力、关系、公众形象——则更新对应角色条目并追加变更记录）。本章若首次引入会复用的具名角色/势力，按 Phase 3「细纲后设定补全」规则补建对应 `设定/` 档案。角色状态更新规则详见 state-tracking.md。
+15. **Postcommit Gate**（落盘后校验，详见 `references/write-gates.md` Gate 3）：
+   - 投影更新：增量更新 `追踪/state.md`、`追踪/progress.md`、`追踪/characters.md`、`追踪/foreshadowing.md`
+   - ledger 写入：在 `追踪/run-ledger.md` 追加一行（章号/时间/状态/字数）
+   - 连续线索计数：更新 strand_sequence，同线索递增，切换线索归零
+   - 备份：可选，复制正文到 `备份/Chapter-{N}.md`
+16. **中途快照**（长篇写作安全网）：每连续写完 3 章，在继续前执行以下快照操作：
    - 将当前进度写入 `追踪/上下文.md`（只更新进度元信息——当前位置、最近决策、待处理线索——不重复角色状态/伏笔的具体内容）
    - 用 `ls -la 正文/` 确认最近 3 个章节文件已成功写入磁盘且大小正常（>100 bytes）
    - 如果发现文件缺失或大小异常，立即重新写入
@@ -389,9 +399,9 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 **标点确定性收尾**：本批正文写完后，对所有新写正文文件运行 `node scripts/normalize-punctuation.js 正文/第XXX章_*.md`（写模式，默认 `--quote-mode keep`），确定性清除叙述里的破折号 `——`/`—`、双连字符 `--` 和独立行 `---`，防止长篇累积横线。对话被打断的 `——`、数字区间与盐言「」不受影响。narrative-writer agent 不运行本脚本，由主会话在 agent 返回后针对实际落盘文件运行。
 
-#### Agent 调用：consistency-checker
+#### Agent 调用：reviewer
 
-质量检查阶段，如果项目已部署 consistency-checker agent（检查 `.claude/agents/consistency-checker.md` 是否存在），spawn `Agent(subagent_type: "consistency-checker", prompt: "项目目录：{dir}\n检查范围：{本次写作的章节}\n检查类型：事实冲突+伏笔断线+角色属性不一致")` 执行一致性检查，获取 S1-S4 分级报告。如 agent 不可用，由主线程参照 quality-checklist.md 直接检查。
+质量检查阶段，如果项目已部署 reviewer agent（检查 `.claude/agents/reviewer.md` 是否存在），spawn `Agent(subagent_type: "reviewer", prompt: "项目目录：{dir}\n检查范围：{本次写作的章节}\n检查类型：事实冲突+伏笔断线+角色属性不一致")` 执行一致性检查，获取 S1-S4 分级报告。如 agent 不可用，由主线程参照 quality-checklist.md 直接检查。
 
 #### Agent 调用：narrative-writer（去AI味审查）
 

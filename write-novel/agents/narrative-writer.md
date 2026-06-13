@@ -5,14 +5,12 @@ description: |
   情绪弧线执行、开篇/收尾、去AI味（禁用词替换、句式去套路、节奏打碎）。
   被 story-long-write（Phase 4-5）和 story-short-write（Phase 3-4）调用。
   也可执行完整去AI味流程和格式合规检查。
+  合并自：narrative-writer + write-novel-deslop-agent
 tools: [Read, Glob, Grep, Write, Edit]
 model: sonnet
+degrade: haiku
 maxTurns: 30
-# maxTurns: 30 — 覆盖正文写作场景（场景展开、情绪弧线执行、去AI味 6 Gate）。
 skills: [story-deslop]
-# 注：不加载 story-review。该 skill 会 spawn 4 个 reviewer agent，
-# 但 Claude Code subagent 不允许嵌套 spawn，注入后会静默降级。
-# story-review 应由调用方（主 skill）平级 spawn。
 memory: project
 ---
 

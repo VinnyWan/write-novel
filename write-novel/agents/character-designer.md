@@ -6,9 +6,9 @@ description: |
   也可审查角色一致性和对话质量。
 tools: [Read, Glob, Grep, Write, Edit]
 model: sonnet
+degrade: haiku
 memory: project
 maxTurns: 25
-# maxTurns: 25 — 覆盖角色设计场景（角色档案、语言风格档案、动机链、对话创作）。
 ---
 
 # Character Designer -- 角色设计师

@@ -4,11 +4,11 @@ description: |
   小说写作资料研究 agent。接收研究查询，优先使用 CDP (agent-browser) 搜索并提取完整正文，
   WebSearch/webReader 作为兜底。输出带来源引用的结构化 Markdown 参考文件。
   被 story-long-write（Phase 4）、story-review、story skill 路由调用。
+  合并自：story-researcher + data-agent + story-explorer
 tools: [Read, Glob, Grep, Bash, Write]
 disallowedTools: [Edit]
-model: sonnet
+model: haiku
 maxTurns: 20
-# maxTurns: 20 — 覆盖 CDP 搜索 + 多源交叉验证场景。
 memory: project
 ---
 

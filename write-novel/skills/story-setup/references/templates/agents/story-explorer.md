@@ -1,5 +1,5 @@
 ---
-name: story-explorer
+name: story-researcher
 description: |
   故事项目结构化查询 agent（只读）。响应关于角色状态、伏笔进度、设定出现位置、
   时间线节点、写作进度的查询。使用 grep + read 从项目文件系统中检索信息，

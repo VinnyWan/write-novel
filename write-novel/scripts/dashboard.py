@@ -8,14 +8,14 @@ from scripts.frontmatter_parser import parse_frontmatter
 from scripts.project_doctor import run_doctor
 
 
-DASHBOARD_DIR = ".write-novel"
+DASHBOARD_DIR = ".story"
 DASHBOARD_DATA_FILE = "dashboard-data.json"
 DASHBOARD_HTML_FILE = "dashboard.html"
 
 
 def _read_project_info(project_root: str) -> Dict[str, Any]:
     """Read basic project info from global state file."""
-    state_path = ensure_nfc(os.path.join(project_root, '全局写作状态.md'))
+    state_path = ensure_nfc(os.path.join(project_root, '追踪', 'state.md'))
     if not os.path.isfile(state_path):
         return {}
     fm, _ = parse_frontmatter(state_path)
@@ -118,7 +118,7 @@ def render_dashboard_html(data: Dict[str, Any]) -> str:
 <html lang=\"zh-CN\">
 <head>
   <meta charset=\"utf-8\">
-  <title>write-novel dashboard</title>
+  <title>story dashboard</title>
   <style>
     body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 32px; line-height: 1.6; color: #1f2933; }}
     .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }}

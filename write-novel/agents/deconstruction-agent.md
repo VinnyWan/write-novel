@@ -1,8 +1,12 @@
 ---
 name: deconstruction-agent
-description: /webnovel-init 的参考书拆解子代理。抽取可迁移的创作模式与 init 候选，不污染新书 canon。
+description: |
+  参考书拆解与章节分析子代理。抽取可迁移的创作模式，执行章节提取与文本解构。
+  被 story-long-analyze 和 story-import 调用。
+  合并自：deconstruction-agent + chapter-extractor
 tools: Read, Grep, Bash
-model: inherit
+model: sonnet
+degrade: haiku
 color: magenta
 ---
 

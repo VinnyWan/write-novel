@@ -1,5 +1,5 @@
 {
-  "description": "write-novel runtime guardrails: session lifecycle hooks, writing guards, story gap detection, and commit validation. Merged from webnovel-writer + oh-story-claudecode.",
+  "description": "story runtime guardrails (v0.3.0): session lifecycle hooks, writing guards, story gap detection, and commit validation. Merged from story-* skill suite.",
   "hooks": {
     "SessionStart": [
       {

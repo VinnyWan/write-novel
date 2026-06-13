@@ -47,27 +47,28 @@
 - `agents_version: 7` → 旧版，需重新部署以获取 Agent 参考文件路径修复
 - `agents_version: 8` → 旧版，需重新部署以获取 hook lib、reference bundle、root-aware hook 与短篇无副作用修复
 - `agents_version: 9` → 旧版，需重新部署以获取新版写作 Agent
-- `agents_version: 10` → 当前版本
+- `agents_version: 10` → 旧版，需重新部署以获取 v0.3.0 统一 agent 架构
+- `agents_version: 11` → 当前版本
 
 ## 版本变更
 
 ### v2
 
-- 4 个创作型 Agent + 1 个研究型 Agent（story-architect, character-designer, narrative-writer, consistency-checker, story-researcher）
+- 4 个创作型 Agent + 1 个研究型 Agent（story-architect, character-designer, narrative-writer, reviewer, story-researcher）
 - Agent 引用 skill references 写作理论
 - Hook 脚本优化（减少 context 输出）
 - 4 条 path-scoped 规则
 
 ### v3
 
-- 新增 story-explorer 只读查询 Agent（角色/伏笔/设定/进度查询，日更上下文快速加载）
-- 6 个 Agent 总计（story-architect, character-designer, narrative-writer, consistency-checker, story-researcher, story-explorer）
-- story-explorer 被 story-long-write、story-review、story 路由集成调用
+- 新增 story-researcher 只读查询 Agent（角色/伏笔/设定/进度查询，日更上下文快速加载）
+- 6 个 Agent 总计（story-architect, character-designer, narrative-writer, reviewer, story-researcher）
+- story-researcher 被 story-long-write、story-review、story 路由集成调用
 
 ### v4
 
-- 新增 chapter-extractor 章节提取 Agent
-- 7 个 Agent 总计（story-architect, character-designer, narrative-writer, consistency-checker, story-researcher, story-explorer, chapter-extractor）
+- 新增 deconstruction-agent 章节提取 Agent
+- 7 个 Agent 总计（story-architect, character-designer, narrative-writer, reviewer, story-researcher, deconstruction-agent）
 
 ### v5
 
@@ -106,9 +107,17 @@
   - `genre-writing-formulas.md`：从 `story-long-write/references/genre-writing-formulas.md` 复制为 story-setup canonical 副本。
   - `emotional-methods.md`：从 `story-long-write/references/emotional-methods.md` 复制为 story-setup canonical 副本。
   - `style-combat-face.md`：从 `story-long-write/references/style-combat-face.md` 复制为 story-setup canonical 副本。
-  - `output-templates.md`：不复制；`chapter-extractor` 已内置输出格式，旧的裸引用改写为“遵循本文件输出格式”。
+  - `output-templates.md`：不复制；`deconstruction-agent` 已内置输出格式，旧的裸引用改写为”遵循本文件输出格式”。
 - `story-format.md` 删除“章节之间用 `---` 分隔”的旧规则，改为禁止正文片段使用水平分隔线，与 narrative-writer 保持一致。
 
-### v10 (当前)
+### v10
 
 已部署项目请重新运行 `/story-setup`，刷新写作 Agent；主要影响是日更续写更稳定地沿用对标文风。
+
+### v11 (当前)
+
+**v0.3.0: Agent 架构统一。** 31 个 skill 合并为 15 个规范 skill，15 个 agent 合并为 6 个规范 agent。
+- Agent 合并：context-agent → story-architect；chapter-extractor → deconstruction-agent；consistency-checker → reviewer；story-explorer → story-researcher；story-researcher + data-agent 统一。
+- 所有旧 skill 命名空间（write-novel-* / webnovel-*）废弃，统一为 story-*。
+- 旧触发词作为别名保留在路由表中，向后兼容。
+- 已部署项目需重新运行 `/story-setup` 以覆盖 `.claude/agents/`。

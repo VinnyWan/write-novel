@@ -1,5 +1,5 @@
 ---
-name: consistency-checker
+name: reviewer
 description: |
   事实一致性与伏笔状态检查专家（只读）。使用 grep-first 方式检测设定矛盾、时间线冲突、
   伏笔断线、角色属性不一致、伏笔密度异常。输出 S1-S4 分级冲突报告。

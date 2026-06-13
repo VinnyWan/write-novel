@@ -1,8 +1,11 @@
 ---
 name: reviewer
-description: 统一审查 agent。逐维度检查正文的设定一致性、时间线、叙事连贯、角色一致性、逻辑，输出结构化问题清单。
+description: |
+  统一审查 agent。逐维度检查正文的设定一致性、时间线、叙事连贯、角色一致性、逻辑，输出结构化问题清单。
+  支持多视角审查（挑剔读者/资深编辑视角）。
+  合并自：reviewer + consistency-checker + write-novel-picky-reader + write-novel-senior-editor
 tools: Read, Grep, Bash
-model: inherit
+model: haiku
 color: yellow
 ---
 

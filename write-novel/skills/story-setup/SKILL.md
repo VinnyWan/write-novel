@@ -3,7 +3,8 @@ name: story-setup
 version: 1.1.1
 description: |
   网文写作工具集基础设施部署。将 hooks/rules/agents/CLAUDE.md 等基础设施部署到用户项目目录。
-  触发方式：/story-setup、「准备写书」「帮我搭一下环境」「配置写作项目」
+  触发方式：/story-setup、「准备写书」「帮我搭一下环境」「配置写作项目」（旧触发词：/write-novel-setup）
+  合并自：story-setup + write-novel-setup + webnovel-init
 metadata:
   openclaw:
     source: https://github.com/worldwonderer/oh-story-claudecode
@@ -183,7 +184,7 @@ hooks 注册合并按 command 字段去重：
 | references/templates/CLAUDE.md.tmpl | 项目根 CLAUDE.md 模板 |
 | references/templates/hooks/ | 6 个 hook 脚本模板 + `lib/common.sh`/`lib/sentinel.sh` |
 | references/templates/rules/ | 4 条 path-scoped 规则模板 |
-| references/templates/agents/ | 7 个 agent 定义模板（story-architect, character-designer, narrative-writer, consistency-checker, story-researcher, story-explorer, chapter-extractor） |
+| references/templates/agents/ | 7 个 agent 定义模板（story-architect, character-designer, narrative-writer, reviewer, story-researcher, story-researcher, deconstruction-agent） |
 | references/agent-references/ | Agent 模板自带的参考资料副本；部署到 `.claude/skills/story-setup/references/agent-references/`，避免跨 skill references |
 | references/templates/settings-hooks.json | hooks 注册 JSON 片段 |
 | references/templates/上下文.md.tmpl | 写作上下文模板 |

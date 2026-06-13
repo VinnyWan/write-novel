@@ -3,7 +3,8 @@ name: story-review
 version: 1.1.0
 description: |
   多视角对抗式审查。full/lean 模式在已部署 reviewer agents 时并行 spawn；缺失/异常 agents 或 spawn 失败时自动降级 solo，参考文件不可读时使用内置 rubric fallback。
-  触发方式：/story-review、/审查、「审查一下」「帮我审一下」
+  触发方式：/story-review、/审查、「审查一下」「帮我审一下」（旧触发词：/write-novel-review）
+  合并自：story-review + write-novel-review + webnovel-review
 metadata:
   openclaw:
     source: https://github.com/worldwonderer/oh-story-claudecode
@@ -20,7 +21,7 @@ metadata:
 ## Review Mode 选择
 
 - `/story-review` 或 `/story-review full` → 优先 spawn 全部 4 个 Agent；如果当前已经在子代理内，核心 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
-- `/story-review lean` → 优先 spawn `story-architect` + `consistency-checker`；如果当前已经在子代理内，任一所需 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
+- `/story-review lean` → 优先 spawn `story-architect` + `reviewer`；如果当前已经在子代理内，任一所需 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
 - `/story-review solo` → 不 spawn Agent，由当前会话执行基础审查。
 - 未指定 → 默认 full，并在报告里写明最终实际执行模式。
 
@@ -31,8 +32,8 @@ metadata:
 1. **确定请求模式**：解析用户输入中的 `full`、`lean`、`solo`；未指定时目标模式为 `full`。
 2. **确认是否允许 spawn**：如果当前已经在子代理/Agent 内执行，不再递归 spawn，直接降级为 `solo`。
 3. **检查核心 Agent 部署状态**（只检查项目内 agents，不要假设一定存在）：
-   - full 必需：`.claude/agents/story-architect.md`、`.claude/agents/character-designer.md`、`.claude/agents/narrative-writer.md`、`.claude/agents/consistency-checker.md`
-   - lean 必需：`.claude/agents/story-architect.md`、`.claude/agents/consistency-checker.md`
+   - full 必需：`.claude/agents/story-architect.md`、`.claude/agents/character-designer.md`、`.claude/agents/narrative-writer.md`、`.claude/agents/reviewer.md`
+   - lean 必需：`.claude/agents/story-architect.md`、`.claude/agents/reviewer.md`
    - 对每个必需 Agent 文件，读取 frontmatter，确认 `name:` 与 subagent_type 完全一致；frontmatter 缺失、不可解析或 name 不匹配时视为 malformed agent。
    - 如果 `.story-deployed` 存在且 `agents_version` 缺失或小于 `10`，视为 stale deployment；不要 spawn，降级 `solo`，建议用户重新运行 `/story-setup`。
    - 如果目标模式所需任一文件缺失或 malformed，**不要尝试 spawn 缺失/异常 Agent**；自动降级为 `solo`，并在报告开头写明：`Fallback: missing agents -> solo` 或 `Fallback: malformed agents -> solo`，列出问题文件，建议用户运行 `/story-setup`。
@@ -145,7 +146,7 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
    - 默认 `--quote-mode keep`，不把知乎盐言短篇的 `「」` 当作问题；只有项目明确指定引号风格时才检查对应转换建议。
    - 该脚本是 `story-review` 的本地副本，不引用其他 skill 的文件。
 
-**Phase 1.5：可选 story-explorer 预查询**。仅当 `Effective Mode` 仍为 `full`/`lean`、当前允许 spawn 且 Agent/Task 工具可用时，才可检查 `.claude/agents/story-explorer.md` 并 spawn `story-explorer` 预查设定摘要；`solo` 或子代理递归保护场景下不得 spawn，只能直接 Read/Grep。Prompt 示例：
+**Phase 1.5：可选 story-researcher 预查询**。仅当 `Effective Mode` 仍为 `full`/`lean`、当前允许 spawn 且 Agent/Task 工具可用时，才可检查 `.claude/agents/story-researcher.md` 并 spawn `story-researcher` 预查设定摘要；`solo` 或子代理递归保护场景下不得 spawn，只能直接 Read/Grep。Prompt 示例：
 
 ```text
 项目目录：{dir}
@@ -209,6 +210,7 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
   7. 高潮场景是否用了蓄能→假胜→崩解结构？（参照审查基准包摘要里的高潮构建原则）
   8. 伏笔密度、连载期待和结构信息量是否合理？（伏笔密度通常只作为 S4 结构风险，除非已造成理解混乱）
   9. 按平台 rubric 或通用内容 rubric 逐项对照，标记 PASS/FAIL。
+  10. 线索约束检查（参考 `story-long-write/references/strand-weave-rhythm.md`）：Fire 连续≤2章、Constellation 连续≤1章、任意5章窗口至少2种线索、Fire 后5章内回归 Quest。偏离标记 S3。
 
   输出格式：
   VERDICT: APPROVE / CONCERNS / REJECT
@@ -264,6 +266,7 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
   4. 节奏是否均匀（有无连续多节无情绪变化）？
   5. 身体部位同一词是否超 5 次？
   6. AI味分级（轻度/中度/重度）及证据。
+  7. 钩子密度与类型分布：章首/章尾钩子是否到位、文中微钩子密度是否达标（每1000字≥1）、钩子五分类（危机/悬念/欲望/情绪/选择）配比是否符合题材偏好（参考审查基准包摘要中的 hooks-taxonomy 参数）。
 
   输出格式：
   VERDICT: APPROVE / CONCERNS / REJECT
@@ -271,12 +274,12 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
   RECOMMENDATIONS: [修改建议]
   ```
 
-**Agent 4: consistency-checker**（subagent_type: consistency-checker）
+**Agent 4: reviewer**（subagent_type: reviewer）
 - full/lean 均调用。
 - 审查视角：grep-first 事实冲突检测，输出 S1-S4 报告。
 - 提示指令：
   ```
-  你是 consistency-checker，使用 grep-first 方式检测事实矛盾。
+  你是 reviewer，使用 grep-first 方式检测事实矛盾。
   你的任务是【找事实矛盾和状态断线】，不做创作评判，不评价文学质量，不输出创作修改建议。
   项目路径：{项目根}
   审查范围：{文件路径/章节/必要摘录}
@@ -328,7 +331,7 @@ Rubric Source: file | embedded fallback
 - story-architect: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
 - character-designer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
 - narrative-writer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
-- consistency-checker: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
+- reviewer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
 
 > `NOT_RUN` 只用于 lean 模式排除的 reviewer 或可选 reviewer；如果 full/lean 必需 reviewer 缺失或 spawn 失败，应降级 solo，而不是在 full/lean 报告中标记 NOT_RUN 后继续综合。
 
@@ -358,7 +361,7 @@ APPROVE(通过) / CONCERNS(有问题) / REJECT(需重写)
 
 ## lean 模式
 
-lean 模式只 spawn `story-architect` + `consistency-checker`。如果任一缺失，按 Phase 0 自动降级 solo。其余流程同 full。
+lean 模式只 spawn `story-architect` + `reviewer`。如果任一缺失，按 Phase 0 自动降级 solo。其余流程同 full。
 
 ---
 
@@ -371,7 +374,9 @@ solo 必须执行基础检查：
 2. 简单的设定一致性 grep（角色名、属性、关键设定、伏笔关键词）。
 3. AI 味与禁用词检查（优先读取 `story-review/references/banned-words.md` 与 `story-review/references/anti-ai-writing.md`，不可读时使用内置 AI 味 / 禁用词 fallback 速查）。
 4. 通用网文内容评分（优先读取 `story-review/references/quality-rubric.md`，不可读时使用内置通用网文内容 rubric）。
-5. 按统一 Findings Schema 输出简化版报告。
+5. **钩子密度与类型分布检测**：统计本章钩子数量，对照 `story-long-write/references/hooks-taxonomy.md` 五分类法，检查：钩子密度是否达标（章首 1 + 章尾 1 + 文中每 1000 字至少 1 微钩子）、连续两章主分类是否重复、题材偏好配比是否偏离（±15% 标记 S3）。hooks-taxonomy.md 不可读时使用内置五分类定义（危机/悬念/欲望/情绪/选择）做基本判断。
+6. **线索约束检查**：对照 `story-long-write/references/strand-weave-rhythm.md`，检查 Fire 连续≤2章、Constellation 连续≤1章、任意5章窗口至少2种线索。strand-weave-rhythm.md 不可读时使用内置规则（Fire≤2、Constellation≤1）做基本判断。
+7. 按统一 Findings Schema 输出简化版报告。
 
 ### solo 模式输出格式
 
@@ -401,6 +406,13 @@ Rubric Source: file | embedded fallback
 
 ### AI 味 / 禁用词
 - {列出问题，必须附 evidence}
+
+### 钩子密度与类型分布
+- 章首钩子：{有/无}，类型：{危机/悬念/欲望/情绪/选择}
+- 章尾钩子：{有/无}，类型：{危机/悬念/欲望/情绪/选择}
+- 文中微钩子密度：{每1000字 N 个}，达标/未达标
+- 连续章类型重复：{是/否}
+- 题材偏好配比偏离：{无/S3标记}
 
 ### Findings
 {按统一 Findings Schema 或等价表格列出，severity 必须是 S1/S2/S3/S4}

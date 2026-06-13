@@ -3,7 +3,8 @@ name: story-deslop
 version: 1.0.0
 description: |
   网文去AI味。检测并清除文本中的AI写作痕迹，让文字回归自然、非模板化。
-  触发方式：/story-deslop、/去AI味、「去AI味」「这篇太AI了」「网文去AI味」
+  触发方式：/story-deslop、/去AI味、「去AI味」「这篇太AI了」「网文去AI味」（旧触发词：/write-novel-deslop、「去味」「deslop」）
+  合并自：story-deslop + write-novel-deslop
 metadata:
   openclaw:
     source: https://github.com/worldwonderer/oh-story-claudecode
@@ -127,6 +128,10 @@ AI味不是语法错误，不需要"修正"。AI味是一种风格问题——�
 > 以上阈值为参考值，需结合题材特点调整。例如古风题材的对话标签密度天然偏高，应适当放宽。
 >
 > **综合判定规则**：取六项指标中的最高档位。任一指标达重度即按重度处理；无重度时，中度指标 ≥3 项按中度处理，否则按轻度处理。
+
+**自动检测脚本**：Gate A/B/D 可脚本自动化。首次检测时运行 `python3 scripts/deai_check.py {正文文件} --json`（`write-novel/scripts/deai_check.py`），获取 Gate A 禁词命中、Gate B 句式模式、Gate D 节奏统计。C/E/F 关由 Agent 语义判断。
+
+**六关完整规范**：详见 [references/deai-six-gates.md](references/deai-six-gates.md)，含三级强度控制表（轻量/标准/深度）和 `.deslop-whitelist` 机制。
 
 加载 [references/anti-ai-writing.md](references/anti-ai-writing.md) 的「系统性去AI三遍法」获取完整流程。三遍法与本 skill 的关系（覆盖关系，不是 1:1 映射）：
 - **Pass 1（去泛化）** 覆盖 Gate A 的禁用词、Gate C 的抽象情绪、Gate D 的工整对仗、Gate E 的同语气对话粗扫
@@ -361,7 +366,9 @@ node scripts/normalize-punctuation.js <正文文件...>
 |------|----------|
 | [references/banned-words.md](references/banned-words.md) | 检测和替换禁用词时 |
 | [references/anti-ai-writing.md](references/anti-ai-writing.md) | **去AI味完整指南**：预防+三遍法+范例 |
+| [references/deai-six-gates.md](references/deai-six-gates.md) | **六关检测体系**：A/B/C/D/E/F 关完整定义 + 三级强度控制 |
 | [scripts/normalize-punctuation.js](scripts/normalize-punctuation.js) | 文件模式落盘后做确定性标点收尾；默认保留引号风格 |
+| `../../scripts/deai_check.py` | Gate A/B/D 自动检测脚本；支持 `--json` 和 `--intensity` |
 
 ---
 

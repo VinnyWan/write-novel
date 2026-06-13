@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-write-novel — AI 辅助长篇小说创作工具
+story — AI 辅助长篇小说创作工具 (v0.3.0)
 
 Main entry point. Scripts are auxiliary; Markdown files are the truth.
 
@@ -63,7 +63,7 @@ def cmd_init(args):
 
     templates_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        'skills', 'write-novel-setup', 'references', 'templates',
+        'skills', 'story-setup', 'references', 'templates',
     )
 
     templates = [
@@ -248,9 +248,9 @@ def cmd_dashboard(args):
 def cmd_status(args):
     """Quick project status overview."""
     project_root = get_project_root(args)
-    state_path = ensure_nfc(os.path.join(project_root, '全局写作状态.md'))
+    state_path = ensure_nfc(os.path.join(project_root, '追踪', 'state.md'))
     if not os.path.isfile(state_path):
-        print('错误: 未找到全局写作状态.md，请先运行 init')
+        print('错误: 未找到 追踪/state.md，请先运行 init')
         sys.exit(1)
     fm, _ = parse_frontmatter(state_path)
 
@@ -276,7 +276,7 @@ def cmd_status(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='write-novel — AI 辅助长篇小说创作工具',
+        description='story — AI 辅助长篇小说创作工具 (v0.3.0)',
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument('--project', '-p', help='项目根目录（默认当前目录）')

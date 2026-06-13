@@ -139,11 +139,11 @@ PYEOF
 | `章节/第1-3章_深度拆解.md` 缺失 | 跳过 Step 2；对话潜台词段从拆文报告兜底；confidence: low |
 | `拆文报告.md` 不存在 | **停止 Stage 6**，提示用户拆文未完成，先跑完 Stage 5 |
 
-## 与 chapter-extractor 的关系
+## 与 deconstruction-agent 的关系
 
-**不修改 chapter-extractor**。文风直接从既有字段（基调/主题标签/可借鉴要素）整理生成即可。
+**不修改 deconstruction-agent**。文风直接从既有字段（基调/主题标签/可借鉴要素）整理生成即可。
 
-句长 / 标点密度由 Step 4 的跨平台 Python 1-liner 在 Stage 6 主线程直接算出，不依赖 chapter-extractor。若将来需要章级精细分布（如「第 N 章 短句占比」），再考虑给 chapter-extractor 加 `punctuation_density` / `sentence_length_distribution` 字段——但**不在本次范围内**。
+句长 / 标点密度由 Step 4 的跨平台 Python 1-liner 在 Stage 6 主线程直接算出，不依赖 deconstruction-agent。若将来需要章级精细分布（如「第 N 章 短句占比」），再考虑给 deconstruction-agent 加 `punctuation_density` / `sentence_length_distribution` 字段——但**不在本次范围内**。
 
 ## 与写作端的关系
 
