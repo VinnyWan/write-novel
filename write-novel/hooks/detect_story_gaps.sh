@@ -70,12 +70,29 @@ for BOOK_DIR in "${BOOK_DIRS[@]}"; do
     fi
   fi
 
-  # 仅在有问题时输出该书目的信息
-  if [ -n "$BOOK_OUTPUT" ]; then
-    OUTPUT+="检查：$BOOK_NAME\n$BOOK_OUTPUT"
-    HAS_WARNINGS=true
-  fi
-done
+  # 6. 律条合规状态检查（三律条：大纲即法律、设定即物理、创造需登记）
+	  if [ -f "$BOOK_DIR/追踪/run-ledger.md" ]; then
+	    LAW_CHECKS=$(grep -c "律条违反\|law_violation\|未登记\|未经登记" "$BOOK_DIR/追踪/run-ledger.md" 2>/dev/null || echo "0")
+	    if [ "$LAW_CHECKS" -gt 0 ] 2>/dev/null; then
+	      BOOK_OUTPUT+="[WARN] ${BOOK_NAME}：检测到 ${LAW_CHECKS} 处律条违规记录（大纲/设定/登记），建议跑 /story-review。\n"
+	    fi
+	  fi
+	  # 检查是否所有正文章节都有对应细纲 (大纲即法律)
+	  if [ -d "$BOOK_DIR/大纲" ] && [ -d "$BOOK_DIR/正文" ]; then
+	    OUTLINE_CHAPTERS=$(find "$BOOK_DIR/大纲" -name "细纲_第*.md" 2>/dev/null | wc -l | tr -d ' ')
+	    TEXT_CHAPTERS=$(find "$BOOK_DIR/正文" -name "Chapter-*.md" -o -name "第*章*.md" 2>/dev/null | wc -l | tr -d ' ')
+	    UNOUTLINED=$((TEXT_CHAPTERS - OUTLINE_CHAPTERS))
+	    if [ "$UNOUTLINED" -gt 0 ] 2>/dev/null; then
+	      BOOK_OUTPUT+="[WARN] ${BOOK_NAME}：${UNOUTLINED} 章正文缺少对应细纲（大纲即法律），建议先补建细纲再继续写作。\n"
+	    fi
+	  fi
+
+	  # 仅在有问题时输出该书目的信息
+	  if [ -n "$BOOK_OUTPUT" ]; then
+	    OUTPUT+="检查：$BOOK_NAME\n$BOOK_OUTPUT"
+	    HAS_WARNINGS=true
+	  fi
+	done
 
 # 3. 全局拆文未完成检测（项目级，非书目级）
 GLOBAL_PROGRESS_OUTPUT=""

@@ -144,7 +144,7 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
    - 将 `em-dash`、`double-hyphen`、`markdown-divider` 结果作为 `format` 或 `prose` findings 合并进报告。
    - `story-review` 不修改文件；需要自动修复时建议转 `/story-deslop`。
    - 默认 `--quote-mode keep`，不把知乎盐言短篇的 `「」` 当作问题；只有项目明确指定引号风格时才检查对应转换建议。
-   - 该脚本是 `story-review` 的本地副本，不引用其他 skill 的文件。
+   - 该脚本位于共享位置 `write-novel/scripts/normalize-punctuation.js`，由 story-deslop 和 story-review 共用。
 
 **Phase 1.5：可选 story-researcher 预查询**。仅当 `Effective Mode` 仍为 `full`/`lean`、当前允许 spawn 且 Agent/Task 工具可用时，才可检查 `.claude/agents/story-researcher.md` 并 spawn `story-researcher` 预查设定摘要；`solo` 或子代理递归保护场景下不得 spawn，只能直接 Read/Grep。Prompt 示例：
 

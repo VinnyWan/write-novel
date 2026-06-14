@@ -1,22 +1,23 @@
 ---
 name: story-doctor
 description: |
-  项目诊断与维护工具。对网文项目做只读体检/诊断，检查目录/文件/依赖/产物完整性；
+  项目诊断与维护。对网文项目做只读体检/诊断，检查目录/文件/依赖/产物完整性；
   同时支持从会话提取成功写作模式并写入项目记忆。
-  触发方式：/story-doctor、「体检」「诊断」「检查项目」（旧触发词：/webnovel-doctor）
+  触发方式：/story-doctor、「体检」「诊断」「检查项目」
   合并自：webnovel-doctor + webnovel-learn
-allowed-tools: Read Bash
+allowed-tools: Read Glob Bash
 ---
 
 # story-doctor：项目诊断与维护
 
 ## 两大功能
 
-### A. 项目体检（来自 webnovel-doctor）
+### A. 项目体检（纯 Markdown 诊断）
 
 只读诊断当前书项目：确认所处阶段应有的目录、文件、依赖是否完整。
+**不调用任何脚本，由 agent 直接读取 markdown 文件进行诊断。**
 
-### B. 模式学习（来自 webnovel-learn）
+### B. 模式学习
 
 从当前会话提取成功写作模式并写入项目记忆。
 
@@ -26,27 +27,27 @@ allowed-tools: Read Bash
 
 ### 原则
 
-1. 只读诊断：不写项目文件、不自动修复、不安装依赖、不启动 Dashboard
-2. 统一用 `python -X utf8`，避免中文路径编码问题
+1. 只读诊断：不写项目文件、不自动修复
+2. 纯 markdown 方式：agent 直接使用 Read/Glob 检查文件和目录
 3. 缺失项按阶段解释影响与修复建议
 
 ### 检查项
 
-| 检查项 | 说明 |
-|--------|------|
-| 目录结构 | `设定/` `大纲/` `正文/` `追踪/` `人物/` 是否存在 |
-| 核心文件 | `设定/MASTER_SETTING.md` `追踪/state.md` `追踪/progress.md` |
-| 章节完整性 | 正文章节是否连续，YAML frontmatter 是否完整 |
-| 伏笔状态 | `追踪/foreshadowing.md` 中是否有逾期未回收的伏笔 |
-| 角色一致性 | `追踪/characters.md` 与 `人物/` 中的角色是否一致 |
-| 依赖检查 | Python 依赖是否满足 `requirements.txt` |
+| 检查项 | 诊断方式 |
+|--------|----------|
+| 目录结构 | Glob 检查 `设定/` `大纲/` `正文/` `追踪/` 是否存在 |
+| 核心文件 | Read 检查 `设定/MASTER_SETTING.md` `追踪/state.md` `追踪/context.md` |
+| 章节完整性 | Glob 检查正文章节是否连续，Read 抽查 YAML frontmatter |
+| 伏笔状态 | Read `追踪/foreshadowing.md` 检查逾期伏笔 |
+| 角色一致性 | Read `追踪/characters.md` 与 Glob `设定/角色/` 交叉验证 |
+| 律条合规 | 标记近期章节中未登记实体和设定违反 |
 
 ### 执行
 
-```bash
-export WORKSPACE_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
-python -X utf8 scripts/main.py doctor --project-root "${WORKSPACE_ROOT}"
-```
+Agent 直接执行以下诊断步骤：
+1. Glob 项目目录结构，确认四目录（设定/大纲/正文/追踪）存在
+2. Read 核心文件，检查完整性
+3. 输出阶段感知的诊断报告
 
 ### 输出
 
@@ -60,14 +61,14 @@ python -X utf8 scripts/main.py doctor --project-root "${WORKSPACE_ROOT}"
 
 ### 目标
 
-提取可复用的写作模式（钩子/节奏/对话/微兑现等），追加到项目记忆。
+提取可复用的写作模式（钩子/节奏/对话/微兑现/情绪等），追加到项目记忆。
 
 ### 执行流程
 
 1. 确定当前项目根目录
-2. 读取 `追踪/progress.md` 获取当前章节号作为上下文
+2. 读取 `追踪/state.md` 获取当前进度作为上下文
 3. 解析用户输入，归类 `pattern_type`：hook/pacing/dialogue/payoff/emotion/format/other
-4. 调用 `python -X utf8 scripts/main.py memory add-pattern` 写入
+4. 将模式写入 `.claude/memory/` 目录下的对应记忆文件
 
 ### 模式类型
 

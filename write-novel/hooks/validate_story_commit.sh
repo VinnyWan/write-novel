@@ -194,6 +194,29 @@ while IFS= read -r -d '' file; do
         WARNINGS="$WARNINGS\n⚠ $file: Setting file missing required fields (name/名字: ...)"
       fi
       ;;
+
+	    # 检查章节文件的 YAML frontmatter 必填字段
+	    大纲/*|*/大纲/*|正文/*|*/正文/*)
+	      # 检查是否有 YAML frontmatter (以 --- 开头)
+	      if head -1 "$FULL_PATH" 2>/dev/null | grep -q "^---$"; then
+	        FRONTMATTER=$(sed -n '2,/^---$/p' "$FULL_PATH" 2>/dev/null | head -30)
+	        if [ -n "$FRONTMATTER" ]; then
+	          MISSING_FIELDS=""
+	          for field in "target_words" "strand" "hook_type"; do
+	            if ! echo "$FRONTMATTER" | grep -qE "^${field}:" 2>/dev/null; then
+	              MISSING_FIELDS="$MISSING_FIELDS $field"
+	            fi
+	          done
+	          if [ -n "$MISSING_FIELDS" ]; then
+	            WARNINGS="$WARNINGS\n⚠ $file: Chapter file missing YAML frontmatter fields:$MISSING_FIELDS"
+	          fi
+	        fi
+	      else
+	        if echo "$file" | grep -qE "(细纲_第|Chapter-|第.*章)"; then
+	          WARNINGS="$WARNINGS\n⚠ $file: Chapter/outline file missing YAML frontmatter (recommended)"
+	        fi
+	      fi
+	      ;;
   esac
 done < <(git -C "$ROOT" -c core.quotepath=false diff --cached --relative --name-only --diff-filter=ACM -z -- . 2>/dev/null || true)
 

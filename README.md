@@ -2,7 +2,7 @@
 
 > AI 辅助长篇小说创作工具。核心理念：**Markdown-First** —— 所有数据以全中文 Markdown 文件存储。
 
-**当前版本：v0.3.0** (2026-06-13) · [更新日志](CHANGELOG.md)
+**当前版本：v0.3.0** (2026-06-14) · [更新日志](CHANGELOG.md)
 
 ## 快速开始
 
@@ -35,7 +35,6 @@
 | `story-review` | `/story-review` | 多视角对抗式审查（full/lean/solo） |
 | `story-cover` | `/story-cover` | 封面生成 |
 | `story-query` | `/story-query` | 角色/伏笔/设定/进度查询 |
-| `story-dashboard` | `/story-dashboard` | 只读可视化面板 |
 | `story-doctor` | `/story-doctor` | 项目诊断 + 模式学习 |
 
 ## Agent 体系（6 Agents，三级模型分配）
@@ -82,12 +81,15 @@
 write-novel/
 ├── README.md
 ├── CHANGELOG.md
-├── CLAUDE.md
 ├── write-novel/
 │   ├── agents/                 # 6 个规范 Agent 定义
+│   ├── dashboard/              # FastAPI + React 静态面板
+│   ├── evals/                  # 行为评估模块
 │   ├── hooks/                  # 自动化 hooks
+│   ├── references/             # 方法论与 CSV 参考数据库
 │   ├── scripts/                # Python 脚本与 CLI
-│   └── skills/                 # 15 个规范 Skill 定义
+│   ├── skills/                 # 15 个规范 Skill 定义
+│   └── templates/              # 37 题材模板 + 输出模板
 ```
 
 ## 核心能力

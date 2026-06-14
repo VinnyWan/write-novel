@@ -28,7 +28,7 @@ description: |
 | 环境部署 | 准备写书、搭环境、初始化、配置 | `/story-setup` |
 | 导入小说 | 导入、反向解析、把我的书导进来 | `/story-import` |
 | 项目查询 | 查角色、查伏笔、查进度、查设定、什么状态、写到哪了 | `/story-query` |
-| 面板 | 面板、数据看板、dashboard | `/story-dashboard` |
+| 面板 | 面板、数据看板、dashboard | `/story-query` |
 | 诊断 | 体检、诊断、检查项目 | `/story-doctor` |
 | 查资料 | 查资料、帮我查资料、调研、搜索一下 | 直接 spawn `story-researcher` agent |
 | 切换/列出书目 | 切书、换书、列出我的书、我在写哪几本 | 见下方「多书切换」 |
@@ -56,7 +56,7 @@ description: |
 - "拆文" "分析这本书" "黄金三章" 匹配 `story-long-analyze`
 - "扫榜" "排行" "什么火" 匹配 `story-long-scan`
 - "导入" "反向解析" "把我的书导进来" 匹配 `story-import`
-- "面板" "dashboard" 匹配 `story-dashboard`
+- "面板" "dashboard" 匹配 `story-query`（原 story-dashboard 已合并至 story-query）
 - "体检" "诊断" 匹配 `story-doctor`
 
 ## 旧命名空间兼容
@@ -80,7 +80,7 @@ description: |
 | webnovel-query | story-query |
 | webnovel-review | story-review |
 | webnovel-init | story-setup |
-| webnovel-dashboard | story-dashboard |
+| webnovel-dashboard | story-query |
 | webnovel-doctor | story-doctor |
 
 ## 项目状态感知
@@ -117,5 +117,5 @@ description: |
 | `story-review` | 多视角审查 |
 | `story-cover` | 封面生成 |
 | `story-query` | 项目状态查询 |
-| `story-dashboard` | 数据面板 |
+| `story-query` | 项目查询 + 数据面板（原 story-dashboard 已合并） |
 | `story-doctor` | 项目诊断与维护 |

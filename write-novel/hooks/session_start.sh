@@ -1,25 +1,22 @@
 #!/bin/bash
-# session-start.sh — 显示项目状态和写作上下文摘要
-# 设计原则：无可用信息时完全静默，不输出任何内容，避免污染 context
+# session-start.sh — 显示项目状态、大纲缓冲、伏笔状态、上次操作
 set -euo pipefail
 
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
-OUTPUT=""
-HAS_CONTENT=false
 
-# 先做最小 preflight，再 source；否则 lib 缺失时无法输出可修复提示。
 if [ ! -f "$HOOK_DIR/lib/common.sh" ] || [ ! -f "$HOOK_DIR/lib/sentinel.sh" ]; then
-  printf '%b' "[WARN] story hook 函数库缺失。重新运行 /story-setup 恢复 .claude/hooks/lib/。\n"
+  printf '%b' "[WARN] story hook 函数库缺失。重新运行 /story-setup 恢复。\n"
   exit 0
 fi
 
-# 加载公共函数库
 source "$HOOK_DIR/lib/common.sh"
 source "$HOOK_DIR/lib/sentinel.sh"
 
 ROOT=$(project_root)
+OUTPUT=""
+HAS_CONTENT=false
 
-# 部署自检：.story-deployed 存在但 hooks 文件被误删时发出警告
+# 部署自检
 if sentinel_exists "$ROOT/.story-deployed"; then
   MISSING_HOOKS=""
   for hook in session-start.sh session-end.sh detect-story-gaps.sh pre-compact.sh post-compact.sh validate-story-commit.sh lib/common.sh lib/sentinel.sh; do
@@ -28,51 +25,19 @@ if sentinel_exists "$ROOT/.story-deployed"; then
     fi
   done
   if [ -n "$MISSING_HOOKS" ]; then
-    OUTPUT+="[WARN] .story-deployed 存在但缺少 hook：$MISSING_HOOKS\n"
-    OUTPUT+="  修复：重新运行 /story-setup 恢复缺失的 hook。\n\n"
+    OUTPUT+="[WARN] 缺少 hook：$MISSING_HOOKS 重新运行 /story-setup。\n\n"
     HAS_CONTENT=true
-  fi
-
-  AGENTS_VERSION=$(read_sentinel_field agents_version "$ROOT/.story-deployed")
-  case "$AGENTS_VERSION" in
-    ''|*[!0-9]*)
-      OUTPUT+="[WARN] .story-deployed 缺少数字 agents_version。重新运行 /story-setup。\n\n"
-      HAS_CONTENT=true
-      ;;
-    *)
-      if [ "$AGENTS_VERSION" -lt 10 ]; then
-        OUTPUT+="[WARN] story-setup agents_version=$AGENTS_VERSION 低于 v10。重新运行 /story-setup 刷新 hooks、agents 和 references。\n\n"
-        HAS_CONTENT=true
-      fi
-      ;;
-  esac
-
-  for field in setup_skill_version target_cli resolver_strategy references_dir; do
-    if [ -z "$(read_sentinel_field "$field" "$ROOT/.story-deployed")" ]; then
-      OUTPUT+="[WARN] .story-deployed 缺少 $field 字段。重新运行 /story-setup 刷新部署元信息。\n\n"
-      HAS_CONTENT=true
-    fi
-  done
-
-  REFERENCES_DIR=$(read_sentinel_field references_dir "$ROOT/.story-deployed")
-  if [ -n "$REFERENCES_DIR" ]; then
-    REFERENCES_PATH=$(resolve_project_path "$REFERENCES_DIR")
-    if [ ! -d "$REFERENCES_PATH" ] || ! find "$REFERENCES_PATH" -maxdepth 1 -type f -name "*.md" -print -quit 2>/dev/null | grep -q .; then
-      OUTPUT+="[WARN] story-setup 参考资料包缺失或为空：${REFERENCES_DIR}。重新运行 /story-setup。\n\n"
-      HAS_CONTENT=true
-    fi
   fi
 else
   OUTPUT+="[WARN] 写作环境未部署。运行 /story-setup 初始化。\n\n"
   HAS_CONTENT=true
 fi
 
-# 显示分支和最近 commit（仅在有 git 历史时）
+# Git 状态
 BRANCH=$(git -C "$ROOT" branch --show-current 2>/dev/null || echo "")
 if [ -n "$BRANCH" ]; then
-  OUTPUT+="=== 写作进度 ===\n"
-  OUTPUT+="分支：$BRANCH\n"
-  RECENT=$(git -C "$ROOT" log --oneline -5 2>/dev/null || true)
+  OUTPUT+="=== 写作进度 ===\n分支：$BRANCH\n"
+  RECENT=$(git -C "$ROOT" log --oneline -3 2>/dev/null || true)
   if [ -n "$RECENT" ]; then
     OUTPUT+="$RECENT\n"
   fi
@@ -80,25 +45,61 @@ if [ -n "$BRANCH" ]; then
   HAS_CONTENT=true
 fi
 
-# 上下文.md 摘要（只看当前位置部分，前 10 行）
+# 大纲缓冲余量
 BOOK_DIR=$(discover_active_book)
+if [ -n "$BOOK_DIR" ] && [ -d "$BOOK_DIR/大纲" ]; then
+  OUTLINE_COUNT=$(find "$BOOK_DIR/大纲" -name "细纲_第*.md" 2>/dev/null | wc -l | tr -d ' ')
+  CHAPTER_COUNT=$(find "$BOOK_DIR/正文" -name "Chapter-*.md" -o -name "第*章*.md" 2>/dev/null | wc -l | tr -d ' ')
+  BUFFER=$((OUTLINE_COUNT - CHAPTER_COUNT))
+  if [ "$OUTLINE_COUNT" -gt 0 ]; then
+    OUTPUT+="[INFO] 细纲: ${OUTLINE_COUNT}章 | 已写: ${CHAPTER_COUNT}章 | 缓冲: ${BUFFER}章\n"
+    if [ "$BUFFER" -le 2 ] && [ "$BUFFER" -ge 0 ]; then
+      OUTPUT+="[WARN] 大纲缓冲不足 (≤2章)\n"
+    fi
+    HAS_CONTENT=true
+  fi
+fi
+
+# 待处理伏笔
+if [ -n "$BOOK_DIR" ] && [ -f "$BOOK_DIR/追踪/foreshadowing.md" ]; then
+  PENDING=$(grep -c "未回收\|pending\|open" "$BOOK_DIR/追踪/foreshadowing.md" 2>/dev/null || echo "0")
+  OVERDUE=$(grep -c "overdue\|逾期" "$BOOK_DIR/追踪/foreshadowing.md" 2>/dev/null || echo "0")
+  if [ "$PENDING" -gt 0 ] 2>/dev/null; then
+    OUTPUT+="[INFO] 待回收伏笔: ${PENDING}个"
+    if [ "$OVERDUE" -gt 0 ] 2>/dev/null; then
+      OUTPUT+=" (逾期${OVERDUE}个)"
+    fi
+    OUTPUT+="\n"
+    HAS_CONTENT=true
+  fi
+fi
+
+# 上次操作
+if [ -n "$BOOK_DIR" ] && [ -f "$BOOK_DIR/追踪/run-ledger.md" ]; then
+  LAST_OP=$(tail -1 "$BOOK_DIR/追踪/run-ledger.md" 2>/dev/null || echo "")
+  if [ -n "$LAST_OP" ]; then
+    OUTPUT+="[INFO] 上次: ${LAST_OP}\n"
+    HAS_CONTENT=true
+  fi
+fi
+
+# 上下文摘要
 if [ -n "$BOOK_DIR" ] && [ -f "$BOOK_DIR/追踪/上下文.md" ]; then
-  OUTPUT+="--- 当前位置 ---\n"
+  OUTPUT+="--- 进度摘要 ---\n"
   SNAPSHOT=$(head -10 "$BOOK_DIR/追踪/上下文.md")
   OUTPUT+="${SNAPSHOT}\n---\n\n"
   HAS_CONTENT=true
 fi
 
-# 未完成拆文（阈值 > 0 才报告）
+# 未完成拆文
 if [ -d "$ROOT/拆文库" ]; then
   PROGRESS_COUNT=$(find "$ROOT/拆文库" -name "_progress.md" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$PROGRESS_COUNT" -gt 0 ]; then
-    OUTPUT+="[INFO] 拆文库/ 中有 $PROGRESS_COUNT 个未完成拆文。运行 /story-long-analyze 或 /story-short-analyze。\n"
+    OUTPUT+="[INFO] 拆文库/ 中有 ${PROGRESS_COUNT} 个未完成拆文。\n"
     HAS_CONTENT=true
   fi
 fi
 
-# 仅在有实际内容时输出，否则完全静默
 if [ "$HAS_CONTENT" = true ]; then
   printf '%b' "$OUTPUT"
 fi

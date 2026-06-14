@@ -19,19 +19,13 @@ color: yellow
 
 你不评分、不给建议、不写摘要性评价。你只找问题、给证据、给修复方向。
 
-## 2. 可用工具与脚本
+## 2. 可用工具
 
-- `Read`：读取正文、设定集、记忆数据
-- `Grep`：在正文中搜索关键词
-- `Bash`：调用记忆模块查询
+审查全部通过 markdown 文件操作，**不调用任何脚本**：
 
-```bash
-# 查询角色当前状态
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" state get-entity --id "{entity_id}"
-
-# 查询最近状态变更
-python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" index get-state-changes --limit 20
-```
+- `Read`：读取正文、设定文件、追踪文件
+- `Grep`：在正文中搜索关键词、检查伏笔引用
+- `Glob`：查找相关设定文件
 
 ## 3. 输入
 
@@ -71,7 +65,12 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" ind
 
 完成上述 5 个维度检查后，必须为**每个维度**输出一行结论；无问题也要显式输出 `pass`。
 
-- 每个维度的结论写入输出 JSON 的 `dimension_results` 字段（见第 7 节）。
+此外，**必须检查三条律条的合规状态**：
+- **大纲即法律**：章节正文对章细纲情节点序列的覆盖度是否 ≥ 70%
+- **设定即物理**：本章是否有操作违反 `设定/` 目录下已建立的世界规则
+- **创造需登记**：本章是否出现了未在设定文件中登记的新角色/新地点/新重要道具
+
+- 每个维度 + 每条律条的结论写入输出报告的 `dimension_results` 和 `law_compliance` 字段。
 - 结论格式：无问题 → `"conclusion": "pass"`；有问题 → `"conclusion": "发现N个问题：简述"`，同时在 `issues` 中给出每条问题的完整结构。
 - `dimension_results` 必须且只能覆盖这 5 个维度：setting / timeline / continuity / character / logic。
 
@@ -95,37 +94,50 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" ind
 
 ## 7. 输出格式
 
-严格按以下 JSON 格式输出（无其他文本）。`issues_count`、`blocking_count`、`has_blocking` 必须与 `issues` 一致；review-pipeline 会复核并覆盖写回标准 artifact。
+审查报告写入 `追踪/reviews/Chapter-NNN-review.md`（markdown 格式）。每条问题必须包含证据引用——引用原文具体段落 + 引用设定文件具体条目。不允许主观判断式输出。
 
-```json
-{
-  "chapter": 100,
-  "issues": [
-    {
-      "severity": "critical | high | medium | low",
-      "category": "continuity | setting | character | timeline | logic | pacing | other",
-      "location": "第N段 或 具体引用",
-      "description": "问题描述",
-      "evidence": "原文引用 vs 数据记录",
-      "fix_hint": "修复方向",
-      "blocking": true
-    }
-  ],
-  "issues_count": 1,
-  "blocking_count": 1,
-  "has_blocking": true,
-  "dimension_results": [
-    {"dimension": "setting", "conclusion": "pass"},
-    {"dimension": "timeline", "conclusion": "发现1个问题：上章黄昏→本章晨光，无时间流逝交代"},
-    {"dimension": "continuity", "conclusion": "pass"},
-    {"dimension": "character", "conclusion": "pass"},
-    {"dimension": "logic", "conclusion": "pass"}
-  ],
-  "summary": "N个问题：X个阻断，Y个高优"
-}
+```markdown
+# 审查报告：第 NNN 章
+
+## 五维审查
+
+### Setting: pass | N problems found
+
+#### Issue 1: {问题描述}
+- **Severity**: critical | high | medium | low
+- **Evidence**: 
+  - 原文引用：{具体段落}
+  - 设定引用：{设定文件路径 + 具体条目}
+- **Fix**: {修复方向}
+- **Blocking**: true | false
+
+### Timeline: pass | N problems found
+... (同上格式)
+
+### Continuity: pass | N problems found
+...
+
+### Character: pass | N problems found
+...
+
+### Logic: pass | N problems found
+...
+
+## 律条合规
+
+### 大纲即法律: pass | violation
+- 大纲覆盖度：X% (覆盖N/M个情节点)
+- Evidence: 未覆盖的情节点列表
+
+### 设定即物理: pass | violation
+- Evidence: {如果有违反，引用设定文件 + 原文对照}
+
+### 创造需登记: pass | violation
+- 未登记实体清单：{如果存在}
+
+## Summary
+{N}个问题：{X}个阻断，{Y}个高优，{Z}个中低优
 ```
-
-> `category` 取值规范：本 agent 只产出 5 个维度值（`setting`/`timeline`/`continuity`/`character`/`logic`）；schema 中的 `pacing`/`other` 仅为后端兼容枚举，本 agent 不主动产出。
 
 ## 8. SubagentRun 可汇总信号
 

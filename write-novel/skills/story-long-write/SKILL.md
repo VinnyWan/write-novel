@@ -316,12 +316,19 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
    - (10) 对标书路径下 `剧情/{相关剧情线}.md`（按对标书路径查找）— 从索引中选择与本章相关的剧情线文件
    - (11) 对标书路径下 `设定/世界观/*.md`（glob，按对标书路径查找）— 从拆文产出的设定中获取参考。**回退顺序**：① glob `设定/世界观/*.md`；② 若 `设定/世界观/` 子目录不存在则读单文件 `设定/世界观.md`（早期拆文库格式）；③ 若也无则读 `设定/金手指.md` 当作最低限度参考；④ 都没有则跳过本步骤（缺失不阻塞）
    - (12) `追踪/foreshadowing.md`（如存在）— 伏笔状态与逾期检测
-3. **Prewrite Gate 校验**（写前必执行，详见 `references/write-gates.md` Gate 1）：
-   - 3a. **章契约完整性**：确认 `大纲/Chapter-{N}.md` frontmatter 中 `target_words`/`strand`/`contract_nodes`/`hook_type`/`payoff_density` 齐全
-   - 3b. **爽点密度预估**：按 `references/hooks-taxonomy.md` 分题材偏好参数计算本章应有微兑现数，章契约 `payoff_density` ≥ 题材最低要求（打脸/逆袭每 3000 字 ≥ 2 微兑现；日常/铺垫章 ≥ 1）
-   - 3c. **线索冲突检测**：若前一章 `strand` 同线索已连续达到上限（fire ≥ 2、constellation ≥ 1），提示切换
-   - 3d. **伏笔逾期检测**：读取 `追踪/foreshadowing.md`，有 `overdue: true` 伏笔时提示优先回收
-   - 输出 prewrite 检查报告（通过/警告/阻塞），阻塞项解决前不进入步骤 4
+3. **体裁画像加载**（写前必执行，Prewrite Gate 前提）：
+   - 3a. 从项目设定或细纲中读取当前体裁，确定 profile ID
+   - 3b. 读取 `references/methodology/genre-profile-configs.md`，加载对应体裁的 YAML 配置
+   - 3c. 若体裁模板（`templates/genres/{体裁名}.md`）有 YAML frontmatter `profile` 字段，以 frontmatter 值为准
+   - 3d. 体裁未配置 profile 时，使用默认画像（`id: default`）：爽点密度=中等、钩子=通用、线配比=70/20/10
+   - 3e. 将以下参数注入写作上下文：爽点密度阈值、钩子偏好类型、微兑现下限、节奏停滞阈值、线配比
+4. **Prewrite Gate 校验**（写前必执行，详见 `references/write-gates.md` Gate 1）：
+   - 4a. **章契约完整性**：确认 `大纲/Chapter-{N}.md` frontmatter 中 `target_words`/`strand`/`contract_nodes`/`hook_type`/`payoff_density` 齐全
+   - 4b. **爽点密度预估**：使用步骤 3 加载的体裁画像的 `coolpoint_config.density_per_chapter` 计算本章应有微兑现数，章契约 `payoff_density` ≥ 体裁最低要求
+   - 4c. **线配比检查**：使用步骤 3 加载的体裁画像的 `pacing_config` 检查当前线配比是否偏离画像建议
+   - 4d. **线索冲突检测**：若前一章 `strand` 同线索已连续达到上限（fire ≥ 2、constellation ≥ 1），提示切换
+   - 4e. **伏笔逾期检测**：读取 `追踪/foreshadowing.md`，有 `overdue: true` 伏笔时提示优先回收
+   - 输出 prewrite 检查报告（通过/警告/阻塞），阻塞项解决前不进入步骤 5
 4. **准备层**（下面的 3 步是核心方法在单章写作中的落地：筛选状态 → 召回模块 → 确认意图）：
    - 4.1 **状态筛选**：从 `追踪/角色状态.md` 中筛选本章涉及角色的当前状态，从 `追踪/伏笔.md` 中筛选本章需要回收/推进的伏笔。输出最简记忆包（参考 state-tracking.md）。如果角色状态文件不存在，从角色设定和前文推断
    - 4.2 **模块召回与文风召回**：
