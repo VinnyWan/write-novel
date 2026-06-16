@@ -1,1 +1,0 @@
-/Users/admin/code/write-novel/write-novel/references/methodology/outline-methods.md
