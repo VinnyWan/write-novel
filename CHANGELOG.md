@@ -2,6 +2,45 @@
 
 这里记录每个正式版本对作者和维护者的影响。发布说明优先面向中文网文作者：先说写作体验有什么变化，再补维护者关心的技术细节。
 
+## v2.1.0 (2026-06-17) — 自有市场双通道分发
+
+### 变更
+
+- **插件目录恢复子目录结构**：插件组件（skills/、agents/、hooks/ 等）移回 `write-novel/` 子目录，仓库根只保留市场和文档
+- **新增自有市场清单**：`.claude-plugin/marketplace.json`，用户可通过 `claude plugin marketplace add VinnyWan/write-novel` 添加
+- **README 更新**：新增自有市场安装方式，补充市场 badge
+- **安装方式双通道**：自有市场（推荐）+ 社区市场
+
+### 迁移指南
+
+从 v2.0.0 升级：
+1. 更新仓库：`git pull`
+2. 以插件模式加载时，指定子目录：`claude --plugin-dir ./write-novel`
+3. 或者改为市场安装：先 `claude plugin uninstall write-novel`，再 `claude plugin marketplace add VinnyWan/write-novel && claude plugin install write-novel@write-novel-marketplace`
+
+## v2.0.0 (2026-06-16) — 插件化重构，支持市场分发
+
+### 重大变更（BREAKING）
+
+- **插件目录重组**：所有插件内容从 `write-novel/` 子目录移至仓库根目录，符合 Claude Code 官方插件规范
+- **manifest 标准化**：`.claude-plugin/plugin.json` 重写为官方 schema，移除旧版非标准字段（`commands`、`skills`、`agents`、`files`、`compatibility`）
+- **Skill 命名空间**：skills 现在以插件命名空间为前缀（`/write-novel:story` 而非 `/story`）
+
+### 迁移指南
+
+如果你从 v0.3.0 升级：
+1. 更新仓库：`git pull`
+2. 以插件模式加载：`claude --plugin-dir .`（而非依赖 `.claude/` 配置）
+3. Skill 触发词变化：`/story` → `/write-novel:story`，`/story-deslop` → `/write-novel:story-deslop`，以此类推
+4. 删除旧 `write-novel/` 目录（如果 git pull 未自动清理）
+
+### 开发者变更
+
+- 目录结构：`skills/`、`agents/`、`hooks/`、`references/`、`templates/`、`scripts/` 均在仓库根目录
+- `write-novel/` 包装目录已删除
+- `.claude/` 保留为项目本地工作区配置（不影响插件功能）
+- 所有 14 个 skills、6 个 agents、7 个 hooks 功能不变，仅路径变更
+
 ## v0.3.0 (2026-06-13) — Skill/Agent 架构统一与故事系统 Markdown 化
 
 ### 新增

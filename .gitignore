@@ -7,8 +7,6 @@ server
 .trae/
 .worktrees/
 openspec/
-docs/
-docs/*
 images/
 CLAUDE.md
 AGENTS.md

@@ -1,0 +1,23 @@
+{
+  "name": "write-novel-marketplace",
+  "description": "Marketplace for the write-novel Claude Code plugin.",
+  "metadata": {
+    "description": "中文长篇网文创作插件市场——安装 write-novel 插件获得全套网文创作工具链。"
+  },
+  "owner": {
+    "name": "VinnyWan"
+  },
+  "plugins": [
+    {
+      "name": "write-novel",
+      "description": "中文长篇网文创作工作台——扫榜、拆文、大纲、正文、审查、去AI味，14 个 Skills + 6 个 Agents 全流程覆盖。",
+      "version": "2.0.0",
+      "author": {
+        "name": "VinnyWan"
+      },
+      "source": "./write-novel",
+      "category": "productivity",
+      "homepage": "https://github.com/VinnyWan/write-novel"
+    }
+  ]
+}

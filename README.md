@@ -1,148 +1,182 @@
 # write-novel
 
-> AI 辅助长篇小说创作工具。核心理念：**Markdown-First** —— 所有数据以全中文 Markdown 文件存储。
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](write-novel/.claude-plugin/plugin.json)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://claude.ai/claude-code)
+[![Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-black.svg)](.claude-plugin/marketplace.json)
 
-**当前版本：v0.3.0** (2026-06-14) · [更新日志](CHANGELOG.md)
+AI 辅助中文长篇网络小说创作插件。从扫榜、拆文、大纲到正文日更，覆盖超长篇网文创作全流程。内置 14 个 Skills、6 个 Agents、7 个 Hooks，纯 Markdown 驱动，所有状态文件均可直接阅读编辑。
+
+## 安装
+
+### 从自有市场安装（推荐）
+
+```bash
+# 添加自有市场
+claude plugin marketplace add VinnyWan/write-novel --scope user
+
+# 安装插件
+claude plugin install write-novel@write-novel-marketplace --scope user
+```
+
+### 从社区市场安装
+
+```bash
+# 添加社区市场
+claude plugin marketplace add anthropics/claude-plugins-community
+
+# 安装插件
+claude plugin install write-novel@claude-community
+```
+
+### 本地开发安装
+
+```bash
+git clone https://github.com/VinnyWan/write-novel.git
+claude --plugin-dir ./write-novel
+```
+
+安装后运行 `/reload-plugins` 加载所有 skills。
 
 ## 快速开始
 
+安装插件后，在 Claude Code 中：
+
 ```bash
-# 在 Claude Code 中
-/story-setup          # 部署项目基础设施
-/story-long-scan      # 扫榜选方向
-/story-long-analyze   # 拆解对标书
-/story-long-write     # 开书写正文
-/story-review         # 审查已写章节
-/story-deslop         # 去AI味
+/write-novel:story-setup       # 1. 部署项目基础设施（首次必执行）
+/write-novel:story-long-scan   # 2. 扫榜选方向
+/write-novel:story-long-analyze # 3. 拆解对标书
+/write-novel:story-long-write  # 4. 开书写正文
+/write-novel:story-review      # 5. 审查已写章节
+/write-novel:story-deslop      # 6. 去AI味
 ```
 
-旧触发词（`/write-novel-*`、`/webnovel-*`）作为别名保留，自动路由到对应新 skill。
+也可以直接说「我想写小说」，story skill 会自动路由到对应子 skill。
 
-## Skill 体系（15 Skills）
+**完整流水线**：`扫榜 → 拆文 → 写作 → 审查 → 去AI味 → 封面`。详细流程见 [USAGE.md](USAGE.md)。
 
-| Skill | 触发 | 功能 |
-|-------|------|------|
-| `story` | `/story` | 路由入口，按意图自动分发到子 skill |
-| `story-setup` | `/story-setup` | 环境部署 + agent/hooks/rules 安装 |
-| `story-long-scan` | `/story-long-scan` | 多平台扫榜 + 选题决策 |
-| `story-short-scan` | `/story-short-scan` | 短篇选题扫描 |
-| `story-long-analyze` | `/story-long-analyze` | 6阶段深度拆文管道 |
-| `story-short-analyze` | `/story-short-analyze` | 短篇拆文分析 |
-| `story-long-write` | `/story-long-write` | 长篇写作：开书→大纲→正文→日更 |
-| `story-short-write` | `/story-short-write` | 短篇写作 |
-| `story-import` | `/story-import` | 逆向导入已有小说 |
-| `story-deslop` | `/story-deslop` | 去AI味：六关检测（A/B/C/D/E/F） |
-| `story-review` | `/story-review` | 多视角对抗式审查（full/lean/solo） |
-| `story-cover` | `/story-cover` | 封面生成 |
-| `story-query` | `/story-query` | 角色/伏笔/设定/进度查询 |
-| `story-doctor` | `/story-doctor` | 项目诊断 + 模式学习 |
+## Skill 体系（14 个）
 
-## Agent 体系（6 Agents，三级模型分配）
+| Skill | 使用方式 | 功能 |
+|-------|---------|------|
+| `story` | `/write-novel:story` | 路由入口，按意图自动分发 |
+| `story-setup` | `/write-novel:story-setup` | 环境部署 + 模板安装 |
+| `story-long-scan` | `/write-novel:story-long-scan` | 多平台扫榜 + 选题决策 |
+| `story-short-scan` | `/write-novel:story-short-scan` | 短篇选题扫描 |
+| `story-long-analyze` | `/write-novel:story-long-analyze` | 6 阶段深度拆文 |
+| `story-short-analyze` | `/write-novel:story-short-analyze` | 短篇拆文分析 |
+| `story-long-write` | `/write-novel:story-long-write` | 长篇写作：开书 → 大纲 → 正文 → 日更 |
+| `story-short-write` | `/write-novel:story-short-write` | 短篇写作 |
+| `story-import` | `/write-novel:story-import` | 逆向导入已有小说 |
+| `story-deslop` | `/write-novel:story-deslop` | 去 AI 味：六关检测 + 3-pass 润色 |
+| `story-review` | `/write-novel:story-review` | 多视角对抗式审查 |
+| `story-cover` | `/write-novel:story-cover` | 封面生成 |
+| `story-query` | `/write-novel:story-query` | 角色/伏笔/设定/进度查询 |
+| `story-doctor` | `/write-novel:story-doctor` | 项目诊断 + 模式学习 |
 
-| 层级 | 模型 | Agent | 职责 |
-|------|------|-------|------|
-| 架构级 | Opus→Sonnet | `story-architect` | 故事架构、大纲结构、钩子/反转设计 |
-| 创作级 | Sonnet→Haiku | `narrative-writer` | 正文起草、去AI味、格式合规 |
-| 创作级 | Sonnet→Haiku | `character-designer` | 角色设计、语言风格、对话创作 |
-| 创作级 | Sonnet→Haiku | `deconstruction-agent` | 拆文分析、章节摘要提取 |
-| 检查级 | Haiku | `reviewer` | 事实冲突扫描、一致性审查、S1-S4分级 |
-| 检查级 | Haiku | `story-researcher` | 项目内只读查询 + 外部资料搜索 |
+## Agent 体系（6 个）
 
-合并自旧版 15 个 agent：context-agent→story-architect、chapter-extractor→deconstruction-agent、consistency-checker→reviewer、data-agent+story-explorer→story-researcher。
+| 层级 | Agent | 职责 |
+|------|-------|------|
+| 架构级 | `story-architect` | 故事架构、大纲结构、钩子/反转设计 |
+| 创作级 | `narrative-writer` | 正文起草、去 AI 味、格式合规 |
+| 创作级 | `character-designer` | 角色设计、语言风格、对话创作 |
+| 创作级 | `deconstruction-agent` | 拆文分析、章节摘要提取 |
+| 检查级 | `reviewer` | 事实冲突扫描、一致性审查 |
+| 检查级 | `story-researcher` | 项目内只读查询 + 外部资料搜索 |
 
-## 项目目录结构
+## Hooks（自动化守护）
 
-### 用户写作项目（Contract → Commit → Projection）
-
-```
-{书名}/
-├── 设定/
-│   ├── MASTER_SETTING.md       # 全局设定契约（YAML frontmatter）
-│   ├── 角色/{角色名}.md
-│   └── 势力/{势力名}.md
-├── 大纲/
-│   ├── Volume-1.md             # 卷契约（YAML frontmatter）
-│   └── Chapter-001.md          # 章契约（CBN/CPNs/CEN）
-├── 正文/
-│   └── Chapter-001.md          # 正文 commit（YAML frontmatter）
-├── 追踪/                       # 投影层
-│   ├── state.md                # 当前写作状态
-│   ├── progress.md             # 进度摘要
-│   ├── characters.md           # 角色状态
-│   ├── foreshadowing.md        # 伏笔状态
-│   └── run-ledger.md           # 操作日志（断点续传）
-├── 对标/{对标书名}/
-└── 备份/
-```
-
-### 插件开发目录
-
-```
-write-novel/
-├── README.md
-├── CHANGELOG.md
-├── write-novel/
-│   ├── agents/                 # 6 个规范 Agent 定义
-│   ├── dashboard/              # FastAPI + React 静态面板
-│   ├── evals/                  # 行为评估模块
-│   ├── hooks/                  # 自动化 hooks
-│   ├── references/             # 方法论与 CSV 参考数据库
-│   ├── scripts/                # Python 脚本与 CLI
-│   ├── skills/                 # 15 个规范 Skill 定义
-│   └── templates/              # 37 题材模板 + 输出模板
-```
+| Hook | 触发时机 | 功能 |
+|------|---------|------|
+| SessionStart | 会话启动 | 显示大纲缓冲、伏笔状态、上次操作 |
+| SessionEnd | 会话结束 | 保存会话状态 |
+| PreCompact | Compact 前 | 保存写作状态到追踪文件 |
+| PostCompact | Compact 后 | 恢复上下文状态 |
+| PreToolUse | 写操作前 | 运行时写作守护校验 |
+| PreCommit | Git commit 前 | YAML frontmatter 必填字段检查 |
 
 ## 核心能力
 
 ### 故事系统（Contract → Commit → Projection）
 
-三层 Markdown 契约链：**Contract**（设定约束）→ **Commit**（正文落盘）→ **Projection**（派生追踪）。每章写作前经三阶段写门校验：
+三层 Markdown 契约链驱动写作：**Contract**（设定约束）→ **Commit**（正文落盘）→ **Projection**（派生追踪）。每章写作前经三阶段写门校验，防止设定吃书。
 
-```
-Prewrite Gate（写前）→ Precommit Gate（提交前）→ Postcommit Gate（提交后）
-```
+### 情绪驱动写作
+
+7 种情绪类型（爽感释放 / 悬念紧张 / 虐心压抑 / 意外反转 / 温暖治愈 / 细思极恐 / 共鸣感动）× 每章情绪锚点设计 × 章尾 5 类钩子（危机 / 悬念 / 欲望 / 情绪 / 选择）。
 
 ### 追读力体系
 
-钩子五分类法（危机/悬念/欲望/情绪/选择）× 分题材偏好参数，保障每章爽点密度和期待链不断裂。
+钩子五分类法 × 分题材偏好参数，保障每章爽点密度和期待链不断裂。
 
 ### 多线叙事节奏
 
-Quest（主线）/ Fire（支线）/ Constellation（伏笔）三线标注，硬约束：Fire 连续≤2章、Constellation 连续≤1章。
+Quest（主线）/ Fire（支线）/ Constellation（伏笔）三线标注，硬约束：Fire 连续 ≤ 2 章、Constellation 连续 ≤ 1 章。
 
-### 去AI味六关检测
+### 去 AI 味六关检测
 
-A（禁词）→ B（句式）→ C（心理外化）→ D（节奏）→ E（对话）→ F（结尾），三级强度控制（轻量/标准/深度）。`deai_check.py` 自动化 A/B/D 关。
+A（禁词）→ B（句式）→ C（心理外化）→ D（节奏）→ E（对话）→ F（结尾），三级强度控制（轻量 / 标准 / 深度）。3-pass 方法论：去泛化 → 去书面化 → 回自然感。
 
 ### 断点续传
 
 `追踪/run-ledger.md` 记录每次操作，中断后自动诊断恢复点并重建上下文。
 
-## 命令行参考
+## 项目结构
 
-| 命令 | 说明 |
-|------|------|
-| `python scripts/main.py init --project ./项目` | 初始化新项目 |
-| `python scripts/main.py search <关键词> --project ./项目` | BM25 关键词检索 |
-| `python scripts/main.py project --project ./项目` | 从 Markdown 重建派生数据 |
-| `python scripts/main.py doctor --project ./项目` | 项目健康诊断 |
-| `python scripts/main.py preflight -c 5 -v 1 --project ./项目` | 写前预检 |
-| `python scripts/main.py write-gate -s gate-2 -c 5 --project ./项目` | 写门校验 |
-| `python scripts/main.py dashboard --project ./项目` | 生成静态 HTML 面板 |
-| `python scripts/main.py status --project ./项目` | 查看项目进度 |
-| `python scripts/deai_check.py <文件> --json` | 去AI味自动检测（A/B/D关） |
+### 插件目录
 
-## 技术栈
+```
+write-novel/                          # 仓库根（市场根）
+├── .claude-plugin/
+│   └── marketplace.json              # 市场清单
+├── README.md
+├── CHANGELOG.md
+├── LICENSE
+├── USAGE.md
+│
+└── write-novel/                      # 插件根
+    ├── .claude-plugin/
+    │   └── plugin.json               # 插件清单
+    ├── skills/                       # 14 个 skill（SKILL.md）
+    ├── agents/                       # 6 个 agent 定义
+    ├── hooks/                        # hooks.json + 脚本
+    ├── references/                   # 方法论与参考数据
+    ├── templates/                    # 37 题材模板 + 输出模板
+    ├── scripts/                      # Python/JS 工具脚本
+    ├── dashboard/                    # Web 可视化面板
+    └── evals/                        # 行为评估
+```
 
-- **语言**：Python 3.10+
-- **依赖**：PyYAML, rank-bm25, jieba
-- **存储**：纯 Markdown 文件（YAML Frontmatter）
-- **编码**：NFC/NFD 自动兼容，中文路径安全
+### 用户写作项目
 
-## 设计原则
+安装插件后，`story-setup` 会在你的小说目录下创建：
 
-1. **Markdown-First**：所有数据以 `.md` 文件存储，人类和 AI 均可直接阅读编辑
-2. **Contract → Commit → Projection**：三层分离，契约驱动写作，投影从正文重建
-3. **Skill > Script**：优先用 SKILL.md + references 规范驱动，脚本仅做确定性自动化
-4. **状态透明**：项目状态在任何编辑器中打开文件即可查看，无需特殊工具
-5. **作者控制**：你随时可以手动编辑任何文件；脚本只修改结构化字段
+```
+{书名}/
+├── 设定/
+│   ├── MASTER_SETTING.md        # 全局设定契约
+│   ├── 角色/{角色名}.md
+│   └── 势力/{势力名}.md
+├── 大纲/
+│   ├── Volume-1.md              # 卷契约
+│   └── Chapter-001.md           # 章契约
+├── 正文/
+│   └── Chapter-001.md           # 正文
+├── 追踪/
+│   ├── state.md                 # 写作状态
+│   ├── characters.md            # 角色状态
+│   ├── foreshadowing.md         # 伏笔状态
+│   └── run-ledger.md            # 操作日志
+├── 对标/{对标书名}/
+└── 备份/
+```
+
+## 进一步阅读
+
+- [USAGE.md](USAGE.md) — 完整使用文档（流水线、场景、FAQ）
+- [CHANGELOG.md](CHANGELOG.md) — 版本更新日志
+
+## 许可
+
+MIT · [VinnyWan](https://github.com/VinnyWan)
