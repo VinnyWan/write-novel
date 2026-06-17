@@ -163,3 +163,27 @@ export function SearchIcon(props) {
         </IconBase>
     )
 }
+
+export function NetworkIcon(props) {
+    return (
+        <IconBase {...props}>
+            <rect x="3" y="3" width="4" height="4" />
+            <rect x="17" y="5" width="4" height="4" />
+            <rect x="10" y="17" width="4" height="4" />
+            <rect x="10" y="6" width="2" height="12" />
+            <rect x="4" y="6" width="12" height="2" />
+        </IconBase>
+    )
+}
+
+export function TargetIcon(props) {
+    return (
+        <IconBase {...props}>
+            <rect x="3" y="11" width="18" height="2" />
+            <rect x="11" y="3" width="2" height="18" />
+            <rect x="7" y="7" width="10" height="10" />
+            <rect x="9" y="9" width="6" height="6" />
+            <rect x="11" y="11" width="2" height="2" />
+        </IconBase>
+    )
+}

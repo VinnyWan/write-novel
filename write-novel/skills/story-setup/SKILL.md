@@ -1,6 +1,6 @@
 ---
 name: story-setup
-version: 1.1.1
+version: 1.2.0
 description: |
   网文写作工具集基础设施部署。将 hooks/rules/agents/CLAUDE.md 等基础设施部署到用户项目目录。
   触发方式：/story-setup、「准备写书」「帮我搭一下环境」「配置写作项目」（旧触发词：/write-novel-setup）
@@ -43,7 +43,7 @@ metadata:
 | `skills/story-setup/references/templates/CLAUDE.md.tmpl` | `CLAUDE.md` | user+managed | marker/section merge | contains story skill routing sections |
 | `skills/story-setup/references/templates/hooks/` | `.claude/hooks/` | story-setup managed | recursive replace | `session-*.sh`, `detect-story-gaps.sh`, `validate-story-commit.sh`, `lib/common.sh`, `lib/sentinel.sh` exist |
 | `skills/story-setup/references/templates/rules/*.md` | `.claude/rules/*.md` | story-setup managed | replace | every rule contains `paths` frontmatter |
-| `skills/story-setup/references/templates/agents/*.md` | `.claude/agents/*.md` | story-setup managed | replace | 7 agent files exist |
+| `skills/story-setup/references/templates/agents/*.md` | `.claude/agents/*.md` | story-setup managed | replace | 9 agent files exist |
 | `skills/story-setup/references/agent-references/*.md` | `.claude/skills/story-setup/references/agent-references/*.md` | story-setup managed | replace | every `story-setup/references/agent-references/*.md` reference resolves |
 | `skills/story-setup/references/templates/settings-hooks.json` | `.claude/settings.local.json` | user+managed | merge by hook command | hook JSON valid and registered commands deduped |
 | `skills/story-setup/references/templates/上下文.md.tmpl` | `{书名}/追踪/上下文.md` | user state | create only if absent | never overwrite existing writing context |
@@ -106,8 +106,8 @@ metadata:
 - 写入以下字段（YAML `key: value` 格式，hook 用 `references/templates/hooks/lib/sentinel.sh` 读取）：
   ```
   deployed_at: <date -u +"%Y-%m-%dT%H:%M:%SZ">
-  agents_version: 10
-  setup_skill_version: 1.1.1
+  agents_version: 11
+  setup_skill_version: 1.2.0
   target_cli: claude-code
   resolver_strategy: project-local-skill-reference
   references_dir: .claude/skills/story-setup/references/agent-references
@@ -124,7 +124,7 @@ metadata:
 2. 验证 rules 路径：
    - 检查 `.claude/rules/` 下的规则文件是否存在且包含 `paths` frontmatter
 3. 验证 agents：
-   - 检查 `.claude/agents/` 下的 7 个 agent 定义文件是否存在
+   - 检查 `.claude/agents/` 下的 9 个 agent 定义文件是否存在（story-architect, character-designer, narrative-writer, reviewer, story-researcher, deconstruction-agent, consistency-checker, story-explorer, chapter-extractor）
 4. 验证 agent reference bundle：
    - 检查 `.claude/skills/story-setup/references/agent-references/` 下 reference 文件完整
    - 检查所有 `story-setup/references/agent-references/<file>.md` 都能解析到 deployed bundle
@@ -172,8 +172,8 @@ hooks 注册合并按 command 字段去重：
 ## 重新部署
 
 - `.story-deployed` 不存在 → 全新安装，Phase 2 全部执行
-- `.story-deployed` 存在且 `agents_version: 10` → 提示已部署，AskUserQuestion 确认是否重新部署
-- `.story-deployed` 存在但 `agents_version` < 10 → 提示需要更新，重新执行 Phase 2 覆盖 agents/hooks/rules/reference bundle，CLAUDE.md 和 settings.local.json 走合并策略
+- `.story-deployed` 存在且 `agents_version: 11` → 提示已部署，AskUserQuestion 确认是否重新部署
+- `.story-deployed` 存在但 `agents_version` < 11 → 提示需要更新，重新执行 Phase 2 覆盖 agents/hooks/rules/reference bundle，CLAUDE.md 和 settings.local.json 走合并策略
 
 ---
 
@@ -184,7 +184,7 @@ hooks 注册合并按 command 字段去重：
 | references/templates/CLAUDE.md.tmpl | 项目根 CLAUDE.md 模板 |
 | references/templates/hooks/ | 6 个 hook 脚本模板 + `lib/common.sh`/`lib/sentinel.sh` |
 | references/templates/rules/ | 4 条 path-scoped 规则模板 |
-| references/templates/agents/ | 7 个 agent 定义模板（story-architect, character-designer, narrative-writer, reviewer, story-researcher, story-researcher, deconstruction-agent） |
+| references/templates/agents/ | 9 个 agent 定义模板（story-architect, character-designer, narrative-writer, reviewer, story-researcher, deconstruction-agent, consistency-checker, story-explorer, chapter-extractor） |
 | references/agent-references/ | Agent 模板自带的参考资料副本；部署到 `.claude/skills/story-setup/references/agent-references/`，避免跨 skill references |
 | references/templates/settings-hooks.json | hooks 注册 JSON 片段 |
 | references/templates/上下文.md.tmpl | 写作上下文模板 |

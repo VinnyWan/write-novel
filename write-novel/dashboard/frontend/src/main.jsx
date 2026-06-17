@@ -8,6 +8,8 @@ const OverviewPage = lazy(() => import('./pages/OverviewPage.jsx'))
 const CharactersPage = lazy(() => import('./pages/CharactersPage.jsx'))
 const PacingPage = lazy(() => import('./pages/PacingPage.jsx'))
 const ForeshadowingPage = lazy(() => import('./pages/ForeshadowingPage.jsx'))
+const RelationGraphPage = lazy(() => import('./pages/RelationGraphPage.jsx'))
+const ReadTrackingPage = lazy(() => import('./pages/ReadTrackingPage.jsx'))
 const FilesPage = lazy(() => import('./pages/FilesPage.jsx'))
 const SystemPage = lazy(() => import('./pages/SystemPage.jsx'))
 
@@ -32,6 +34,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                         <Route path="characters" element={<CharactersPage />} />
                         <Route path="pacing" element={<PacingPage />} />
                         <Route path="foreshadowing" element={<ForeshadowingPage />} />
+                        <Route path="relations" element={<RelationGraphPage />} />
+                        <Route path="read-tracking" element={<ReadTrackingPage />} />
                         <Route path="files" element={<FilesPage />} />
                         <Route path="system" element={<SystemPage />} />
                         <Route path="*" element={<Navigate to="/" replace />} />

@@ -20,7 +20,7 @@ metadata:
 
 ## Review Mode 选择
 
-- `/story-review` 或 `/story-review full` → 优先 spawn 全部 4 个 Agent；如果当前已经在子代理内，核心 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
+- `/story-review` 或 `/story-review full` → 优先 spawn 全部 5 个 Agent；如果当前已经在子代理内，核心 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
 - `/story-review lean` → 优先 spawn `story-architect` + `reviewer`；如果当前已经在子代理内，任一所需 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
 - `/story-review solo` → 不 spawn Agent，由当前会话执行基础审查。
 - 未指定 → 默认 full，并在报告里写明最终实际执行模式。
@@ -32,7 +32,7 @@ metadata:
 1. **确定请求模式**：解析用户输入中的 `full`、`lean`、`solo`；未指定时目标模式为 `full`。
 2. **确认是否允许 spawn**：如果当前已经在子代理/Agent 内执行，不再递归 spawn，直接降级为 `solo`。
 3. **检查核心 Agent 部署状态**（只检查项目内 agents，不要假设一定存在）：
-   - full 必需：`.claude/agents/story-architect.md`、`.claude/agents/character-designer.md`、`.claude/agents/narrative-writer.md`、`.claude/agents/reviewer.md`
+   - full 必需：`.claude/agents/story-architect.md`、`.claude/agents/character-designer.md`、`.claude/agents/narrative-writer.md`、`.claude/agents/reviewer.md`、`.claude/agents/consistency-checker.md`
    - lean 必需：`.claude/agents/story-architect.md`、`.claude/agents/reviewer.md`
    - 对每个必需 Agent 文件，读取 frontmatter，确认 `name:` 与 subagent_type 完全一致；frontmatter 缺失、不可解析或 name 不匹配时视为 malformed agent。
    - 如果 `.story-deployed` 存在且 `agents_version` 缺失或小于 `10`，视为 stale deployment；不要 spawn，降级 `solo`，建议用户重新运行 `/story-setup`。
@@ -302,6 +302,29 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
 
 ---
 
+**Agent 5: consistency-checker**（subagent_type: consistency-checker）
+- full 模式调用。
+- 审查视角：客观事实冲突扫描 — 时间线、战力体系、地点连续性、伏笔状态、角色知识边界。
+- 提示指令：
+  ```
+  你是 consistency-checker，使用 grep-first 方式检测客观事实矛盾。
+  你的任务是【找确定的、可验证的事实冲突】，不做创作评判，不评价文学质量。
+  项目路径：{项目根}
+  审查范围：{文件路径/章节/必要摘录}
+  检查项：
+  1. 时间线一致性：本章时间标记是否与上章衔接、倒计时是否正确推进
+  2. 战力体系一致性：角色是否使用了超等级能力
+  3. 地点连续性：场景切换是否合理
+  4. 伏笔状态：新埋/回收的伏笔是否有遗漏登记
+  5. 角色知识边界：角色是否使用了不应知道的信息
+
+  输出格式：
+  VERDICT: APPROVE / CONCERNS / REJECT
+  FINDINGS: 使用统一 Findings Schema，severity 为 S1/S2/S3/S4；category 只能使用 consistency / factual
+  ```
+
+---
+
 ## Phase 3：综合裁决
 
 1. 收集实际执行的 reviewer VERDICT 和 FINDINGS。
@@ -332,8 +355,9 @@ Rubric Source: file | embedded fallback
 - character-designer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
 - narrative-writer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
 - reviewer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
+- consistency-checker: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
 
-> `NOT_RUN` 只用于 lean 模式排除的 reviewer 或可选 reviewer；如果 full/lean 必需 reviewer 缺失或 spawn 失败，应降级 solo，而不是在 full/lean 报告中标记 NOT_RUN 后继续综合。
+> `NOT_RUN` 只用于 lean 模式排除的 reviewer 或可选 reviewer（character-designer、narrative-writer、consistency-checker）；如果 full/lean 必需 reviewer 缺失或 spawn 失败，应降级 solo，而不是在 full/lean 报告中标记 NOT_RUN 后继续综合。
 
 ## Severity Counts
 - S1: n

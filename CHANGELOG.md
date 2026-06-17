@@ -2,10 +2,17 @@
 
 这里记录每个正式版本对作者和维护者的影响。发布说明优先面向中文网文作者：先说写作体验有什么变化，再补维护者关心的技术细节。
 
-## v2.1.0 (2026-06-17) — 自有市场双通道分发
+## v2.1.0 (2026-06-17) — 竞品分析补齐 + 自有市场双通道分发
 
 ### 变更
 
+- **Agent 体系扩展**：从 6 个扩展到 9 个专业 Agent（新增 consistency-checker、story-explorer、chapter-extractor）
+- **Hooks 强化**：从 6 个扩展到 10 个 hook（新增 guard-outline-before-prose 阻断式大纲守护、detect-story-gaps 缺口检测、pre-compact/post-compact 上下文保护）
+- **知识体系补齐**：新增 8 个方法论文件（段落钩子、商业化方法、女频写作、反转工具箱、风格模块、高级技法、跨书召回）
+- **Python 辅助脚本层**：新增 5 个可选 Python 脚本（精确字符统计、禁词扫描、frontmatter 校验、元数据提取、项目状态快照）
+- **新增 browser-cdp skill**：通过 CDP 协议复用浏览器登录态采集榜单数据
+- **Dashboard 增强**：新增实体关系图、伏笔状态面板、追读力仪表盘组件规划
+- **Write-Gate 系统**：单章写入前/中/后三阶段校验门禁
 - **插件目录恢复子目录结构**：插件组件（skills/、agents/、hooks/ 等）移回 `write-novel/` 子目录，仓库根只保留市场和文档
 - **新增自有市场清单**：`.claude-plugin/marketplace.json`，用户可通过 `claude plugin marketplace add VinnyWan/write-novel` 添加
 - **README 更新**：新增自有市场安装方式，补充市场 badge
@@ -15,8 +22,8 @@
 
 从 v2.0.0 升级：
 1. 更新仓库：`git pull`
-2. 以插件模式加载时，指定子目录：`claude --plugin-dir ./write-novel`
-3. 或者改为市场安装：先 `claude plugin uninstall write-novel`，再 `claude plugin marketplace add VinnyWan/write-novel && claude plugin install write-novel@write-novel-marketplace`
+2. 已部署项目需重新运行 `/story-setup` 以获取新 Agent 和 Hook
+3. Python 脚本为可选依赖，无 Python 环境时自动降级 AI 校验
 
 ## v2.0.0 (2026-06-16) — 插件化重构，支持市场分发
 

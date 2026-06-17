@@ -30,6 +30,7 @@ description: |
 | 项目查询 | 查角色、查伏笔、查进度、查设定、什么状态、写到哪了 | `/story-query` |
 | 面板 | 面板、数据看板、dashboard | `/story-query` |
 | 诊断 | 体检、诊断、检查项目 | `/story-doctor` |
+| 浏览器操控 | 打开浏览器、抓取榜单、采集数据 | `/browser-cdp` |
 | 查资料 | 查资料、帮我查资料、调研、搜索一下 | 直接 spawn `story-researcher` agent |
 | 切换/列出书目 | 切书、换书、列出我的书、我在写哪几本 | 见下方「多书切换」 |
 
@@ -58,6 +59,7 @@ description: |
 - "导入" "反向解析" "把我的书导进来" 匹配 `story-import`
 - "面板" "dashboard" 匹配 `story-query`（原 story-dashboard 已合并至 story-query）
 - "体检" "诊断" 匹配 `story-doctor`
+- "打开浏览器" "抓取" "采集" 匹配 `browser-cdp`
 
 ## 旧命名空间兼容
 

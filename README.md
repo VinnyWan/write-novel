@@ -1,11 +1,11 @@
 # write-novel
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen.svg)](write-novel/.claude-plugin/plugin.json)
+[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen.svg)](write-novel/.claude-plugin/plugin.json)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://claude.ai/claude-code)
 [![Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-black.svg)](.claude-plugin/marketplace.json)
 
-AI 辅助中文长篇网络小说创作插件。从扫榜、拆文、大纲到正文日更，覆盖超长篇网文创作全流程。内置 14 个 Skills、6 个 Agents、7 个 Hooks，纯 Markdown 驱动，所有状态文件均可直接阅读编辑。
+AI 辅助中文长篇网络小说创作插件。从扫榜、拆文、大纲到正文日更，覆盖超长篇网文创作全流程。内置 15 个 Skills、9 个 Agents、10 个 Hooks，纯 Markdown 驱动，所有状态文件均可直接阅读编辑。
 
 ## 安装
 
@@ -73,6 +73,7 @@ claude --plugin-dir ./write-novel
 | `story-cover` | `/write-novel:story-cover` | 封面生成 |
 | `story-query` | `/write-novel:story-query` | 角色/伏笔/设定/进度查询 |
 | `story-doctor` | `/write-novel:story-doctor` | 项目诊断 + 模式学习 |
+| `browser-cdp` | `/write-novel:browser-cdp` | 浏览器操控，CDP 协议复用登录态采集数据 |
 
 ## Agent 体系（6 个）
 
@@ -82,8 +83,11 @@ claude --plugin-dir ./write-novel
 | 创作级 | `narrative-writer` | 正文起草、去 AI 味、格式合规 |
 | 创作级 | `character-designer` | 角色设计、语言风格、对话创作 |
 | 创作级 | `deconstruction-agent` | 拆文分析、章节摘要提取 |
-| 检查级 | `reviewer` | 事实冲突扫描、一致性审查 |
-| 检查级 | `story-researcher` | 项目内只读查询 + 外部资料搜索 |
+| 检查级 | `reviewer` | 多维主观审查（结构/角色/文字/平台适配） |
+| 检查级 | `consistency-checker` | 客观事实冲突扫描（时间线/战力/地点/伏笔） |
+| 检查级 | `story-researcher` | 外部资料搜索 + 多源交叉验证 |
+| 查询级 | `story-explorer` | 项目内只读查询（角色/伏笔/进度） |
+| 提取级 | `chapter-extractor` | 章节摘要提取 + 情节点 + 角色提及（并行拆文） |
 
 ## Hooks（自动化守护）
 
@@ -94,6 +98,10 @@ claude --plugin-dir ./write-novel
 | PreCompact | Compact 前 | 保存写作状态到追踪文件 |
 | PostCompact | Compact 后 | 恢复上下文状态 |
 | PreToolUse | 写操作前 | 运行时写作守护校验 |
+| PreCompact | Compact 前 | 保存写作状态到追踪文件 |
+| PostCompact | Compact 后 | 恢复上下文状态 |
+| guard-outline-before-prose | 正文写入前 | 阻断式检查：无对应细纲则拒绝写入 |
+| detect-story-gaps | 会话启动 | 设定/大纲/伏笔缺口检测 |
 | PreCommit | Git commit 前 | YAML frontmatter 必填字段检查 |
 
 ## 核心能力
