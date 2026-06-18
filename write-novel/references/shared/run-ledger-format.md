@@ -60,3 +60,23 @@
 3. 若最后步骤状态为 `failed` 或 `interrupted` → 从该步骤恢复
 4. 若产物文件存在但未标记 → 标记为 "可能部分完成"，询问用户
 5. 产物超过 24 小时未更新 → 标记"可能过期"，建议重新执行
+
+## 归档规则
+
+每完成一卷（50章或用户明确标记卷结束）时执行归档：
+
+1. 将当前 `追踪/run-ledger.md` 中属于已完成卷的行移至 `追踪/archive/run-ledger-vol{N}.md`
+2. 在新归档文件顶部写入卷摘要行：`# 第{N}卷 运行账本归档 — {卷起始章}-{卷结束章} — 归档时间: {ISO 8601}`
+3. 当前 `run-ledger.md` 保留新卷的起始行和表头
+4. 在 `run-ledger.md` 顶部添加归档引用：`> 历史卷账本: [第1卷](archive/run-ledger-vol1.md) [第2卷](archive/run-ledger-vol2.md) ...`
+5. 归档目录 `追踪/archive/` 不存在时先创建
+
+**归档判断条件**：
+- 卷最后一章的步骤 9/9 postcommit-gate 状态为 `done`，且
+- 该章编号 ≥ 卷结束章（从卷纲读取），或
+- 用户显式执行 `/story-long-write archive` 触发
+
+**归档日志**：每次归档后在 `追踪/projection-log.jsonl` 追加一条:
+```json
+{"event": "ledger_archive", "volume": 1, "chapters": "001-050", "timestamp": "2026-06-18T15:30:00"}
+```

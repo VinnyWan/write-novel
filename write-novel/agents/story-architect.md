@@ -42,6 +42,16 @@ memory: project
 | `story-setup/references/agent-references/genre-core-mechanics.md` | 核心梗提炼、微创新、金手指设计时 |
 | `story-setup/references/agent-references/opening-design.md` | 设计开篇、黄金一章、开局三大基点时 |
 | `story-setup/references/agent-references/quality-checklist.md` | 审查大纲质量、黄金三章检查、通用质量检查时 |
+| `追踪/project_memory.json`（如存在） | 准备章节 brief 时检索历史成功模式（最多 3 条），了解"什么写法在本项目中验证有效" |
+
+### 模式检索（准备章节 brief 时可选执行）
+
+当收到章节 brief 任务时，如果项目存在 `追踪/project_memory.json`：
+1. 读取 `references/shared/pattern-schema.md` 了解 6 类模式
+2. 读取 `追踪/project_memory.json`，按本章类型（opening/climax/transition/daily/resolution）匹配相关模式
+3. 每组类别最多取 3 条最相关模式
+4. 在 brief 中写入「历史模式参考」小节（可选），供 narrative-writer 参考
+5. 无匹配时报告「无相关模式记录」，不阻塞流程
 
 ---
 

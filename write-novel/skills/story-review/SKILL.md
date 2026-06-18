@@ -127,7 +127,7 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
    - 优先把文件路径、章节名、行号范围传给 reviewer，不要把整本或大量章节完整复制进每个 prompt。
    - 单文件或短片段可附 300-1200 字关键摘录。
    - 多章/整卷/整本审查必须分批：按章节或文件组拆分，每批输出独立 findings，再综合。
-3. **读取相关支撑材料**：正文、相关设定、角色档案、大纲、追踪/上下文、伏笔文件；缺失时在报告中标记证据不足。
+3. **读取相关支撑材料**：正文、相关设定、角色档案、大纲、追踪/上下文、伏笔文件、`.story-system/contracts/chapter_{N}.contract.md`（合约文件，如存在则必须读取）；缺失时在报告中标记证据不足。
 4. **识别目标平台并加载 rubric**：
    - 优先使用用户显式指定的平台。
    - 其次读取项目文档里的 `目标平台` / `平台` 字段，例如 `设定/`、`大纲/`、`概要.md`、`项目简介.md`、`拆文报告` 等。
@@ -276,23 +276,25 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
 
 **Agent 4: reviewer**（subagent_type: reviewer）
 - full/lean 均调用。
-- 审查视角：grep-first 事实冲突检测，输出 S1-S4 报告。
+- 审查视角：grep-first 事实冲突检测 + 合约合规检查，输出 S1-S4 报告。
 - 提示指令：
   ```
   你是 reviewer，使用 grep-first 方式检测事实矛盾。
   你的任务是【找事实矛盾和状态断线】，不做创作评判，不评价文学质量，不输出创作修改建议。
   项目路径：{项目根}
   审查范围：{文件路径/章节/必要摘录}
+  合约文件：`.story-system/contracts/chapter_{N}.contract.md`（如存在，审查前必读）
   已知角色：{从设定文件提取角色列表}
   审查基准包摘要：{Phase 1 形成的 rubric / fallback 摘要，必须内联}
   Rubric Source: file | embedded fallback
   可选补充参考：如项目已部署 story-setup reference bundle，可读取 `story-setup/references/agent-references/quality-checklist.md`；若不可读，不影响事实冲突扫描。
   检查项：
-  1. 角色属性是否前后一致？
-  2. 世界规则是否被违反？
-  3. 伏笔状态是否前后一致（已埋/计划回收/已回收/断线）？
-  4. 时间线是否自洽？
-  5. 术语、身份、地点、能力边界是否前后一致？
+  1. 合约合规（如合约文件存在）：must_cover 覆盖检查、forbidden 违规检测、CBN/CPNs/CEN 完成度
+  2. 角色属性是否前后一致？
+  3. 世界规则是否被违反？
+  4. 伏笔状态是否前后一致（已埋/计划回收/已回收/断线）？
+  5. 时间线是否自洽？
+  6. 术语、身份、地点、能力边界是否前后一致？
 
   输出格式：
   VERDICT: APPROVE / CONCERNS / REJECT
@@ -444,6 +446,12 @@ Rubric Source: file | embedded fallback
 ### 修改建议
 {按优先级排列}
 ```
+
+---
+
+## 报告输出格式
+
+审查报告可保留现有结构（Verdict Summary + Findings + 修改建议），但结尾必须追加标准化 3 段摘要（详见 `references/shared/report-template.md`），包含：完成状态、问题严重度汇总（S1/S2/S3/S4 分布 + 阻断/高优/中低优）、下一步命令。solo 模式输出已基本兼容，仅需在结尾补"下一步"命令块。
 
 ---
 

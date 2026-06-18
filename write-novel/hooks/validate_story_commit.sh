@@ -1,5 +1,6 @@
 #!/bin/bash
 # validate-story-commit.sh — 在 git commit 时检查格式问题（WARNING only, no BLOCKING）
+# v2: 增加 .story-system/contracts/ 合约文件必填字段校验
 set -euo pipefail
 
 source "$(dirname "$0")/lib/common.sh"
@@ -177,6 +178,33 @@ while IFS= read -r -d '' file; do
     FULL_PATH="$GIT_ROOT/$file"
   fi
 
+  # === v2: 检查合约文件的必填字段 ===
+  case "$file" in
+    .story-system/contracts/*.contract.md|*/.story-system/contracts/*.contract.md)
+      if head -1 "$FULL_PATH" 2>/dev/null | grep -q "^---$"; then
+        CONTRACT_FM=$(sed -n '2,/^---$/p' "$FULL_PATH" 2>/dev/null | head -40)
+        if [ -n "$CONTRACT_FM" ]; then
+          CONTRACT_MISSING=""
+          for field in "cbn" "cpns" "cen" "payoff_density" "target_words" "strand" "hook_type"; do
+            if ! echo "$CONTRACT_FM" | grep -qE "^${field}:" 2>/dev/null; then
+              CONTRACT_MISSING="$CONTRACT_MISSING $field"
+            fi
+          done
+          # Validate CPNs count (2-4 items under cpns:)
+          CPNS_COUNT=$(echo "$CONTRACT_FM" | sed -n '/^cpns:/,/^[a-z]/p' | grep -cE '^  - ' 2>/dev/null || echo "0")
+          if [ "$CPNS_COUNT" -lt 2 ] 2>/dev/null || [ "$CPNS_COUNT" -gt 4 ] 2>/dev/null; then
+            WARNINGS="$WARNINGS\n⚠ $file: Contract CPNs count should be 2-4 (found ${CPNS_COUNT})"
+          fi
+          if [ -n "$CONTRACT_MISSING" ]; then
+            WARNINGS="$WARNINGS\n⚠ $file: Contract file missing required YAML frontmatter fields:$CONTRACT_MISSING"
+          fi
+        fi
+      else
+        WARNINGS="$WARNINGS\n⚠ $file: Contract file missing YAML frontmatter"
+      fi
+      ;;
+  esac
+
   # 检查正文文件是否包含硬编码的情节值
   case "$file" in
     正文.md|*/正文.md|正文/*|*/正文/*)
@@ -194,29 +222,31 @@ while IFS= read -r -d '' file; do
         WARNINGS="$WARNINGS\n⚠ $file: Setting file missing required fields (name/名字: ...)"
       fi
       ;;
+  esac
 
-	    # 检查章节文件的 YAML frontmatter 必填字段
-	    大纲/*|*/大纲/*|正文/*|*/正文/*)
-	      # 检查是否有 YAML frontmatter (以 --- 开头)
-	      if head -1 "$FULL_PATH" 2>/dev/null | grep -q "^---$"; then
-	        FRONTMATTER=$(sed -n '2,/^---$/p' "$FULL_PATH" 2>/dev/null | head -30)
-	        if [ -n "$FRONTMATTER" ]; then
-	          MISSING_FIELDS=""
-	          for field in "target_words" "strand" "hook_type"; do
-	            if ! echo "$FRONTMATTER" | grep -qE "^${field}:" 2>/dev/null; then
-	              MISSING_FIELDS="$MISSING_FIELDS $field"
-	            fi
-	          done
-	          if [ -n "$MISSING_FIELDS" ]; then
-	            WARNINGS="$WARNINGS\n⚠ $file: Chapter file missing YAML frontmatter fields:$MISSING_FIELDS"
-	          fi
-	        fi
-	      else
-	        if echo "$file" | grep -qE "(细纲_第|Chapter-|第.*章)"; then
-	          WARNINGS="$WARNINGS\n⚠ $file: Chapter/outline file missing YAML frontmatter (recommended)"
-	        fi
-	      fi
-	      ;;
+  # 检查章节文件的 YAML frontmatter 必填字段
+  case "$file" in
+    大纲/*|*/大纲/*|正文/*|*/正文/*)
+      # 检查是否有 YAML frontmatter (以 --- 开头)
+      if head -1 "$FULL_PATH" 2>/dev/null | grep -q "^---$"; then
+        FRONTMATTER=$(sed -n '2,/^---$/p' "$FULL_PATH" 2>/dev/null | head -30)
+        if [ -n "$FRONTMATTER" ]; then
+          MISSING_FIELDS=""
+          for field in "target_words" "strand" "hook_type"; do
+            if ! echo "$FRONTMATTER" | grep -qE "^${field}:" 2>/dev/null; then
+              MISSING_FIELDS="$MISSING_FIELDS $field"
+            fi
+          done
+          if [ -n "$MISSING_FIELDS" ]; then
+            WARNINGS="$WARNINGS\n⚠ $file: Chapter file missing YAML frontmatter fields:$MISSING_FIELDS"
+          fi
+        fi
+      else
+        if echo "$file" | grep -qE "(细纲_第|Chapter-|第.*章)"; then
+          WARNINGS="$WARNINGS\n⚠ $file: Chapter/outline file missing YAML frontmatter (recommended)"
+        fi
+      fi
+      ;;
   esac
 done < <(git -C "$ROOT" -c core.quotepath=false diff --cached --relative --name-only --diff-filter=ACM -z -- . 2>/dev/null || true)
 

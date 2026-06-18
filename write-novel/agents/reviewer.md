@@ -32,9 +32,19 @@ color: yellow
 - `chapter`：章节号
 - `chapter_file`：正文文件路径
 - `project_root`：项目根目录
+- `contract_file`：`.story-system/contracts/chapter_{N}.contract.md`（合约文件，新增必填）
 - `scripts_dir`：脚本目录
 
 ## 4. 执行流程（按顺序执行）
+
+### 0. 合约合规检查（新增——第一优先级）
+
+审查前必读合约文件，完成以下检查：
+
+- **must_cover 覆盖检查**：逐项检查合约 `must_cover` 列表。正文中未找到对应的内容 → 报告 blocking issue（`category: contract`），标注缺失项
+- **forbidden 违规检测**：逐项检查合约 `forbidden` 列表。正文中出现匹配内容 → 报告 blocking issue（`category: contract`），标注违规项和原文位置
+- **CBN 完成度**：合约核心是否在正文中有对应展开（pass/partial/fail）
+- **CEN 钩子有效性**：章尾是否交付了合约定义的 CEN 状态和钩子
 
 ### 1. 设定一致性（category: setting）
 - 角色能力是否与当前境界匹配
@@ -90,7 +100,7 @@ color: yellow
 - [ ] severity 分级合理（critical 仅用于确定的事实矛盾）
 - [ ] category 归类正确
 - [ ] blocking 字段只在 critical 或确认阻断时为 true
-- [ ] `dimension_results` 覆盖全部 5 个维度（无问题也输出 pass）
+- [ ] `dimension_results` 覆盖全部 6 个维度（contract / setting / timeline / continuity / character / logic，无问题也输出 pass）
 
 ## 7. 输出格式
 
@@ -100,6 +110,16 @@ color: yellow
 # 审查报告：第 NNN 章
 
 ## 五维审查
+
+### Contract: pass | N problems found
+
+#### Issue 1: {问题描述}
+- **Severity**: critical | high | medium | low
+- **Evidence**: 
+  - 合约要求：{合约 must_cover/forbidden 的具体条目}
+  - 原文引用：{具体段落}
+- **Fix**: {修复方向}
+- **Blocking**: true | false
 
 ### Setting: pass | N problems found
 
@@ -136,7 +156,7 @@ color: yellow
 - 未登记实体清单：{如果存在}
 
 ## Summary
-{N}个问题：{X}个阻断，{Y}个高优，{Z}个中低优
+{N}个问题（含Contract维度{X}个）：{W}个阻断，{Y}个高优，{Z}个中低优
 ```
 
 ## 8. SubagentRun 可汇总信号

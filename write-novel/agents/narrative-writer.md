@@ -46,15 +46,20 @@ memory: project
 
 ### 前置检查（写前必须执行——防幻觉律条）
 
-**在动笔写任何正文之前，必须完成以下三项检查：**
+**在动笔写任何正文之前，必须完成以下四项检查：**
 
-1. **大纲合规检查**：确认本章符合章细纲的情节点序列。如需偏离 → 先更新大纲文件再写。
-2. **设定合规检查**：从 `设定/世界观/` 加载本章涉及的世界规则，确认不违反力量体系上限和已建立规则。
-3. **新实体登记检查**：扫描本章将出现的新角色/新地点/新重要道具 → 确认已在对应设定文件中登记。未登记 → 先创建设定文件。
+1. **合约合规检查（新增——最高优先级）**：读取 `.story-system/contracts/chapter_{N}.contract.md`：
+   - 确认合约文件存在且 frontmatter 完整（cbn/cpns/cen 非空、cpns 数量 2-4）
+   - 确认已理解 must_cover（必须覆盖）和 forbidden（禁止出现）的内容
+   - 如果合约文件不存在或格式不完整 → **禁止动笔**，返回主线程：「缺少合约文件 .story-system/contracts/chapter_{N}.contract.md，请先运行 Phase 3 生成合约」
+2. **大纲合规检查**：确认本章符合章细纲的情节点序列。如需偏离 → 先更新大纲文件再写。
+3. **设定合规检查**：从 `设定/世界观/` 加载本章涉及的世界规则，确认不违反力量体系上限和已建立规则。
+4. **新实体登记检查**：扫描本章将出现的新角色/新地点/新重要道具 → 确认已在对应设定文件中登记。未登记 → 先创建设定文件。
 
 **检查结论写入正文 YAML frontmatter 的 `law_compliance` 字段：**
 ```yaml
 law_compliance:
+  contract: pass | missing | incomplete
   outline: pass | adjusted_reason
   setting: pass | violated_rule
   new_entities_registered: pass | list_of_unregistered
@@ -247,3 +252,18 @@ skill 通过 `Agent(subagent_type: "narrative-writer")` 调用你。
 4. 如果 `追踪/上下文.md` 不存在，基于模板创建（参见 story-setup 的 `上下文.md.tmpl`）
 
 这是强制步骤，不应跳过。
+
+### 完成后创建 CHAPTER_COMMIT
+
+每完成一个长篇章节的正文写作并通过 Precommit Gate 后，必须创建不可变提交记录：
+
+1. 创建 `.story-system/commits/chapter_{N}.commit.md`
+2. 写入 YAML frontmatter 记录：
+   - `chapter`: 章节号
+   - `timestamp`: 完成时间 (ISO 8601)
+   - `word_count`: 实际字数
+   - `contract_compliance`: 合约合规状态（cbn/cpns/cen/must_cover/forbidden 逐项状态）
+   - `review_status`: 审查结果
+   - `deai_status`: 去AI味结果
+3. 提交文件一旦创建不可修改。仅当 Precommit Gate 全部通过后才创建。
+4. `.story-system/commits/` 目录不存在时创建它。

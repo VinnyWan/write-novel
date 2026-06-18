@@ -41,6 +41,8 @@ allowed-tools: Read Glob Bash
 | 伏笔状态 | Read `追踪/foreshadowing.md` 检查逾期伏笔 |
 | 角色一致性 | Read `追踪/characters.md` 与 Glob `设定/角色/` 交叉验证 |
 | 律条合规 | 标记近期章节中未登记实体和设定违反 |
+| 模式记忆 | Read `追踪/project_memory.json`（如存在）检查文件完整性、各类条目数、去重有效性 |
+| 合约系统 | Read `.story-system/contracts/` 检查合约覆盖率和 commit 连续完整性 |
 
 ### 执行
 

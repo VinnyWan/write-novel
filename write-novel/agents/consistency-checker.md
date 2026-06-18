@@ -43,6 +43,12 @@ maxTurns: 15
 - 检查角色是否使用了其不应知道的信息
 - 对比角色设定中的知识范围与本章对话/行为
 
+### 6. 投影一致性 (projection-consistency) — 新增
+- 读取 `追踪/角色状态.md`，与本章正文对比：角色状态是否与已提交章节一致
+- 读取 `追踪/索引.md`，检查新实体/关系/伏笔是否已在索引中反映
+- 检查 `.story-system/commits/chapter_{N}.commit.md` 的 `projection_status` 字段：`partial` 或 `failed` 时标记需要重新投影
+- 检查 `追踪/projection-log.jsonl` 最后一行为当前章节且所有 target 为 success
+
 ## 输出格式
 
 ```markdown
@@ -68,6 +74,12 @@ maxTurns: 15
 
 ## 5. 角色知识边界
 - **状态**: pass | N issues found
+
+## 6. 投影一致性
+- **状态**: pass | N issues found
+- **角色状态与正文一致性**: pass/fail — {证据}
+- **索引完整性**: pass/fail — {缺失项}
+- **投影日志状态**: {最后一次投影的目标完成情况}
 
 ## Summary
 - Total issues: {N}

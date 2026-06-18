@@ -1,5 +1,6 @@
 #!/bin/bash
-# pre-compact.sh — compact 前强制保存写作状态到追踪/上下文.md
+# pre-compact.sh — compact 前强制保存写作状态到追踪/上下文.md + run-ledger.md
+# v2: 增加 context_compact 事件写入 run-ledger
 set -euo pipefail
 
 source "$(dirname "$0")/lib/common.sh"
@@ -43,6 +44,36 @@ TEMPLATE
 
   LINE_COUNT=$(wc -l < "$CONTEXT_FILE" | tr -d ' ')
   echo "Writing state saved: ${BOOK_DIR#$ROOT/}/追踪/上下文.md ($LINE_COUNT lines)"
+
+  # === v2: Write context_compact event to run-ledger ===
+  LEDGER_FILE="$BOOK_DIR/追踪/run-ledger.md"
+
+  # Ensure ledger exists
+  if [ ! -f "$LEDGER_FILE" ]; then
+    mkdir -p "$(dirname "$LEDGER_FILE")"
+    cat > "$LEDGER_FILE" << 'LEDGER_TMPL'
+# 运行账本
+
+| 章节 | 步骤 | 状态 | 时间戳 | 产物路径 |
+|------|------|------|--------|----------|
+LEDGER_TMPL
+  fi
+
+  # Detect current chapter from 上下文 or 正文/
+  CURRENT_CHAPTER="?"
+  if [ -f "$CONTEXT_FILE" ]; then
+    CURRENT_CHAPTER=$(grep -oE '第[0-9]+章' "$CONTEXT_FILE" | tail -1 | grep -oE '[0-9]+' || echo "?")
+  fi
+  if [ "$CURRENT_CHAPTER" = "?" ]; then
+    # Try detecting from latest body file
+    LATEST_BODY=$(ls -1 "$BOOK_DIR/正文/" 2>/dev/null | grep -oE '第[0-9]+章' | grep -oE '[0-9]+' | sort -n | tail -1 || echo "?")
+    CURRENT_CHAPTER="${LATEST_BODY:-?}"
+  fi
+
+  # Append context_compact event
+  TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  echo "| ${CURRENT_CHAPTER} | context_compact | interrupted | ${TIMESTAMP} | - |" >> "$LEDGER_FILE"
+  echo "Context compact event recorded in run-ledger (chapter ${CURRENT_CHAPTER})"
 else
   echo "No active book found. State not saved."
 fi

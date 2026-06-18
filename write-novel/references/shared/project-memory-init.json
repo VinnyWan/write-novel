@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "patterns": {
+    "hook": [],
+    "pacing": [],
+    "dialogue": [],
+    "cool_points": [],
+    "emotion": [],
+    "format": []
+  }
+}

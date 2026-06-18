@@ -47,6 +47,7 @@ metadata:
 | **开书** | "帮我开书" / 项目目录为空 | 完整 Phase 1→2→3→4→5（下方全部流程） |
 | **日更续写** | 关键词（"日更"/"续写"/"继续写"）**且**项目已有正文+追踪 | 加载 `references/workflow-daily.md` |
 | **大修** | "修改第X章" / "回炉" / "重写第X章" | 加载 `references/workflow-revision.md` |
+| **中断恢复** | "--resume" / "--continue" / "继续上次" | 读取 `追踪/run-ledger.md`，找到最后 checkpoint，跳过已完成步骤恢复 |
 
 > **开新卷**：如果新卷引入新角色/势力/设定，先回 Phase 2 增量补充，再进 Phase 3 补充新卷细纲，最后 Phase 4 写作。如果纯延续，直接回 Phase 3。
 
@@ -215,6 +216,30 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 前 3 章细纲额外加载 [references/opening-design.md](references/opening-design.md)（黄金三章法则+六大标准）。
 
+#### 细纲转合约（每批细纲建完必须执行）
+
+每批细纲建完后，对每章生成 `.story-system/contracts/chapter_XXX.contract.md`：
+
+1. 读取 `references/shared/contract-schema.md` 了解合约 schema
+2. 从细纲提取 CBN（核心事件）、CPNs（情节点序列，2-4 个）、CEN（章尾钩子）
+3. 根据体裁画像设置 `payoff_density`、`strand`、`hook_type`、`hook_strength`
+4. 根据卷纲/伏笔表填充 `must_cover`（必须覆盖的内容）和 `forbidden`（禁止出现的内容）
+5. 写入 YAML frontmatter + 合约正文（CBN/CPNs/CEN 详解 + 约束理由）
+6. 合约文件与细纲文件一一对应，创建后随细纲一起纳入大纲锁定范围
+
+> `.story-system/` 目录结构：
+> ```
+> .story-system/
+>   contracts/
+>     chapter_001.contract.md
+>     chapter_002.contract.md
+>     ...
+>   commits/
+>     chapter_001.commit.md
+>     ...
+>   index.md    # 全局合约索引
+> ```
+
 #### Agent 调用：story-architect
 
 大纲搭建阶段优先由主会话产出卷纲+首批细纲；只有结构复杂、反转链多或主会话方案不稳定时，才调用 story-architect agent。若项目已部署 story-architect agent（检查 `.claude/agents/story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "story-architect", prompt: "项目目录：{dir}\n任务类型：大纲搭建\n查询参数：卷级结构+细纲+钩子/反转/情绪弧线设计")` 辅助大纲排布、钩子/反转/情绪弧线设计。如 agent 不可用，由主线程直接执行。
@@ -291,12 +316,22 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 #### 断点诊断与恢复
 
-每次写作会话开始时，先执行断点诊断（详见 `references/checkpoint-resume.md`）：
+每次写作会话开始时，先执行断点诊断（详见 `references/shared/run-ledger-format.md` 和 `references/checkpoint-resume.md`）：
 
 1. 读取 `追踪/run-ledger.md`，找到最后一条操作记录
-2. 若最后状态为 `completed` → 定位下一章
-3. 若最后状态为 `started` 或 `interrupted` → 验证章节文件，重建上下文，显示恢复摘要
-4. 显示恢复摘要：「上次写到第 N 章（{status}）。继续吗？」用户确认后继续
+2. 若最后状态为 `done` → 定位下一章
+3. 若最后状态为 `failed` 或 `interrupted` → 验证章节文件，重建上下文（重新加载 contract + 大纲 + 前一章正文），显示恢复摘要
+4. 显示恢复摘要：「上次写到第 N 章（{最后步骤} {状态}）。继续吗？」用户确认后继续
+5. **--resume 模式**：跳过 `run-ledger` 中已标记 `done` 的步骤，直接从下一个未完成的步骤开始
+6. **上下文压缩恢复**：如 pre-compact hook 记录了 `context_compact` 事件，post-compact 自动执行上下文重建
+
+Ledger 追加时机（详见 `references/shared/run-ledger-format.md` 步骤定义）：
+- Prewrite Gate 通过后追加 `prewrite-gate | done`
+- 正文 draft 完成后追加 `draft | done`
+- Reviewer 完成后追加 `reviewer | done | failed`
+- Precommit Gate 通过后追加 `precommit-gate | done`
+- CHAPTER_COMMIT 后追加 `commit | done`
+- Postcommit Gate 后追加 `postcommit-gate | done`
 
 #### 单章写作流程
 
@@ -304,6 +339,7 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 1. **检查细纲**：读取 `大纲/细纲_第{N}章.md`。如果不存在，**必须先补建细纲再写正文**，不允许跳过细纲直接写作。补建时参考卷纲中本章对应的事件规划和上下文。
 2. **读取上下文**（按需加载，缺失则跳过。可选快捷路径：如果项目已部署 story-researcher agent（检查 `.claude/agents/story-researcher.md` 是否存在），可 spawn `Agent(subagent_type: "story-researcher", prompt: "项目目录：{dir}\n查询类型：context_load\n查询参数：准备写第 {N} 章")` 一次获取上下文）：
+   - (0) `.story-system/contracts/chapter_{N}.contract.md` — 本章合约（**必读**，写前第一优先级）
    - (1) `正文/第{N-1}章_*.md` — 上一章正文
    - (2) `大纲/细纲_第{N}章.md` — 本章细纲（含钩子设计）
    - (3) `追踪/伏笔.md`（如存在）— 待回收伏笔
@@ -323,11 +359,11 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
    - 3d. 体裁未配置 profile 时，使用默认画像（`id: default`）：爽点密度=中等、钩子=通用、线配比=70/20/10
    - 3e. 将以下参数注入写作上下文：爽点密度阈值、钩子偏好类型、微兑现下限、节奏停滞阈值、线配比
 4. **Prewrite Gate 校验**（写前必执行，详见 `references/write-gates.md` Gate 1）：
-   - 4a. **章契约完整性**：确认 `大纲/Chapter-{N}.md` frontmatter 中 `target_words`/`strand`/`contract_nodes`/`hook_type`/`payoff_density` 齐全
-   - 4b. **爽点密度预估**：使用步骤 3 加载的体裁画像的 `coolpoint_config.density_per_chapter` 计算本章应有微兑现数，章契约 `payoff_density` ≥ 体裁最低要求
-   - 4c. **线配比检查**：使用步骤 3 加载的体裁画像的 `pacing_config` 检查当前线配比是否偏离画像建议
-   - 4d. **线索冲突检测**：若前一章 `strand` 同线索已连续达到上限（fire ≥ 2、constellation ≥ 1），提示切换
-   - 4e. **伏笔逾期检测**：读取 `追踪/foreshadowing.md`，有 `overdue: true` 伏笔时提示优先回收
+   - 4a. **合约文件存在性**：确认 `.story-system/contracts/chapter_{N}.contract.md` 存在且可读。若 contract 文件不存在 → 从细纲生成合约（参考 Phase 3「细纲转合约」），若细纲也不存在 → **必须先补建细纲和合约再写正文**，不允许跳过
+   - 4b. **合约完整性**：确认 contract frontmatter 中 `cbn`/`cpns`(2-4个)/`cen`/`target_words`/`strand`/`hook_type`/`payoff_density` 齐全
+   - 4c. **爽点密度预估**：使用步骤 3 加载的体裁画像的 `coolpoint_config.density_per_chapter` 计算本章应有微兑现数，合约 `payoff_density` ≥ 体裁最低要求
+   - 4d. **线配比检查**：使用步骤 3 加载的体裁画像的 `pacing_config` 检查当前线配比是否偏离画像建议；合约 `strand` 连续同线达到上限（fire ≥ 2、constellation ≥ 1）时提示切换
+   - 4e. **伏笔逾期检测**：读取 `追踪/foreshadowing.md`，有 `overdue: true` 伏笔时提示优先回收；检查合约 `foreshadowing_recycle` 是否覆盖了逾期的伏笔
    - 输出 prewrite 检查报告（通过/警告/阻塞），阻塞项解决前不进入步骤 5
 4. **准备层**（下面的 3 步是核心方法在单章写作中的落地：筛选状态 → 召回模块 → 确认意图）：
    - 4.1 **状态筛选**：从 `追踪/角色状态.md` 中筛选本章涉及角色的当前状态，从 `追踪/伏笔.md` 中筛选本章需要回收/推进的伏笔。输出最简记忆包（参考 state-tracking.md）。如果角色状态文件不存在，从角色设定和前文推断
@@ -347,20 +383,47 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 10. **检查**：章尾是否有钩子、爽点是否到位
 11. **禁用词扫描**：对照 `references/banned-words.md` 检查本章，一级词（高频AI腔）命中即替换；二级词（低频/语境相关）高频出现时替换，偶发可参考 `references/anti-ai-writing.md` 定性裁定
 12. **Precommit Gate**（落盘前校验，详见 `references/write-gates.md` Gate 2）：
+   - **合约合规检查**（新增优先项）：
+     - must_cover 覆盖：逐项检查合约 `must_cover` 列表，每项必须在正文中找到对应内容；有缺失项 → 阻塞
+     - forbidden 违规检测：逐项检查合约 `forbidden` 列表，正文中出现匹配内容 → 阻塞
+     - CBN/CPNs/CEN 完成：合约各节点的核心动作都在正文中有所体现
    - 字数达标：`word_count` vs `target_words`（±20% 容忍）
-   - contract_nodes 完成：CBN/CPNs/CEN 全部完成
-   - hook 有效：章尾非总结式结尾，含有效钩子
+   - hook 有效：章尾非总结式结尾，含有效钩子；钩子类型与合约 `hook_type` 一致
    - 格式合规：段落长度、对话独立、无多余空行
    - 去 AI 味：运行 `deai_check.py --json {正文文件}`（如脚本可用），否则手动对照 banned-words.md
    - 投影一致性：角色状态与 `追踪/characters.md` 一致
-   - 有阻塞性错误（S1/S2）时禁止落盘，先修复再进入步骤 13
-14. **更新追踪**：写完后即时更新 `追踪/伏笔.md`（新增/回收伏笔）、`追踪/时间线.md`（记录事件时序）和 `追踪/角色状态.md`（如本章引起角色状态变化——身份、能力、关系、公众形象——则更新对应角色条目并追加变更记录）。本章若首次引入会复用的具名角色/势力，按 Phase 3「细纲后设定补全」规则补建对应 `设定/` 档案。角色状态更新规则详见 state-tracking.md。
-15. **Postcommit Gate**（落盘后校验，详见 `references/write-gates.md` Gate 3）：
-   - 投影更新：增量更新 `追踪/state.md`、`追踪/progress.md`、`追踪/characters.md`、`追踪/foreshadowing.md`
-   - ledger 写入：在 `追踪/run-ledger.md` 追加一行（章号/时间/状态/字数）
+   - 有阻塞性错误时禁止落盘，先修复再进入步骤 13
+14. **更新追踪**：写完后即时更新 `追踪/伏笔.md`（新增/回收伏笔，对照合约 `foreshadowing_plant` 和 `foreshadowing_recycle`）、`追踪/时间线.md`（记录事件时序）和 `追踪/角色状态.md`（如本章引起角色状态变化——身份、能力、关系、公众形象——则更新对应角色条目并追加变更记录）。本章若首次引入会复用的具名角色/势力，按 Phase 3「细纲后设定补全」规则补建对应 `设定/` 档案。角色状态更新规则详见 state-tracking.md。
+15. **CHAPTER_COMMIT**（章末提交）：创建不可变提交记录 `.story-system/commits/chapter_{N}.commit.md`：
+   ```yaml
+   ---
+   chapter: N
+   timestamp: {ISO 8601}
+   word_count: {实际字数}
+   contract_compliance:
+     cbn: pass | partial | fail
+     cpns: "完成 X/3"
+     cen: pass | fail
+     must_cover: "覆盖 Y/Z 项"
+     forbidden: "零违规" | "发现 X 处违规"
+   review_status: pass | partial | fail
+   deai_status: pass | revised | skipped
+   projection_status: full | partial | failed
+   ---
+   ```
+   提交文件一旦创建不可修改。提交后进入 Postcommit Gate。
+16. **Postcommit Gate**（落盘后校验 + 投影管线，详见 `references/write-gates.md` Gate 3 和 `references/shared/projection-spec.md`）：
+   - **触发投影管线**：Chapter commit 后自动执行 4 目标投影：
+     1. state → `追踪/角色状态.md` 增量更新
+     2. index → `追踪/索引.md` 增量更新（新实体/关系/伏笔）
+     3. summary → `追踪/章节摘要/第{N}章.md` 生成
+     4. memory → `追踪/写作记忆.md` 增量更新（成功模式记录）
+   - 验证 state + index 至少成功（否则标记 `projection_status: failed`）
+   - ledger 写入：在 `追踪/run-ledger.md` 追加一行（章号/步骤/状态/时间戳/产物路径）
    - 连续线索计数：更新 strand_sequence，同线索递增，切换线索归零
+   - 投影日志写入：追加 `追踪/projection-log.jsonl` 一行
    - 备份：可选，复制正文到 `备份/Chapter-{N}.md`
-16. **中途快照**（长篇写作安全网）：每连续写完 3 章，在继续前执行以下快照操作：
+17. **中途快照**（长篇写作安全网）：每连续写完 3 章，在继续前执行以下快照操作：
    - 将当前进度写入 `追踪/上下文.md`（只更新进度元信息——当前位置、最近决策、待处理线索——不重复角色状态/伏笔的具体内容）
    - 用 `ls -la 正文/` 确认最近 3 个章节文件已成功写入磁盘且大小正常（>100 bytes）
    - 如果发现文件缺失或大小异常，立即重新写入
@@ -417,6 +480,47 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 检查后更新追踪文件：
 - 更新 `追踪/伏笔.md` 中的过期伏笔和回收状态
 - 更新 `追踪/时间线.md` 中的时间线疑点
+
+#### 模式学习捕获（章末执行）
+
+每章完成后，从本章正文中识别成功的写作模式并存储到 `追踪/project_memory.json`：
+
+1. 读取 `references/shared/pattern-schema.md` 了解 6 类模式定义
+2. 扫描本章正文，识别有效模式（可选，仅在确认有价值时记录）：
+   - 钩子结构（章首/章尾的有效钩子类型）
+   - 节奏序列（快-缓-快、蓄能-假胜-崩解等有效序列）
+   - 对话交锋（潜台词丰富、角色差异化明显的对话）
+   - 爽点释放（铺垫充分、释放干脆的爽点段落）
+   - 情绪递进（自然流畅的情绪变化轨迹）
+3. 对每个候选模式计算 SHA256-12 hash，与 `project_memory.json` 已有条目对比：
+   - 精确匹配 → 跳过
+   - 近似匹配（编辑距离 < 5）→ 跳过，记录 near-duplicate 日志
+   - 新模式 → 追加到对应类别数组
+4. 每类最多 200 条，超出时 LRU 淘汰最旧条目
+5. 如果 `追踪/project_memory.json` 不存在，用 `references/shared/project-memory-init.json` 创建初始文件
+
+---
+
+## 报告输出格式
+
+每次完成写作操作后，必须使用标准化 3 段式报告（详见 `references/shared/report-template.md`）：
+
+```markdown
+## 📋 完成状态
+**状态：已完成 | 部分完成 | 需要你处理 | 未完成**
+### 已生成文件
+- `文件路径` — 说明
+
+## ⚠️ 问题
+### 自动处理
+### 建议检查
+### 必须处理
+
+## 🔜 下一步
+`/story-long-write {N+1}` 或其他可执行命令
+```
+
+禁止向作者暴露内部 JSON、traceback 或原始 agent 输出。所有用户可见输出走此格式。
 
 ---
 
