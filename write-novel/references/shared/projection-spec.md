@@ -10,11 +10,19 @@
 - 合约文件存在且通过 Precommit Gate
 - 正文文件已落盘
 
-## 5 个投影目标
+## 4 个投影目标（分 2 组并行执行）
+
+投影分两组并行执行，组间无文件依赖：
+
+**并行组 1**：state + index（写入 `追踪/角色状态.md` 和 `追踪/索引.md`）
+**并行组 2**：summary + memory（写入 `追踪/章节摘要/第{N}章.md` 和 `追踪/写作记忆.md`）
+
+> 无法并行时（如环境限制），回退到串行顺序：state → index → summary → memory。
 
 ### 1. state — 角色状态投影
 
 **产出文件**：`追踪/角色状态.md`（增量更新）
+**执行组**：并行组 1
 
 **提取规则**：
 - 扫描本章正文，识别以下变更类型：
@@ -33,6 +41,7 @@
 ### 2. index — 索引投影
 
 **产出文件**：`追踪/索引.md`（增量更新）
+**执行组**：并行组 1
 
 **提取规则**：
 - 新实体：本章新出现的具名物品、地点、组织、概念 → 追加到对应分类
@@ -55,6 +64,7 @@
 ### 3. summary — 章节摘要投影
 
 **产出文件**：`追踪/章节摘要/第{N}章.md`（新建）
+**执行组**：并行组 2
 
 **提取规则**：
 - 3-5 句情节摘要（概括本章核心事件）
@@ -85,6 +95,7 @@
 ### 4. memory — 写作记忆投影
 
 **产出文件**：`追踪/写作记忆.md`（增量更新）
+**执行组**：并行组 2
 
 **提取规则**：
 - 从本章识别成功的写作模式（可选，仅在确认有价值时记录）：
@@ -96,24 +107,27 @@
 - 记录模式类型、来源章、简短说明
 - 与 `project_memory.json` 的模式学习系统联动
 
-### 5. vector — 向量存储投影（暂不实现）
+## 日更精简投影
 
-占位目标，后续迭代实现。
+日更模式（workflow-daily）使用精简投影：仅执行并行组 1 的 state 和并行组 2 的 summary（2 目标），跳过 index 和 memory。详见 workflow-daily.md。
 
 ## 投影日志
 
-每次投影完成后，追加一行到 `追踪/projection-log.jsonl`：
+两组投影完成后，追加一行到 `追踪/projection-log.jsonl`：
 
 ```json
-{"chapter": 42, "timestamp": "2026-06-18T15:30:00", "targets": {"state": "success", "index": "success", "summary": "success", "memory": "success", "vector": "skipped"}}
+{"chapter": 42, "timestamp": "2026-06-18T15:30:00", "targets": {"state": "success", "index": "success", "summary": "success", "memory": "success"}, "mode": "parallel"}
 ```
+
+> `mode` 字段：实际执行模式 — `parallel`（并行）或 `serial`（串行回退）。
 
 ## 失败处理
 
-- 单目标失败：标记该目标为 `failed`，记录原因，继续执行其他目标
-- state 或 index 失败：commit 标记为 `projection_status: partial`
-- 全部目标失败：commit 标记为 `projection_status: failed`，记录详细错误
+- 单组失败：另一组结果保留，commit 标记为 `projection_status: partial`
+- 组内单目标失败：同组另一目标正常完成，该组标记部分成功
+- 两组全部失败：commit 标记为 `projection_status: failed`，记录详细错误
+- 投影失败不阻塞下一章写作
 
 ## agent 执行说明
 
-投影管线由主线程 agent 在 Postcommit Gate 中执行，不 spawn 子 agent。每个目标更新完成后立即验证文件写入成功。
+投影管线由主线程 agent 在 Postcommit Gate（Stage G）中执行。两组投影可并行启动（如环境支持），不 spawn 子 agent。每组完成后立即验证文件写入成功。
