@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Story Config",
+  "description": "写作项目配置 Schema。由 story-setup Phase 1.5 配置向导生成。",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "配置 schema 版本号",
+      "minimum": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "配置创建时间（ISO 8601 UTC）"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "配置最后更新时间（ISO 8601 UTC）"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "作者笔名（必填）",
+      "minLength": 1
+    },
+    "book_name": {
+      "type": "string",
+      "description": "书名（必填）",
+      "minLength": 1
+    },
+    "target_platform": {
+      "type": "string",
+      "description": "目标发布平台（必填）",
+      "enum": ["起点", "番茄", "晋江", "知乎盐言", "其他"]
+    },
+    "target_words": {
+      "type": "integer",
+      "description": "目标总字数（整数，单位：字，必填）",
+      "minimum": 10000
+    },
+    "genre": {
+      "type": "string",
+      "description": "题材/流派（选填，默认"仙侠"）",
+      "default": "仙侠"
+    },
+    "style_preference": {
+      "type": "string",
+      "description": "写作风格偏好（选填，默认"不指定"）",
+      "enum": ["热血", "轻松", "暗黑", "幽默", "不指定"],
+      "default": "不指定"
+    },
+    "storage_structure": {
+      "type": "string",
+      "description": "存储结构（选填，默认"single-book"）",
+      "enum": ["single-book", "multi-book"],
+      "default": "single-book"
+    }
+  },
+  "required": ["version", "author_name", "book_name", "target_platform", "target_words"],
+  "additionalProperties": false
+}

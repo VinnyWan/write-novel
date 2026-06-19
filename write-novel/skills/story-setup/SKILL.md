@@ -31,6 +31,84 @@ metadata:
 4. 检查 `.active-book` 文件是否存在
    - 存在 → 显示当前活跃书目
    - 不存在 → 跳过
+5. 检查 `.story-config.json` 是否存在
+   - 存在 → 读取并展示当前配置摘要（作者、书名、平台、目标字数、题材、风格），使用 AskUserQuestion 询问「是否修改配置？」。选择「是」→ 进入 Phase 1.5 且预填已有值；选择「否」→ 跳过 Phase 1.5 直接进入 Phase 2
+   - 不存在 → 进入 Phase 1.5 全新收集模式
+   - 无书名目录 → 进入 Phase 1.5 全新收集模式（即使有 `.story-config.json`）
+
+## Phase 1.5：项目配置向导
+
+> 配置向导收集项目核心参数，持久化到 `.story-config.json`。
+> 后续所有 skill 可从此文件读取参数，消除重复询问。
+
+### 1.5.1 必填轮（4 问，顺序固定）
+
+**Q1 — 作者笔名**
+- 使用 AskUserQuestion 询问作者笔名
+- 默认值：`git config user.name` 的输出（如可获取）
+- 写入 `author_name`
+
+**Q2 — 书名**
+- 使用 AskUserQuestion 询问书名
+- 默认值：Phase 1 检测到的书名目录名（如有）
+- 写入 `book_name`
+
+**Q3 — 目标平台**
+- 使用 AskUserQuestion（单选）询问目标平台
+- 选项：起点、番茄、晋江、知乎盐言、其他
+- 写入 `target_platform`
+
+**Q4 — 目标字数**
+- 使用 AskUserQuestion（单选）询问目标字数
+- 选项：30万字（短篇）、100万字（中篇）、200万字+（长篇超）、自定义
+- 选择「自定义」时，弹出文本输入框让用户输入数字（单位：万字）
+- 写入 `target_words`（整数，单位：字）
+
+### 1.5.2 选填轮确认
+
+- 必填轮 4 项收集完成后，使用 AskUserQuestion 询问「是否进行更多配置（题材、风格、存储结构）？」
+- 选项：「继续配置」/「跳过，使用默认值」
+- 选择「跳过」→ 选填字段写入默认值，直接进入 1.5.3 配置摘要确认
+
+### 1.5.3 选填轮（3 问，可跳过）
+
+**Q5 — 题材/流派**
+- 使用 AskUserQuestion（单选）询问题材
+- 选项：从 `agent-references/genre-catalog.md` 的路由表第一列提取热门题材（取前 8 个作为选项），末尾加「其他」
+- 写入 `genre`
+
+**Q6 — 写作风格偏好**
+- 使用 AskUserQuestion（单选）询问风格偏好
+- 选项：热血、轻松、暗黑、幽默、不指定
+- 写入 `style_preference`
+
+**Q7 — 存储结构**
+- 使用 AskUserQuestion（单选）询问存储结构
+- 选项：单书（`{书名}/`）、多书并列
+- 写入 `storage_structure`
+
+### 1.5.4 配置摘要确认
+
+- 展示完整配置摘要（键值对列表）
+- 使用 AskUserQuestion 询问「确认以上配置？」
+- 选项：「确认」→ 写入 `.story-config.json` 并进入 Phase 2；「重新填写」→ 返回 1.5.1 必填轮第一问
+
+### 1.5.5 模板占位符替换
+
+> 配置确认后、Phase 2 部署前执行。
+
+从 `.story-config.json` 读取值，按以下映射批量替换：
+
+| 占位符 | 配置字段 | 格式 |
+|--------|----------|------|
+| `{作者名}` | `author_name` | 原值 |
+| `{书名}` | `book_name` | 原值 |
+| `{项目名}` | `book_name` | 同书名 |
+| `{目标平台}` | `target_platform` | 原值 |
+| `{目标字数}` | `target_words` | 格式化为「X万字」 |
+| `{题材}` | `genre` | 原值 |
+
+对于未收集到的字段（用户跳过且无默认值），对应占位符保留原样不替换。
 
 ## Phase 2：部署基础设施
 
@@ -47,12 +125,13 @@ metadata:
 | `skills/story-setup/references/agent-references/*.md` | `.claude/skills/story-setup/references/agent-references/*.md` | story-setup managed | replace | every `story-setup/references/agent-references/*.md` reference resolves |
 | `skills/story-setup/references/templates/settings-hooks.json` | `.claude/settings.local.json` | user+managed | merge by hook command | hook JSON valid and registered commands deduped |
 | `skills/story-setup/references/templates/上下文.md.tmpl` | `{书名}/追踪/上下文.md` | user state | create only if absent | never overwrite existing writing context |
+| generated config | `.story-config.json` | user state | create only if absent | contains `version`, `author_name`, `book_name`, `target_platform`, `target_words` |
 | generated sentinel | `.story-deployed` | story-setup managed | replace | contains `agents_version`, `setup_skill_version`, `target_cli`, `resolver_strategy`, `references_dir` |
 
 ### 2.1 部署 CLAUDE.md
 
 - 读取 `skills/story-setup/references/templates/CLAUDE.md.tmpl`
-- 替换占位符（见下方「模板占位符」段）
+- 替换占位符（已在 Phase 1.5.5 完成，此处使用替换后的内容）
 - 写入项目根目录 `CLAUDE.md`（如已存在，按「CLAUDE.md 合并策略」处理）
 
 ### 2.2 部署 Hooks
@@ -130,7 +209,11 @@ metadata:
    - 检查所有 `story-setup/references/agent-references/<file>.md` 都能解析到 deployed bundle
 5. 验证部署标记：
    - 检查 `.story-deployed` 是否存在且包含时间戳、`agents_version: 10`、`setup_skill_version: 1.1.1`、`target_cli`、`resolver_strategy`、`references_dir`
-6. 输出安装报告：
+6. 验证项目配置：
+   - 检查 `.story-config.json` 是否存在
+   - 如存在，校验必填字段（`author_name`、`book_name`、`target_platform`、`target_words`）均非空
+   - 缺少必填字段时输出警告「⚠️ .story-config.json 配置不完整，建议重新运行 /story-setup」
+7. 输出安装报告：
    - 列出所有已部署的文件
    - 列出需要注意的事项（如已有配置已合并）
    - 提示用户可以开始使用 `/story-long-write` 或 `/story-short-write`
@@ -139,14 +222,16 @@ metadata:
 
 ## 模板占位符
 
+> 占位符替换已在 Phase 1.5.5 中自动完成。此段保留供手动干预时参考。
+
 | 占位符 | 替换规则 | 示例 |
 |--------|----------|------|
-| `{项目名}` | 用户项目名称或目录名 | 《剑来》、《暗卫》 |
-| `{书名}` | 书名目录名（与目录一致） | 与 `{项目名}` 相同，或用户自定义 |
-| `{目标平台}` | 目标发布平台 | 起点、番茄、晋江、知乎盐言 |
-| `{作者名}` | 用户笔名或昵称 | 未指定时用「作者」 |
+| `{项目名}` | `book_name` 字段值或项目目录名 | 《剑来》、《暗卫》 |
+| `{书名}` | `book_name` 字段值 | 同 `{项目名}` |
+| `{目标平台}` | `target_platform` 字段值 | 起点、番茄、晋江、知乎盐言 |
+| `{作者名}` | `author_name` 字段值 | 未指定时用「作者」 |
 
-替换时去掉花括号。如果用户未指定项目名，用当前目录名。未指定的占位符保留原样不替换。
+替换时去掉花括号。未收集到的占位符保留原样不替换。
 
 ## CLAUDE.md 合并策略
 
@@ -154,7 +239,7 @@ metadata:
 1. 优先识别 story-setup 管理块标记（如果旧项目已有标记，只替换标记内内容）
 2. 无标记时，读取用户现有 CLAUDE.md，按 `##` 标题切分为 section map
 3. 读取模板 CLAUDE.md.tmpl，同样切分
-4. 模板中的标准 section（Skill 路由表、文件结构、协作规则、Context Recovery、语言）**覆盖**用户同名 section
+4. 模板中的标准 section（Skill 路由表、项目配置、文件结构、协作规则、Context Recovery、语言）**覆盖**用户同名 section
 5. 用户独有的 section（自定义内容）**保留**不动
 6. 未知冲突用 AskUserQuestion 让用户选择保留哪个版本
 
@@ -188,6 +273,7 @@ hooks 注册合并按 command 字段去重：
 | references/agent-references/ | Agent 模板自带的参考资料副本；部署到 `.claude/skills/story-setup/references/agent-references/`，避免跨 skill references |
 | references/templates/settings-hooks.json | hooks 注册 JSON 片段 |
 | references/templates/上下文.md.tmpl | 写作上下文模板 |
+| references/config-schema.json | `.story-config.json` 的 JSON Schema 参考文件 |
 
 ---
 
@@ -201,3 +287,5 @@ hooks 注册合并按 command 字段去重：
 | 部署完成，开始写作 | story-long-write / story-short-write | `/story-long-write` 或 `/story-short-write` |
 | 导入已有小说做拆解 | story-import | `/story-import` |
 | 需要浏览器登录态（扫榜/拆文取原文） | browser-cdp | `/browser-cdp` |
+
+后续所有 skill 可通过读取项目根目录 `.story-config.json` 获取项目参数（作者、书名、平台、题材、字数目标），无需重复询问。
