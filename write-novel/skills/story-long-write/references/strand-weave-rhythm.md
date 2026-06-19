@@ -29,7 +29,7 @@
 | 约束 | 规则 | 检测方式 |
 |------|------|---------|
 | Fire 回归 | Fire 线索后必须在 5 章内回到 Quest | 检查 `strand` 序列 |
-| Constellation 回收 | Constellation 埋入的伏笔必须在其后 10 章内至少有一次 `in_progress` 推进 | 检查 `追踪/foreshadowing.md` |
+| Constellation 回收 | Constellation 埋入的伏笔必须在其后 10 章内至少有一次 `in_progress` 推进 | 检查 `追踪/状态.md` 伏笔 section |
 | 三线轮转 | 任意 5 章窗口内必须至少出现 2 种线索 | 滑动窗口检测 |
 
 ---

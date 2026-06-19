@@ -45,13 +45,14 @@ metadata:
 | 场景 | 触发条件 | 执行流程 |
 |------|----------|----------|
 | **开书** | "帮我开书" / 项目目录为空 | 完整 Phase 1→2→3a→3b→4→5（下方全部流程） |
+| **开书恢复** | 项目目录非空 **且** `追踪/run-ledger.md` 末行 `操作=openbook & 状态=interrupted` | 加载 `references/checkpoint-resume.md`「开书 Phase 级恢复」：读阶段字段定位中断 Phase → 验证 Phase 交付物完整性 → 从该 Phase 接续或跳下一 Phase |
 | **日更续写** | 关键词（"日更"/"续写"/"继续写"）**且**项目已有正文+追踪 | 加载 `references/workflow-daily.md`（Phase 4 精简模式：跳过 Stage D 独立检查 + Stage H 中途快照，Stage G 投影精简为 2 目标，Stage A 使用三层摘要加载，质量检查合并执行） |
 | **大修** | "修改第X章" / "回炉" / "重写第X章" | 加载 `references/workflow-revision.md` |
 | **中断恢复** | "--resume" / "--continue" / "继续上次" | 读取 `追踪/run-ledger.md`，找到最后 checkpoint，跳过已完成步骤恢复 |
 
 > **开新卷**：如果新卷引入新角色/势力/设定，先回 Phase 2 增量补充，再进 Phase 3a 补充新卷卷纲+设定补全，然后 Phase 3b 补充新卷细纲，最后 Phase 4 写作。如果纯延续，直接回 Phase 3b。
 
-**匹配优先级**：同时命中多行时，按 日更续写 → 大修 → 开书 的顺序匹配。日更续写的 AND 条件（项目已有正文+追踪）不满足时，提示用户"项目还没有正文，建议先开书"。
+**匹配优先级**：同时命中多行时，按 开书恢复 → 日更续写 → 大修 → 开书 的顺序匹配。开书未完成时（run-ledger 末行 openbook+interrupted）优先恢复开书结构，不进日更续写——即使项目已有部分正文（如开书 phase4 写过几章又回炉）。日更续写的 AND 条件（项目已有正文+追踪）不满足时，提示用户"项目还没有正文，建议先开书"。
 
 **日更续写保持在 workflow 内**：一旦本次请求路由到 `references/workflow-daily.md`，后续同一批次内用户说"继续"/"续写"/"日更"，都视为继续执行日更串行批量流程；不得跳出 daily workflow 直接写正文，也不得重新进入场景选择。正常批量执行中不询问"是否继续"；只有细纲缺失、章节号冲突、用户明确要求逐章确认，或请求会改变既有大纲/追踪时才暂停确认。
 
@@ -90,6 +91,8 @@ metadata:
 #### Agent 调用：story-architect
 
 story-architect 属于高层级结构设计 agent。轻量题材定位优先由主会话完成；只有涉及复杂世界观、多线结构、强反转工程或用户明确要求时，才调用 story-architect。确认选题方向后，如果项目已部署 story-architect agent（检查 `.claude/agents/story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "story-architect", prompt: "项目目录：{dir}\n任务类型：题材定位\n查询参数：{用户选择的方向+对标信息}")` 辅助题材分析和核心梗设计。如 agent 不可用，由主线程直接执行。
+
+> **Phase 1 checkpoint**：选题方向确认后，向 `追踪/run-ledger.md` 追加一行 `openbook | - | phase1 | completed | - | {选题关键决策}`。若 Phase 1 中途中断，追加 `interrupted` 行记录断点。
 
 ---
 
@@ -146,6 +149,8 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 如 agent 不可用，由主线程直接执行。
 
+> **Phase 2 checkpoint**：核心设定完成、`设定/关系.md` + `设定/题材定位.md` 落盘后，向 `追踪/run-ledger.md` 追加一行 `openbook | - | phase2 | completed | - | {核心设定摘要}`。中途中断追加 `interrupted` 行。
+
 ---
 
 ### Phase 3a：卷纲 + 设定补全
@@ -199,41 +204,38 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 #### 设定补全 Gate
 
-卷纲（特别是第一卷卷纲）产出后，**必须先执行设定补全 Gate**，扫描卷纲识别所有需要的设定项，逐项检查并建档，再进入 Phase 3b 细纲。
+卷纲（特别是第一卷卷纲）产出后，**必须先执行设定需求预览**，扫描卷纲识别所有需要的设定项，列出预览清单供用户确认。**不做实际建档操作**——建档统一在 Phase 3b 细纲完成后一次性执行。
 
-**Gate 检查步骤**：
+**预览步骤**：
 
-1. **角色扫描**：从卷纲提取所有具名角色，检查 `设定/角色/{名}.md` 是否存在
-   - 主角/主要配角 → 不存在则建档（姓名、身份、与主角关系、本卷功能），填已确定信息，未定字段留占位符
-   - 一次性路人 → 跳过
-2. **势力扫描**：从卷纲提取所有势力/组织，检查 `设定/势力/{名}.md`，缺失则建档（名称、定位、核心目标、关键人物、与主角关系）
-3. **世界观规则扫描**：识别影响多章的世界观规则，检查 `设定/世界观/{主题}.md`，缺失则建档（规则、适用范围）
-4. **关系网扫描**：检查 `设定/关系.md` 是否覆盖卷纲中所有主要角色关系，不完整则补充
-5. **输出设定状态清单**：
+1. **角色扫描**：从卷纲提取所有具名角色，检查 `设定/角色/{名}.md` 是否存在，输出角色清单
+2. **势力扫描**：从卷纲提取所有势力/组织，检查 `设定/势力/{名}.md` 是否存在，输出势力清单
+3. **世界观规则扫描**：识别影响多章的世界观规则，检查 `设定/世界观/{主题}.md` 是否存在，输出需求清单
+4. **输出设定需求预览**：
 
 ```
-## 第一卷设定补全状态
+## 第一卷设定需求预览
+
+### 需建档
+- 角色：{列表}（将在细纲完成后统一建档）
+- 势力：{列表}
+- 世界观：{列表}
 
 ### 已完备
 - 角色：{列表}
 - 势力：{列表}
 - 世界观：{列表}
-
-### 需补建
-- 角色：{列表} → 已建档
-- 势力：{列表} → 已建档
-- 世界观：{列表} → 已建档
-
-### 需补充
-- {文件名}：缺少 {字段}，待后续细纲/正文确定
 ```
 
-Gate 执行完毕后，向用户展示清单摘要，确认后进入 Phase 3b。建档操作尽量自动化（AI 自行扫描+填写），只在关键决策点询问用户。
+用户确认预览清单后进入 Phase 3b。建档操作延后到细纲完成后一次性执行（见 Phase 3b「细纲后设定补全」）。
 
-**设定补全 artifact 产出**（Phase 3a 落盘）：
-- **追踪/伏笔.md** + **追踪/时间线.md** + **追踪/角色状态.md** + **追踪/功法状态.md**：伏笔状态表+故事时间线+角色状态快照+功法技能树（参考 plot-core-methods.md「连续性追踪」、state-tracking.md「角色状态快照格式」、technique-tracker-schema.md「功法状态追踪格式」）
+**设定 artifact 产出**（Phase 3a 落盘）：
+- **追踪/状态.md**：合并追踪文件（伏笔+时间线+角色状态+功法状态，模板见 artifact-protocols.md「追踪/状态.md」）
+- **追踪/上下文.md**：写作进度摘要
 
 <!-- cross-book-recall:trigger:execution-output -->
+
+> **Phase 3a checkpoint**：卷纲落盘（`大纲/大纲.md` + `大纲/卷纲_第1卷.md`）且设定需求预览经用户确认后，向 `追踪/run-ledger.md` 追加一行 `openbook | - | phase3a | completed | - | {卷纲摘要}`。中途中断追加 `interrupted` 行。
 
 ---
 
@@ -248,7 +250,25 @@ Gate 执行完毕后，向用户展示清单摘要，确认后进入 Phase 3b。
 默认分批建纲：先建前 10 章细纲进入 Phase 4 写作；每写完 5 章再滚动补齐后 5-10 章。不要在单次对话里强行产出 30 章完整细纲。
 如果全书章数较少（≤30 章），可以在 Phase 3b 一次全部建完。
 
-```
+```yaml
+---
+chapter: N
+title: "章名"
+target_words: 3000
+cbn: "一句话核心事件"
+cpns:
+  - "情节点1：谁做了什么"
+  - "情节点2：谁做了什么"
+  - "情节点3：谁做了什么"
+cen: "章尾钩子描述"
+strand: "主线"
+hook_type: "悬念"
+payoff_density: 2
+must_cover:
+  - "必须覆盖内容1"
+forbidden: []
+---
+
 ## 细纲（第 N 章）
 
 ### 第 N 章：{章名}
@@ -261,6 +281,8 @@ Gate 执行完毕后，向用户展示清单摘要，确认后进入 Phase 3b。
 - 字数目标：{X} 字
 ```
 
+**合约信息嵌入细纲**：YAML frontmatter 中 `cbn`/`cpns`/`cen`/`payoff_density`/`strand`/`hook_type`/`must_cover`/`forbidden` 字段即为本章合约。不生成独立 `.story-system/contracts/` 文件。字段说明见 [artifact-protocols.md](references/artifact-protocols.md)「大纲/细纲_第XXX章.md」。
+
 **大纲锁定**：已进入正文写作的前 10 章细纲锁定，未经用户确认不得修改；后续滚动细纲可随正文反馈微调。
 
 **细纲质量要求**：每章细纲一视同仁，全部用最高标准打磨——钩子+人设+爽点+悬念+伏笔。
@@ -270,40 +292,21 @@ Gate 执行完毕后，向用户展示清单摘要，确认后进入 Phase 3b。
 
 **章节标题规则**：只做轻量去重；发现同名或明显重复标题时，按本章核心事件改名，并保持细纲标题与正文文件名一致。
 
-**细纲后轻量设定补全（每批细纲建完后执行）**：仅扫描本批细纲中新出现的、Phase 3a Gate 未覆盖的具名角色/势力/关键设定，对**会复用**的（按卷纲/细纲判断：后续多次出场或承担剧情功能）自动建档，不等用户确认：
-- 角色 → 建 `设定/角色/{名}.md`（填空模板见 character-basics.md 主角卡/配角卡），并在 `追踪/角色状态.md` 登记初始状态；
-- 势力/组织 → 建 `设定/势力/{名}.md`（名称、定位、核心目标、关键人物、与主角关系）；
-- 影响多章的世界观规则 → 建/补 `设定/世界观/{主题}.md`（规则、适用范围）；
-- 功法/技能 → 建 `设定/功法技能/{名}.md`（模板见 `write-novel/templates/output/设定集-功法技能.md`，填入名称、类型、品阶、所属体系、效果简述、持有角色）。判断"会复用"的标准：同一功法/技能在后续细纲中出现 ≥2 次，或属于主角/重要配角的标志性技能。一次性路人技能不建档。
+**细纲后设定补全（每批细纲建完后执行）**：合并 Phase 3a 预览清单和本批细纲的新增需求，一次性扫描并建档：
 
-Phase 3a Gate 已建档的设定按细纲新信息**增量补充、不覆盖**，同一角色不重复登记 `追踪/角色状态.md`。一次性路人、后文无戏份的配角不建档。建档只填细纲已确定的信息，未定字段留占位符，不提前杜撰。
+1. 从卷纲 + 本批细纲提取所有具名角色/势力/世界观规则/功法技能
+2. 角色：对照 Phase 3a 预览清单 + 细纲新增，对**会复用**的（后续出场 ≥ 2 次或承担剧情功能）建档 `设定/角色/{名}.md`，并在 `追踪/状态.md` 角色状态 section 登记初始状态
+3. 势力/组织：建档 `设定/势力/{名}.md`（名称、定位、核心目标、关键人物、与主角关系）
+4. 世界观规则：建档/补 `设定/世界观/{主题}.md`（规则、适用范围）
+5. 功法/技能：建档 `设定/功法技能/{名}.md`（名称、类型、品阶、所属体系、效果简述、持有角色）。复用意判断：同一功法/技能在后续细纲中出现 ≥2 次，或属于主角/重要配角的标志性技能。一次性路人技能不建档
+6. 关系网：检查 `设定/关系.md` 是否覆盖所有主要角色关系，不完整则补充
+7. 输出设定状态清单（已完备/已建档/需补充）
+
+一次性路人、后文无戏份的配角不建档。建档只填细纲已确定的信息，未定字段留占位符，不提前杜撰。滚动补全时增量处理新增细纲中的新设定，已有设定增量补充不覆盖。
 
 前 3 章细纲额外加载 [references/opening-design.md](references/opening-design.md)（黄金三章法则+六大标准）。
 
-#### 细纲转合约（每批细纲建完必须执行）
-
-每批细纲建完后，对每章生成 `.story-system/contracts/chapter_XXX.contract.md`：
-
-1. 读取 `references/shared/contract-schema.md` 了解合约 schema
-2. 从细纲提取 CBN（核心事件）、CPNs（情节点序列，2-4 个）、CEN（章尾钩子）
-3. 根据体裁画像设置 `payoff_density`、`strand`、`hook_type`、`hook_strength`
-4. 根据卷纲/伏笔表填充 `must_cover`（必须覆盖的内容）和 `forbidden`（禁止出现的内容）
-5. 写入 YAML frontmatter + 合约正文（CBN/CPNs/CEN 详解 + 约束理由）
-6. **合约自检**（生成后立即执行）：逐项检查 frontmatter 必备字段 — `cbn`/`cpns`（2-4个）/`cen`/`target_words`/`strand`/`hook_type`/`payoff_density`。字段齐全且有效 → 通过。有缺失 → 从细纲重新提取补全，重新自检，最多重试 2 次；仍失败则标记该合约 `status: needs_review` 并提示用户。批量生成时每章独立自检，失败章不阻塞其他章
-7. 合约文件与细纲文件一一对应，创建后随细纲一起纳入大纲锁定范围
-
-> `.story-system/` 目录结构：
-> ```
-> .story-system/
->   contracts/
->     chapter_001.contract.md
->     chapter_002.contract.md
->     ...
->   commits/
->     chapter_001.commit.md
->     ...
->   index.md    # 全局合约索引
-> ```
+> **Phase 3b checkpoint**：首批 10 章细纲落盘且设定补全完成后，向 `追踪/run-ledger.md` 追加一行 `openbook | - | phase3b | completed | - | {首批细纲范围}`。中途中断追加 `interrupted` 行。Phase 3b 完成即开书结束，进入 Phase 4 写作（交回日更续写/正文写作流程）。
 
 #### Agent 调用：story-architect
 
@@ -329,21 +332,24 @@ Phase 3a Gate 已建档的设定按细纲新信息**增量补充、不覆盖**�
 │   │   └── {功法名}.md
 │   └── 关系.md
 ├── 大纲/
-│   ├── Volume-1.md             # 卷契约（YAML frontmatter + 卷级大纲）
-│   ├── Chapter-001.md          # 章契约（YAML frontmatter + CBN/CPNs/CEN）
+│   ├── 大纲.md                  # 全书卷级鸟瞰
+│   ├── 卷纲_第1卷.md            # 卷级大纲
+│   ├── 细纲_第001章.md          # 细纲（含嵌入合约 frontmatter）
 │   └── ...
 ├── 正文/
-│   ├── Chapter-001.md          # 正文 commit（YAML frontmatter 记录词数/状态/完成节点）
+│   ├── 第001章_章名.md          # 正文
 │   └── ...
-├── 追踪/                       # 投影层（从正文和设定派生）
-│   ├── state.md                # 当前状态
-│   ├── progress.md             # 进度摘要
-│   ├── characters.md           # 角色状态
-│   ├── foreshadowing.md        # 伏笔状态
-│   └── run-ledger.md           # 操作日志（断点续传）
+├── 追踪/
+│   ├── 状态.md                  # 合并追踪（伏笔+时间线+角色状态+功法状态）
+│   ├── 上下文.md                # 写作进度摘要
+│   ├── run-ledger.md            # 操作日志（断点续传）
+│   ├── 文风缓存.md              # 卷级文风缓存
+│   └── 章节摘要/                # 每章摘要
+│       └── 第{N}章.md
+├── .story-system/
+│   └── commits/                 # 不可变提交记录
+│       └── chapter_{N}.commit.md
 ├── 对标/
-│   ├── 角色状态.md                ← 角色当前状态快照
-│   └── 上下文.md                  ← 正文级（日更进度摘要）
 ├── 参考资料/
 │   └── {topic}.md             # story-researcher 输出的研究资料
 ```
@@ -354,25 +360,24 @@ Phase 3a Gate 已建档的设定按细纲新信息**增量补充、不覆盖**�
 |------|------|---------|---------|
 | 设定/关系.md | 全书 | Phase 2 | Phase 3a 卷纲、Phase 3b 细纲、Phase 4 写作 |
 | 设定/题材定位.md（含 `主对标书` 字段，多对标时必填） | 全书 | Phase 2 | Phase 3a 卷纲、每卷开始前、Phase 4 文风召回 |
-| 设定/角色/{角色名}.md、设定/势力/{名}.md、设定/功法技能/{名}.md | 角色/势力/功法技能 | Phase 3a Gate 主要建档 + Phase 3b 细纲后轻量补全（首批含主角/主要角色） | Phase 4 状态筛选/写作 |
+| 设定/角色/{角色名}.md、设定/势力/{名}.md、设定/功法技能/{名}.md | 角色/势力/功法技能 | Phase 3b 细纲后设定补全（一次性建档） | Phase 4 状态筛选/写作 |
 | 对标/{书名}/文风.md | 对标书 | analyze Stage 6 输出 → story-import 同步 | Phase 4 每章写作前（文风召回） |
 | 大纲/卷纲_第X卷.md | 卷 | Phase 3a | Phase 4 写卷首章前 |
-| 追踪/伏笔.md | 全书 | Phase 3a 起 | Phase 4 每章写作前 |
-| 追踪/时间线.md | 全书 | Phase 3a 起 | Phase 4 每章写作前 |
+| 大纲/细纲_第XXX章.md（含嵌入合约 frontmatter） | 章 | Phase 3b | Phase 4 每章 Stage A/B/E |
+| 追踪/状态.md | 全书 | Phase 3a | Phase 4 每章写作前（状态筛选+伏笔检测）+ 写后更新 |
 | 对标/{书名}/拆文报告.md | 对标书 | 用户手动+analyze | Phase 2 核心设定、Phase 3a 卷纲、Phase 3b 细纲、Phase 4 写作 |
-| 追踪/上下文.md | 全书 | Phase 4 首次日更（workflow-daily 自动创建） | 每次日更开始时 |
+| 追踪/上下文.md | 全书 | Phase 4 首次日更 | 每次日更开始时 |
 | 参考资料/{topic}.md | 按需 | Phase 4（story-researcher 输出） | Phase 4 后续章节写作时复用 |
-| 追踪/角色状态.md | 全书 | Phase 3a | Phase 4 每章写作前（状态筛选步骤） |
 | 对标/{书名}/角色/{角色名}.md | 对标书 | analyze 输出 | Phase 4 模块召回（角色参考） |
 | 对标/{书名}/剧情/{剧情线名}.md | 对标书 | analyze 输出 | Phase 4 模块召回（剧情模块参考） |
 | 对标/{书名}/设定/*.md | 对标书 | analyze 输出 | Phase 2 设定参考、Phase 4 世界观约束 |
-| 追踪/文风缓存.md | 卷 | Phase 4 Stage B2 卷首章创建 | Phase 4 同卷后续章文风召回（缓存命中时跳过完整召回） |
+| 追踪/文风缓存.md | 卷 | Phase 4 Stage B 卷首章创建 | Phase 4 同卷后续章文风召回（缓存命中时跳过完整召回） |
 
 **缺失文件回退**：所有新增文件是可选增强，缺失时按以下优先级降级，不报错不阻塞：
-1. **角色状态文件缺失** → 从角色设定文件和前文推断当前状态
-2. **对标结构化子目录缺失** → 按「对标书路径查找」规则回退（对标子目录 → 拆文库同名子目录 → 对标拆文报告.md → 跳过）
-3. **有对标书但 `文风.md` 缺失** → 日更文风召回 fail-fast，提示先运行 `/story-long-analyze` Stage 6 并 `/story-import` 同步；**完全无对标项目**则跳过文风召回，不阻塞
-4. **伏笔/时间线文件缺失** → 不检查，相关信息在卷纲或大纲中体现即可
+1. **追踪状态文件缺失** → 尝试从旧的独立追踪文件（`追踪/伏笔.md`、`追踪/时间线.md`、`追踪/角色状态.md`、`追踪/功法状态.md`）加载，首次写入时合并为 `追踪/状态.md`
+2. **细纲 frontmatter 无合约字段** → 回退读取 `.story-system/contracts/chapter_{N}.contract.md`（旧格式兼容）
+3. **对标结构化子目录缺失** → 按「对标书路径查找」规则回退（对标子目录 → 拆文库同名子目录 → 对标拆文报告.md → 跳过）
+4. **有对标书但 `文风.md` 缺失** → 日更文风召回 fail-fast，提示先运行 `/story-long-analyze` Stage 6 并 `/story-import` 同步；**完全无对标项目**则跳过文风召回，不阻塞
 
 **文件组织原则：**
 - **人物一个一个文件**：`角色/角色名.md`，方便按需读取
@@ -385,16 +390,16 @@ Phase 3a Gate 已建档的设定按细纲新信息**增量补充、不覆盖**�
 
 #### 断点诊断与恢复
 
-每次写作会话开始时，先执行断点诊断（详见 `references/shared/run-ledger-format.md` 和 `references/checkpoint-resume.md`）：
+每次写作会话开始时，先执行断点诊断（详见 `references/checkpoint-resume.md`）：
 
 1. 读取 `追踪/run-ledger.md`，找到最后一条操作记录
 2. 若最后状态为 `done` → 定位下一章
-3. 若最后状态为 `failed` 或 `interrupted` → 验证章节文件，重建上下文（重新加载 contract + 大纲 + 前一章正文），显示恢复摘要
+3. 若最后状态为 `failed` 或 `interrupted` → 验证章节文件，重建上下文（重新加载细纲（含合约）+ 大纲 + 前一章正文），显示恢复摘要
 4. 显示恢复摘要：「上次写到第 N 章（{最后步骤} {状态}）。继续吗？」用户确认后继续
 5. **--resume 模式**：跳过 `run-ledger` 中已标记 `done` 的步骤，直接从下一个未完成的步骤开始
 6. **上下文压缩恢复**：如 pre-compact hook 记录了 `context_compact` 事件，post-compact 自动执行上下文重建
 
-Ledger 追加时机（详见 `references/shared/run-ledger-format.md` 步骤定义）：
+Ledger 追加时机（详见 `references/checkpoint-resume.md` 步骤定义）：
 - Prewrite Gate 通过后追加 `prewrite-gate | done`
 - 正文 draft 完成后追加 `draft | done`
 - Reviewer 完成后追加 `reviewer | done | failed`
@@ -404,290 +409,70 @@ Ledger 追加时机（详见 `references/shared/run-ledger-format.md` 步骤定�
 
 #### 单章写作流程（Stage A-H）
 
-当用户准备写某一章时，按以下 8 个 Stage 执行：
+当用户准备写某一章时，按以下 Stage 流程执行。详细步骤见 [references/writing-stage-details.md](references/writing-stage-details.md)。
 
-**Stage A：上下文批量加载**（合并原 Step 1-3、6）
+**Stage A：上下文批量加载**
 
-A1. **细纲检查 + 标题预检**：读取 `大纲/细纲_第{N}章.md`。如果不存在，**必须先补建细纲再写正文**。从细纲读取章名，如与既有章节同名或明显重复，先按本章核心事件改名，同步细纲标题。补建时参考卷纲中本章对应的事件规划和上下文。
+A1. 读取细纲（含嵌入合约 frontmatter）→ 标题预检。细纲不存在则必须先补建。
+A2. 加载 6 项核心文件（细纲、上一章正文、角色设定、`追踪/状态.md`、对标文风、体裁画像）+ 按需加载其余文件。
+A3. 加载体裁画像配置（爽点密度阈值、钩子偏好、线配比等参数）。
 
-A2. **上下文分组并行加载**（按需加载，缺失则跳过）：
+**Stage B：准备与校验**
 
-**可选快捷路径**：项目已部署 story-researcher agent（检查 `.claude/agents/story-researcher.md`）时，直接进入 Stage B2 使用合并 query（一次 spawn 同时完成 context_load + benchmark_style_load）。agent 不可用时回退到下方手动分组加载。
+B1. 从上下文中提取最简记忆包（角色状态、相关伏笔、世界约束）。
+B2. 模块召回 + 文风召回（含卷级缓存）。story-researcher agent 可用时单次 spawn 合并 context_load + benchmark_style_load。
+B3. 意图确认：用一句话概括本章节奏和情绪目标。
+B4. **Prewrite Gate**（详见 `references/write-gates.md` Gate 1）：爽点密度预估 + 线配比检查 + 伏笔逾期检测。
+B5. 资料研究（按需）。
 
-**组 1（无依赖，可并行读取）**：
-| # | 文件 | 用途 |
-|---|------|------|
-| 1 | `.story-system/contracts/chapter_{N}.contract.md` | 本章合约（**必读**） |
-| 2 | `正文/第{N-1}章_*.md` | 上一章正文 |
-| 3 | `大纲/细纲_第{N}章.md` | 本章细纲 |
-| 4 | 对标书路径下 `拆文报告.md` | 对标参考 |
-| 5 | `对标/{对标书名}/原文/第{N}章_*.md`（如存在） | 同位置章节参考 |
+**Stage C：正文执行**
 
-组 1 加载完成后，从细纲/合约中提取本章涉及角色名列表。
+C1. spawn narrative-writer agent 执行正文写作，输出写入 `正文/第XXX章_章名.md`。agent 未部署时由主线程直接写作。
+C2. 跨平台 Python 字符统计验证字数。字数 < 目标 90% → 补充正文。
 
-**组 2（依赖组 1 角色名，可并行读取）**：
-| # | 文件 | 用途 |
-|---|------|------|
-| 6 | `设定/角色/{角色名}.md` | 本章涉及角色设定 |
-| 7 | `追踪/伏笔.md`（如存在） | 待回收伏笔 |
-| 8 | `追踪/角色状态.md`（如存在） | 角色当前状态快照 |
-| 9 | 对标书路径下 `剧情/故事线.md` → `剧情/{相关剧情线}.md` | 剧情线索引+相关剧情线 |
-| 10 | 对标书路径下 `设定/世界观/*.md`（glob；回退顺序同旧版） | 世界观参考 |
-| 11 | `参考资料/{topic}.md`（如存在） | 历史研究资料 |
-| 12 | `追踪/foreshadowing.md`（如存在） | 伏笔逾期检测 |
-| 13 | `设定/功法技能/{相关功法}.md`（如存在，单章限载 3 个） | 功法/技能设定 |
+**Stage D：质量初检**（日更模式跳过，合并到批量质量检查）
 
-**缺失不阻塞**：每个文件独立加载，缺失时记录并跳过。对标书路径查找规则不变（优先 `{项目}/对标/{书名}/`，回退 `拆文库/{书名}/`）。
+钩子检查 + 禁用词扫描。
 
-A3. **体裁画像加载**（写前必执行）：
-- 从项目设定或细纲中读取当前体裁 → 确定 profile ID
-- 读取 `references/methodology/genre-profile-configs.md`，加载对应体裁 YAML 配置
-- 体裁模板 frontmatter 有 `profile` 时以其值为准；无配置时使用默认画像（`id: default`）
-- 注入参数：爽点密度阈值、钩子偏好类型、微兑现下限、节奏停滞阈值、线配比
+**Stage E：Postwrite Gate（写后校验 + 追踪更新 + 落盘）**
 
----
+详见 `references/write-gates.md` Gate 2。合并原 Precommit + Postcommit Gate：
+- 质量校验：字数达标、合约合规（细纲 frontmatter `must_cover`/`forbidden`）、hook 有效、格式合规、禁用词扫描、去AI味
+- 追踪原子更新：一次性更新 `追踪/状态.md`（伏笔+时间线+角色状态+功法状态 section）
+- CHAPTER_COMMIT：创建 `.story-system/commits/chapter_{N}.commit.md`
+- 收尾：ledger 写入、连续线索计数、备份（可选）
 
-**Stage B：准备与校验**（合并原 Step 4 Prewrite Gate + Step 4.1-4.3 准备层）
+**Stage G：投影（精简）**
 
-B1. **状态筛选**：从已加载的上下文中提取最简记忆包（参考 state-tracking.md）——角色状态、相关伏笔/前史、世界约束。缺失时从角色设定和前文推断。
+每章写完后执行 2 目标投影：
+1. state：更新 `追踪/状态.md` 角色状态 section
+2. summary：生成 `追踪/章节摘要/第{N}章.md`
 
-B2. **模块召回与文风召回**：
+**Stage H：安全检查**
 
-① 本章目标情绪词？② 借鉴哪个参考文件的哪个技法？③ 用在哪些段落？答不出 → 先回读参考再动笔。
-
-**(a) 文风召回（含卷级缓存）**：
-- 先检查 `追踪/文风缓存.md` 是否存在且 `volume` 匹配当前卷：
-  - **缓存命中**：从 `tone_matches` 中查找本章目标情绪对应的 `{chapter_K, techniques}`，直接使用。若本章基调在缓存中不存在 → 增量匹配（grep 新基调 → 追加到 `tone_matches`）
-  - **缓存未命中**（卷首章或缓存不存在）：完整执行文风召回 → 写入 `追踪/文风缓存.md`（格式见 `references/shared/style-cache-schema.md`）
-- 完整文风召回流程（缓存未命中时执行）：按「对标书路径查找」读 `文风.md` → grep 基调匹配章节 → 读 `第K章_摘要.md`（`深度拆解.md` 存在时加读）
-- 文风文件不存在 → **fail-fast 报错**，不 inline 生成
-- 无对标项目 → 跳过文风召回，缓存标记 `style_profile: none`
-
-**(b) 模块召回**：从对标的结构化子目录（角色/剧情/设定）中按本章情节检索相关模块。
-
-**(c) Agent 快捷路径**：项目已部署 story-researcher agent 时，**单次 spawn** 同时完成 Stage A2 的上下文加载 + 文风召回：
-
-```
-Agent(subagent_type: “story-researcher”, prompt: “项目目录：{dir}\n查询类型：context_load + benchmark_style_load\n章节号：{N}\n目标情绪：{从细纲读取}\n爽点类型：{如有}\n目标字数：{从细纲读取}\n对标书路径：{按查找规则确定}”)
-```
-
-agent 返回 `context_load`（角色/伏笔/时间线/角色状态）和 `benchmark_style_load`（文风路径/摘要/匹配章节/技法/锚点片段/gaps）两个结果块。准备层原样保留 `gaps`。
-
-**(d)** <!-- cross-book-recall:trigger:execution-output --> 输出”对标召回摘要 + 文风召回指令 + 原文锚点片段引用”（合计 ≤10 条），作为 narrative-writer 的输入。多对标书时参 `references/cross-book-recall.md`，进 prompt 的只主对标。
-
-B3. **意图确认**：综合细纲+最简记忆包+模块召回结果，确认本章节奏和情绪目标，用一句话概括写作意图。
-
-B4. **Prewrite Gate 校验**（详见 `references/write-gates.md` Gate 1）：
-- **合约意外缺失兜底**：如合约文件被手动删除，从细纲重新生成合约（沿用 Phase 3b 逻辑）
-- **爽点密度预估**：合约 `payoff_density` ≥ 体裁画像最低要求
-- **线配比检查**：合约 `strand` 连续同线达到上限（fire ≥ 2、constellation ≥ 1）时提示切换
-- **伏笔逾期检测**：逾期伏笔优先回收；检查合约 `foreshadowing_recycle` 覆盖情况
-- 输出 prewrite 检查报告（通过/警告/阻塞），阻塞项解决前不进入 Stage C
-
-> 合约存在性和 frontmatter 字段完整性已在 Phase 3b 合约生成时自检保证，Prewrite Gate 不再重复检查。
-
-B5. **资料研究**（按需）：遇到需要查证的外部事实时，spawn `story-researcher` agent 输出到 `参考资料/`，完成后继续。
-
----
-
-**Stage C：正文执行**（原 Step 7-9）
-
-C1. **正文执行**：第 1 章如果以内心戏、设定认知或独处开场，必须先把内心变化外化为可见事件（决定、误判、对话、物件变化、外部压力），再按字数目标展开；不得用大段心理独白凑字。
-
-如果项目已部署 narrative-writer agent（**检查 `.claude/agents/narrative-writer.md`**），spawn `Agent(subagent_type: “narrative-writer”, prompt: “项目目录：{dir}\n任务描述：写正文\n章节：第{N}章\n细纲文件：大纲/细纲_第{N}章.md\n上一章：正文/第{N-1}章_*.md\n准备层输出：{B1最简记忆包 + B2模块/文风召回结果 + B3写作意图}\n情绪目标：{从B3确认}\n涉及角色：{从B1筛选}\n参考技法：{从B2召回}\n对标/拆文路径：{本次查找到的 对标/{书名}/ 或 拆文库/{书名}/，没有则写 无}\n对标召回摘要：{B2(c)输出的相关角色/剧情/设定/章节模块，最多5条}\n文风路径：{B2(a) 找到的 文风.md 绝对路径，没有则写 无}\n文风召回指令：{B2(a) 输出，含匹配章节号和 1-2 句技法指令}\n原文锚点片段：{文风文件里 4-6 段中按本章情绪选 1-2 段，完整粘贴 300-500字 原文}\n写作硬约束：按三维度织入写场景，但仍必须按镜头断段；一段只承载一个动作/信息变化，优先一段一句，避免一段到底。输出前做密度重排：段落 >60 字按句号/动作转折拆开，单句 >45 字拆短。**文风优先级**：与默认 Gates 冲突时按 narrative-writer.md 的优先级表决议（硬约束 banned-words/Gate F/万能比喻禁令/字数下限 不让位；句长/标点/对话潜台词/情绪交替由文风优先）。\n⚠️字数硬约束：本章必须达到细纲中设定的字数目标（{从细纲读取}字）。写完后立即用跨平台 Python 字符统计核对（命令见 narrative-writer 定义；勿直接用 python3——Windows 上会触发 Microsoft Store 占位程序、exit 49 失败，按 python3→python→py 探测可用解释器）；macOS/Linux 可用 wc -m 备选；禁止 wc -c 或模型估算。字数未达标禁止结束本章。”)` 执行正文写作，输出写入 `正文/第XXX章_章名.md`。如 narrative-writer agent 未部署，由主线程直接写作。
-
-C2. **字数验证**（写作完成后第一件事）：跨平台 Python 字符统计。字数 < 细纲目标的 90% → 回到细纲补充子事件，扩充正文直到达标。
-
----
-
-**Stage D：质量初检**（原 Step 10-11）
-
-D1. **钩子检查 + 禁用词扫描**：章尾是否有钩子、爽点是否到位。对照 `references/banned-words.md` 检查，一级词命中即替换；二级词高频出现时替换，偶发参考 `references/anti-ai-writing.md` 定性裁定。
-
----
-
-**Stage E：Precommit Gate**（原 Step 12，详见 `references/write-gates.md` Gate 2）
-
-E1. **落盘前校验**：
-- **合约合规检查**：must_cover 覆盖逐项检查（缺失→阻塞）、forbidden 违规检测、CBN/CPNs/CEN 完成
-- **字数达标**：`word_count` vs `target_words`（±20% 容忍）
-- **hook 有效**：章尾非总结式结尾，钩子类型与合约 `hook_type` 一致
-- **格式合规**：段落长度、对话独立、无多余空行
-- **去 AI 味**：运行 `deai_check.py --json {正文文件}`（如可用），否则手动对照 banned-words.md
-- **投影一致性**：角色状态与 `追踪/characters.md` 一致
-- 有阻塞性错误时禁止落盘，先修复再进入 Stage F
-
----
-
-**Stage F：追踪原子更新 + CHAPTER_COMMIT**（合并原 Step 14-15）
-
-F1. **追踪原子更新**：在一次操作中按顺序更新以下文件：
-   - `追踪/伏笔.md`（新增/回收伏笔，对照合约）
-   - `追踪/时间线.md`（记录事件时序）
-   - `追踪/角色状态.md`（身份/能力/关系/公众形象变化，追加变更记录）
-   - `追踪/功法状态.md`（功法获得或阶段升级）
-- 本章首次引入会复用的具名角色/势力/功法技能，按 Phase 3b「细纲后轻量设定补全」规则补建 `设定/` 档案
-
-F2. **CHAPTER_COMMIT**：创建不可变提交记录 `.story-system/commits/chapter_{N}.commit.md`：
-   ```yaml
-   ---
-   chapter: N
-   timestamp: {ISO 8601}
-   word_count: {实际字数}
-   contract_compliance:
-     cbn: pass | partial | fail
-     cpns: “完成 X/3”
-     cen: pass | fail
-     must_cover: “覆盖 Y/Z 项”
-     forbidden: “零违规” | “发现 X 处违规”
-   review_status: pass | partial | fail
-   deai_status: pass | revised | skipped
-   projection_status: full | partial | failed
-   ---
-   ```
-
----
-
-**Stage G：Postcommit 并行投影**（原 Step 16，详见 `references/shared/projection-spec.md`）
-
-G1. **投影分组并行执行**：
-- **并行组 1**：state→`追踪/角色状态.md` 增量更新 + index→`追踪/索引.md` 增量更新
-- **并行组 2**：summary→`追踪/章节摘要/第{N}章.md` 生成 + memory→`追踪/写作记忆.md` 增量更新
-- 两组无文件依赖，可同时启动。单组失败标记 `projection_status: partial`，不阻塞下一章
-
-G2. **收尾操作**（等待两组完成后）：
-- ledger 写入：`追踪/run-ledger.md` 追加一行（章号/步骤/状态/时间戳/产物路径）
-- 连续线索计数：更新 strand_sequence
-- 投影日志写入：追加 `追踪/projection-log.jsonl` 一行
-- 备份（可选）：复制正文到 `备份/Chapter-{N}.md`
-
-> **串行回退**：无法并行时按 state → index → summary → memory 顺序串行执行。
-
----
-
-**Stage H：安全检查**（原 Step 17）
-
-H1. **中途快照**（每连续写完 3 章执行）：
-- 将当前进度写入 `追踪/上下文.md`（只更新进度元信息——当前位置、最近决策、待处理线索）
-- 用 `ls -la 正文/` 确认最近 3 个章节文件已成功写入且大小正常（>100 bytes）
-- 文件缺失或异常 → 立即重新写入
-
-> **日更模式**：Stage H 自动跳过——workflow-daily Step 4 已按章更新上下文.md。
-
----
-
-#### Agent 调用：story-researcher（Stage B2 合并查询）
-
-Stage B2 使用**单次 spawn** 同时完成上下文加载和文风召回（替代旧版中 context_load 和 benchmark_style_load 两次独立 spawn）。若 agent 未部署，回退到 Stage A2 手动分组加载 + Stage B2 手动文风召回。
-
-#### Agent 调用：narrative-writer（Stage C1）
-
-正文执行阶段 spawn narrative-writer agent，传入 Stage B 准备层的全部输出（最简记忆包 + 文风召回 + 意图确认）。agent 未部署时由主线程直接写作。
-
-#### Agent 调用：story-researcher（Stage B5 资料研究）
-
-按需 spawn story-researcher agent 搜索外部事实，输出到 `参考资料/`。
-
-#### 写作技巧提醒
-
-| 场景 | 技巧 |
-|------|------|
-| 开篇 500 字 | 必须有钩子，不能从天气/风景开始（除非反差极大） |
-| 对话 | 推进剧情或揭示性格，不能只为了凑字数 |
-| 打斗 | 不要流水账，写策略和反转，不写「你一拳我一脚」 |
-| 日常 | 日常要有人物互动和伏笔，不能只是「吃饭睡觉」 |
-| 爽点释放 | 铺垫要充分、释放要干脆，读者等得越久释放越要爽 |
-| 爽点密度 | 每 3000-5000 字必须有一个让读者「爽」的情绪节点 |
-| 公式约束 | 参考 genre-writing-formulas.md 中的创作公式 |
-| 章尾 | 每章结尾都要有让读者想翻下一页的东西 |
-| 情绪验证 | 写完每章回头检查：读者到这里应该感受到什么？感受到了吗？如果没感受到 → 补冲突或钩子 |
-
-#### 字数硬约束
-
-| 节奏 | 最低字数 | 说明 |
-|------|----------|------|
-| 高速推进 | ≥ 2000 字/章 | 每章一个明确事件 |
-| 正常节奏 | ≥ 3000 字/章 | 主线 + 少量副线 |
-| 舒缓铺垫 | ≥ 3000 字/章 | 人物互动 + 伏笔 |
-| 高潮爆发 | ≥ 2000 字/章 | 集中释放、不拖沓 |
-
-**默认最低字数：3000 字/章。细纲另有标注时以细纲为准。低于最低字数的章节必须补足后再继续。**
-
-
-#### 追踪文件归档
-
-每完成 50 章或一个卷结束时，对 `追踪/上下文.md` 做一次轻量归档：保留最近 5 章详记，将更早内容压缩到 `追踪/归档/第XXX-YYY章.md`，并在上下文中保留归档索引。伏笔、时间线、角色状态仍以当前文件为准，不把活跃线索移入归档。文风缓存跨卷时归档到 `追踪/归档/文风缓存_第X卷.md`。
-
----
-
-## Phase 4 新旧步骤对照表
-
-| 新 Stage | 旧 Step | 变更说明 |
-|----------|---------|---------|
-| A1 | Step 1 + Step 6 | 细纲检查与标题预检合并 |
-| A2 | Step 2 | 13 项上下文改为 2 组并行加载 |
-| A3 | Step 3 | 体裁画像加载（不变） |
-| B1 | Step 4.1 | 状态筛选（前置到 Prewrite Gate 之前） |
-| B2 | Step 4.2 | 文风召回 + 卷级缓存；Agent 合并（context_load+style_load 单次 spawn） |
-| B3 | Step 4.3 | 意图确认（不变） |
-| B4 | Step 4（原 Prewrite Gate） | 移除合约存在性/完整性检查（已移至 Phase 3b 自检）；保留爽点密度/线配比/伏笔逾期 |
-| B5 | Step 5 | 资料研究（不变） |
-| C1 | Step 7-8 | 正文执行（不变） |
-| C2 | Step 9 | 字数验证（不变） |
-| D1 | Step 10-11 | 钩子检查+禁用词扫描合并 |
-| E1 | Step 12 | Precommit Gate（不变） |
-| F1 | Step 14 + 部分 Step 16 | 追踪原子更新（合并原分散的追踪写入） |
-| F2 | Step 15 | CHAPTER_COMMIT（不变） |
-| G1 | Step 16 投影管线 | 4 目标投影分 2 组并行执行 |
-| G2 | Step 16 收尾 | ledger+日志（等待两组完成后执行） |
-| H1 | Step 17 | 中途快照（不变） |
-| — | Step 13 | 旧版无此编号（已补齐） |
-
----
+每连续写完 3 章执行中途快照：更新 `追踪/上下文.md` 进度元信息，确认文件落盘正常。
 
 ---
 
 ### Phase 5：质量检查
 
-检查两个维度：(1) **情绪交付**——每章是否交付了细纲中规划的目标情绪？(2) **技术质量**——一致性、格式、禁用词。参考 [references/quality-checklist.md](references/quality-checklist.md) 中的通用检查和长篇专项清单。
+检查两个维度：(1) **情绪交付**——每章是否交付了细纲中规划的目标情绪？(2) **技术质量**——一致性、格式、禁用词。参考 [references/quality-checklist.md](references/quality-checklist.md)。
 
-**标点确定性收尾**：本批正文写完后，对所有新写正文文件运行 `node scripts/normalize-punctuation.js 正文/第XXX章_*.md`（写模式，默认 `--quote-mode keep`），确定性清除叙述里的破折号 `——`/`—`、双连字符 `--` 和独立行 `---`，防止长篇累积横线。对话被打断的 `——`、数字区间与盐言「」不受影响。narrative-writer agent 不运行本脚本，由主会话在 agent 返回后针对实际落盘文件运行。
+**标点确定性收尾**：本批正文写完后，对所有新写正文文件运行 `node scripts/normalize-punctuation.js 正文/第XXX章_*.md`（写模式，默认 `--quote-mode keep`）。
 
 #### Agent 调用：reviewer
 
-质量检查阶段，如果项目已部署 reviewer agent（检查 `.claude/agents/reviewer.md` 是否存在），spawn `Agent(subagent_type: "reviewer", prompt: "项目目录：{dir}\n检查范围：{本次写作的章节}\n检查类型：事实冲突+伏笔断线+角色属性不一致")` 执行一致性检查，获取 S1-S4 分级报告。如 agent 不可用，由主线程参照 quality-checklist.md 直接检查。
+项目已部署 reviewer agent 时，spawn `Agent(subagent_type: "reviewer", ...)` 执行一致性检查。agent 不可用时由主线程参照 quality-checklist.md 直接检查。
 
-#### Agent 调用：narrative-writer（去AI味审查）
+#### 追踪文件归档
 
-质量检查阶段，如果项目已部署 narrative-writer agent，可 spawn `Agent(subagent_type: "narrative-writer", prompt: "项目目录：{dir}\n任务描述：审查+去AI味\n检查范围：{本次写作的章节}")` 执行文字质量审查和去AI味检查。如 agent 不可用，由主线程直接执行。
-
-检查后更新追踪文件：
-- 更新 `追踪/伏笔.md` 中的过期伏笔和回收状态
-- 更新 `追踪/时间线.md` 中的时间线疑点
-
-#### 模式学习捕获（章末执行）
-
-每章完成后，从本章正文中识别成功的写作模式并存储到 `追踪/project_memory.json`：
-
-1. 读取 `references/shared/pattern-schema.md` 了解 6 类模式定义
-2. 扫描本章正文，识别有效模式（可选，仅在确认有价值时记录）：
-   - 钩子结构（章首/章尾的有效钩子类型）
-   - 节奏序列（快-缓-快、蓄能-假胜-崩解等有效序列）
-   - 对话交锋（潜台词丰富、角色差异化明显的对话）
-   - 爽点释放（铺垫充分、释放干脆的爽点段落）
-   - 情绪递进（自然流畅的情绪变化轨迹）
-3. 对每个候选模式计算 SHA256-12 hash，与 `project_memory.json` 已有条目对比：
-   - 精确匹配 → 跳过
-   - 近似匹配（编辑距离 < 5）→ 跳过，记录 near-duplicate 日志
-   - 新模式 → 追加到对应类别数组
-4. 每类最多 200 条，超出时 LRU 淘汰最旧条目
-5. 如果 `追踪/project_memory.json` 不存在，用 `references/shared/project-memory-init.json` 创建初始文件
+每完成 50 章或一个卷结束时，对 `追踪/上下文.md` 做轻量归档：保留最近 5 章详记，更早内容压缩到 `追踪/归档/`。`追踪/状态.md` 中的活跃线索不移入归档。文风缓存跨卷时归档到 `追踪/归档/文风缓存_第X卷.md`。
 
 ---
 
 ## 报告输出格式
 
-每次完成写作操作后，必须使用标准化 3 段式报告（详见 `references/shared/report-template.md`）：
+每次完成写作操作后，必须使用标准化 3 段式报告（格式见下方）：
 
 ```markdown
 ## 📋 完成状态
@@ -783,7 +568,7 @@ Stage B2 使用**单次 spawn** 同时完成上下文加载和文风召回（替
 | 写作技法全程参考 | `references/writing-craft.md` |
 | 格式与结构规范 | `references/format-and-structure.md`（仅对话/段落格式适用长篇） |
 | 状态追踪协议 | `references/state-tracking.md` |
-| 功法状态追踪格式 | `references/technique-tracker-schema.md` |
+| 功法状态追踪格式 | `references/artifact-protocols.md`「追踪/状态.md」功法状态 section |
 
 ### Phase 5：质量检查
 
