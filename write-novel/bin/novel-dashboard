@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ── 定位 write-novel 工具根目录（脚本自身位置的父目录的父目录） ──
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TOOL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# ── 设置 PYTHONPATH，使 dashboard 模块可导入 ──
+PYTHONPATH="${TOOL_ROOT}:${PYTHONPATH:-}"
+export PYTHONPATH
+
+# ── 解析 --project-root（可能是第一个参数，也可能没有） ──
+PROJECT_ROOT=""
+FORWARD_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --project-root)
+            if [[ $# -gt 1 ]]; then
+                PROJECT_ROOT="$2"
+                shift 2
+            else
+                echo "ERROR: --project-root requires a value" >&2
+                exit 1
+            fi
+            ;;
+        *)
+            FORWARD_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# ── 解析项目根目录 ──
+if [[ -n "$PROJECT_ROOT" ]]; then
+    : # 已通过 CLI 指定
+elif [[ -n "${WEBNOVEL_PROJECT_ROOT:-}" ]]; then
+    PROJECT_ROOT="$WEBNOVEL_PROJECT_ROOT"
+else
+    # 从 CWD 向上搜索 .webnovel/state.json
+    SEARCH_DIR="$(pwd)"
+    while true; do
+        if [[ -f "$SEARCH_DIR/.webnovel/state.json" ]]; then
+            PROJECT_ROOT="$SEARCH_DIR"
+            break
+        fi
+        PARENT="$(dirname "$SEARCH_DIR")"
+        if [[ "$PARENT" == "$SEARCH_DIR" ]]; then
+            # 已到达文件系统根目录
+            echo "ERROR: 未找到 .webnovel/state.json。" >&2
+            echo "请确保在小说项目目录中执行，或通过 --project-root 指定路径。" >&2
+            exit 1
+        fi
+        SEARCH_DIR="$PARENT"
+    done
+fi
+
+# ── 验证项目根目录 ──
+if [[ ! -d "$PROJECT_ROOT" ]]; then
+    echo "ERROR: 项目目录不存在: $PROJECT_ROOT" >&2
+    exit 1
+fi
+
+if [[ ! -f "$PROJECT_ROOT/.webnovel/state.json" ]]; then
+    echo "ERROR: 目录不包含 .webnovel/state.json: $PROJECT_ROOT" >&2
+    exit 1
+fi
+
+echo "项目路径: $PROJECT_ROOT"
+echo "启动 Dashboard: http://127.0.0.1:${PORT:-8765}"
+
+exec python3 -m dashboard.server --project-root "$PROJECT_ROOT" "${FORWARD_ARGS[@]}"

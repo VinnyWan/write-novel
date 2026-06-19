@@ -127,6 +127,7 @@ metadata:
 | `skills/story-setup/references/templates/上下文.md.tmpl` | `{书名}/追踪/上下文.md` | user state | create only if absent | never overwrite existing writing context |
 | generated config | `.story-config.json` | user state | create only if absent | contains `version`, `author_name`, `book_name`, `target_platform`, `target_words` |
 | generated sentinel | `.story-deployed` | story-setup managed | replace | contains `agents_version`, `setup_skill_version`, `target_cli`, `resolver_strategy`, `references_dir` |
+| generated script | `start-dashboard.sh` | story-setup managed | replace | executable, contains absolute path to `novel-dashboard` |
 
 ### 2.1 部署 CLAUDE.md
 
@@ -194,6 +195,17 @@ metadata:
 - 此文件供 session-start.sh 和写作 skill 检测部署状态，避免重复提示
 - 如果 `.story-deployed` 已存在但无 `agents_version` 或版本 < 10，提示用户重新运行 story-setup 以更新 hooks/agents/rules/reference bundle（具体变更见 `UPGRADING.md`）
 
+### 2.8 生成 Dashboard 启动 wrapper
+
+- 在项目根目录生成 `start-dashboard.sh`：
+  ```bash
+  #!/usr/bin/env bash
+  exec "<write-novel-tool-root>/bin/novel-dashboard" "$@"
+  ```
+- `<write-novel-tool-root>` 为本 skill 文件所在位置的 `../../`（即 skill 文件向上两级目录）的绝对路径
+- 赋予可执行权限：`chmod +x <project-root>/start-dashboard.sh`
+- 提示用户：「可通过 `./start-dashboard.sh` 在项目目录中一键启动 Dashboard」
+
 ## Phase 3：验证安装
 
 1. 验证 hooks 注册：
@@ -213,7 +225,10 @@ metadata:
    - 检查 `.story-config.json` 是否存在
    - 如存在，校验必填字段（`author_name`、`book_name`、`target_platform`、`target_words`）均非空
    - 缺少必填字段时输出警告「⚠️ .story-config.json 配置不完整，建议重新运行 /story-setup」
-7. 输出安装报告：
+7. 验证 Dashboard wrapper：
+   - 检查 `start-dashboard.sh` 是否存在且可执行
+   - 检查其内容包含正确的 `novel-dashboard` 绝对路径
+8. 输出安装报告：
    - 列出所有已部署的文件
    - 列出需要注意的事项（如已有配置已合并）
    - 提示用户可以开始使用 `/story-long-write` 或 `/story-short-write`
