@@ -71,3 +71,11 @@
 3. 下一步命令必须有效且可执行，使用项目当前上下文
 4. 文件路径使用相对于项目根目录的路径
 5. 中文输出遵循《中文文案排版指北》
+
+## 错误文案与术语引用
+
+报告中的错误描述和工程术语 SHALL 统一引用结构化资产，不得硬编码：
+
+- **错误目录** `references/shared/author_error_catalog.json`：遇到已知失败模式（写前/写后自检未过、伏笔逾期、字数不达标、合约不合规、章节提交被拒、投影失败等）时，按 `code` 查得作者可读的标题/原因/影响/下一步动作，填入「⚠️ 问题」对应分组。`auto_handle=true` 的问题归入「自动处理」，`must_handle` 归入「必须处理」，`should_handle` 归入「建议检查」。
+- **作者术语表** `references/shared/author_glossary.json`：面向作者的输出若需使用工程术语（frontmatter、合约、prewrite-gate、CHAPTER_COMMIT、run-ledger、投影、快照等），SHALL 先经术语表映射为作者可读中文名。
+- 新增失败模式时，先在错误目录登记 `code` 与可读文案，再在流程中引用。

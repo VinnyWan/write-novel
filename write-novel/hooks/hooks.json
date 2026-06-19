@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -X utf8 \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"",
+            "command": "for PYBIN in python3 python py; do \"$PYBIN\" -c \"\" >/dev/null 2>&1 && break; done; \"$PYBIN\" -X utf8 \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"",
             "timeout": 5
           },
           {
@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -X utf8 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard_runtime_write.py\"",
+            "command": "for PYBIN in python3 python py; do \"$PYBIN\" -c \"\" >/dev/null 2>&1 && break; done; \"$PYBIN\" -X utf8 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard_runtime_write.py\"",
             "timeout": 5
           },
           {
@@ -80,7 +80,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -X utf8 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard_runtime_write.py\"",
+            "command": "for PYBIN in python3 python py; do \"$PYBIN\" -c \"\" >/dev/null 2>&1 && break; done; \"$PYBIN\" -X utf8 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard_runtime_write.py\"",
             "timeout": 5
           }
         ]

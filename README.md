@@ -75,7 +75,7 @@ claude --plugin-dir ./write-novel
 | `story-doctor` | `/write-novel:story-doctor` | 项目诊断 + 模式学习 |
 | `browser-cdp` | `/write-novel:browser-cdp` | 浏览器操控，CDP 协议复用登录态采集数据 |
 
-## Agent 体系（6 个）
+## Agent 体系（9 个）
 
 | 层级 | Agent | 职责 |
 |------|-------|------|
@@ -159,13 +159,13 @@ write-novel/                          # 仓库根（市场根）
     ├── .claude-plugin/
     │   └── plugin.json               # 插件清单
     ├── skills/                       # 14 个 skill（SKILL.md）
-    ├── agents/                       # 6 个 agent 定义
+    ├── agents/                       # 9 个 agent 定义
     ├── hooks/                        # hooks.json + 脚本
     ├── references/                   # 方法论与参考数据
     ├── templates/                    # 37 题材模板 + 输出模板
-    ├── scripts/                      # Python/JS 工具脚本
+    ├── scripts/                      # 静态检查链 + 行为 eval 运行器（发版与 CI 守护）
     ├── dashboard/                    # Web 可视化面板
-    └── evals/                        # 行为评估
+    └── evals/                        # 行为评估契约 + fixtures
 ```
 
 ### 用户写作项目
@@ -194,8 +194,12 @@ write-novel/                          # 仓库根（市场根）
 
 ## 进一步阅读
 
-- [USAGE.md](USAGE.md) — 完整使用文档（流水线、场景、FAQ）
+- [USAGE.md](USAGE.md) — 完整使用文档（流水线、场景、FAQ、开发与质量检查）
 - [CHANGELOG.md](CHANGELOG.md) — 版本更新日志
+
+## 开发与 CI
+
+插件结构与行为契约由一组静态检查脚本守护，push 与 PR 时由 `.github/workflows/plugin-check.yml` 自动运行（静态检查链 + 版本一致性 + 行为 eval），本地可复现、无需 secrets。脚本与 eval 契约说明详见 [USAGE.md「开发与质量检查」](USAGE.md#开发与质量检查)。
 
 ## 许可
 

@@ -36,6 +36,10 @@ foreshadowing_plant:   # 本章新埋伏笔
   - "残魂提到昆仑秘境时语气的变化"
 foreshadowing_recycle: # 本章需回收的伏笔
   - "第41章：拍卖行老者的异常关注"
+must_advance_hooks:    # 本章必须推进的伏笔（写后自检会逐条核对是否真的推进）
+  - "F003：主角对宗门的怀疑"
+eligible_resolve_hooks: # 本章可回收的伏笔（不强制，写手择机填坑）
+  - "F007：神秘黑令牌的来历"
 characters_involved:   # 本章涉及角色
   - 主角
   - 残魂(新)
@@ -59,6 +63,8 @@ emotion_target: "期待感 → 好奇 → 决心"  # 情绪变化轨迹
 | `forbidden` | array | 否 | 本章禁止出现的内容项 |
 | `foreshadowing_plant` | array | 否 | 本章新埋设的伏笔 |
 | `foreshadowing_recycle` | array | 否 | 本章需回收的伏笔（含来源章） |
+| `must_advance_hooks` | array | 否 | 本章必须推进的伏笔 ID 列表；写后自检逐条核对正文是否实际推进，未推进按 `hook-agenda-unfulfilled` 报错 |
+| `eligible_resolve_hooks` | array | 否 | 本章可回收的伏笔 ID 列表（非强制，提示写手择机填坑） |
 | `characters_involved` | array | 否 | 本章出现角色（标注"新"或"路人"） |
 | `emotion_target` | string | 否 | 情绪变化轨迹 |
 
@@ -77,3 +83,5 @@ emotion_target: "期待感 → 好奇 → 决心"  # 情绪变化轨迹
 4. must_cover 每项必须在正文中可找到对应内容
 5. forbidden 每项不得在正文中出现
 6. payoff_density ≥ 体裁画像 density_per_chapter 最低值
+7. `must_advance_hooks` 声明的每条伏笔，正文必须实际推进（写入或明显推动其状态）；未推进按 `hook-agenda-unfulfilled` 经 author_error_catalog 报为「必须处理」
+8. `must_advance_hooks` 与 `eligible_resolve_hooks` 均为可选字段；缺失时跳过对应校验，不报错（向后兼容既有细纲）

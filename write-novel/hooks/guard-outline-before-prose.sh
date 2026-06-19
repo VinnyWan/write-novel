@@ -8,7 +8,14 @@ set -euo pipefail
 source "$(dirname "$0")/lib/common.sh"
 
 INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | python3 -c "
+# 探测真正可用的解释器：Windows 上 `python3` 会命中 Microsoft Store 占位程序（exit 49）
+PYBIN=""
+for c in python3 python py; do
+  if "$c" -c "" >/dev/null 2>&1; then PYBIN="$c"; break; fi
+done
+FILE_PATH=""
+if [ -n "$PYBIN" ]; then
+  FILE_PATH=$(echo "$INPUT" | "$PYBIN" -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
@@ -21,6 +28,7 @@ try:
 except:
     print('')
 " 2>/dev/null || echo "")
+fi
 
 # Only check 正文/ directory writes
 if [ -z "$FILE_PATH" ]; then

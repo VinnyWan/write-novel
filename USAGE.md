@@ -547,3 +547,24 @@ Agent 由 `story-setup` 部署到 `.claude/agents/`，skill 使用前先检查 a
 ### 想写多本书怎么管理？
 
 项目支持多书并存。`/write-novel:story` + "切书" 列出所有书，选择即可切换。`.active-book` 文件记录当前活跃书。
+
+## 开发与质量检查
+
+`write-novel/scripts/` 下提供一组 shell 静态检查脚本，用于发版前与 CI 中守护 skill 包结构完整性。无需安装额外依赖，bash + 标准工具即可运行：
+
+```bash
+bash write-novel/scripts/static-check.sh           # SKILL 结构、references 断链、死文件、agent 引用、section 引用
+bash write-novel/scripts/check-shared-files.sh     # 跨 skill 同名引用文件一致性（防副本漂移）
+bash write-novel/scripts/check-python-invocation.sh # 禁止裸调 python3（Windows Store 占位程序 exit 49）
+bash write-novel/scripts/test-charcount-portable.sh # 跨平台字符统计可移植性
+bash write-novel/scripts/test-charcount-portable.sh --stub  # 模拟 Windows Store 故障场景
+bash write-novel/scripts/check-version-consistency.sh # plugin.json / marketplace.json / CHANGELOG 版本号三处一致
+bash write-novel/scripts/run-behavior-evals.sh      # 行为 eval 契约（17 条 case：frontmatter/契约短语/执行顺序/anti-AI/schema/错误目录/术语表/链接完整性）
+```
+
+解析规则：每个 skill 自带 `references/` 目录，链接相对该目录解析；跨 skill 形式 `story-X/references/Y.md` 相对插件根解析；部署根 `references/methodology|shared/<base>` 作回退。运行态项目路径（`追踪/`、`设定/`、`大纲/`、`正文/` 等）不计入断链。
+
+**行为 eval 契约**：`write-novel/evals/fixtures/behavior/fast.json` 以结构化 JSON 声明 17 条可验证断言（skill frontmatter 合规、关键契约短语存在、prewrite→commit→postwrite 执行顺序、anti-AI 参考齐全、合约 schema 字段、错误目录覆盖已知失败模式、术语表映射、报告模板引用资产、agent 模板齐全、链接完整性等），由 `run-behavior-evals.sh` 逐条执行。新增失败模式或契约字段时同步在 eval 契约登记，避免回归。
+
+任一脚本非零退出即视为检查失败，应修复后再提交。CI（`.github/workflows/plugin-check.yml`）会在 push 与 PR 时自动运行全部检查（静态检查链 + 版本一致性 + 行为 eval），无需 secrets，可本地复现。
+

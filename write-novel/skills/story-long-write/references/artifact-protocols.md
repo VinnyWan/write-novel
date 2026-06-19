@@ -6,8 +6,9 @@
 - 设定/关系.md
 - 设定/题材定位.md
 - 大纲/卷纲_第X卷.md（含情绪弧线+反转规划）
-- 大纲/细纲_第XXX章.md（含嵌入合约 frontmatter）
+- 大纲/细纲_第XXX章.md（含嵌入合约 frontmatter，含钩子议程字段）
 - 追踪/状态.md（合并：伏笔+时间线+角色状态+功法状态）
+- 追踪/快照/chapter_{N}.state.md（按章状态快照，只读副本，回滚锚点）
 - 对标/{对标书名}/拆文报告.md
 - 对标/{对标书名}/原文/第XXX章_{章名}.md
 
@@ -195,6 +196,10 @@ payoff_density: 2
 must_cover:
   - "必须覆盖内容1"
 forbidden: []
+must_advance_hooks:        # 可选：本章必须推进的伏笔 ID（写后逐条核对，未推进报错）
+  - "F003"
+eligible_resolve_hooks:    # 可选：本章可回收的伏笔 ID（非强制，择机填坑）
+  - "F007"
 ---
 
 ## 细纲（第 N 章）
@@ -207,6 +212,9 @@ forbidden: []
 - 爽点：{本章爽点}
 - 章尾钩子：{从章尾13式中选择} — {具体内容，期待度：强/中/弱}
 - 字数目标：{X} 字
+- 钩子议程（可选）：
+  - 必须推进：{F003 等 ID 列表，对应 must_advance_hooks}
+  - 可回收：{F007 等 ID 列表，对应 eligible_resolve_hooks}
 ```
 
 **frontmatter 字段说明**：
@@ -222,6 +230,8 @@ forbidden: []
 | `payoff_density` | 是 | 本章爽点微兑现数量 |
 | `must_cover` | 否 | 必须覆盖的内容清单 |
 | `forbidden` | 否 | 禁止出现的内容清单 |
+| `must_advance_hooks` | 否 | 本章必须推进的伏笔 ID 列表；写后自检逐条核对正文是否实际推进，未推进按 `hook-agenda-unfulfilled` 报为「必须处理」 |
+| `eligible_resolve_hooks` | 否 | 本章可回收的伏笔 ID 列表（非强制，提示写手择机填坑） |
 
 创建参考：`plot-core-methods.md` (小纲与卡文) + `hooks-chapter.md` (章节钩子) + `opening-design.md` (前3章额外加载)
 
@@ -289,3 +299,22 @@ forbidden: []
 ```
 
 创建参考：`plot-core-methods.md` (连续性追踪) + `state-tracking.md` (角色状态快照格式)
+
+---
+
+## 追踪/快照/chapter_{N}.state.md
+
+第 N 章投影完成后存的 `追踪/状态.md` 只读副本，作为按章回滚锚点。格式与回滚流程详见 `state-tracking.md`「按章状态快照与回滚」。
+
+```markdown
+---
+snapshot_chapter: N
+snapshot_timestamp: {ISO 8601}
+source: 追踪/状态.md
+note: 只读副本，禁止编辑。回滚或比对时使用，不参与写作上下文加载。
+---
+
+{第 N 章投影后的 追踪/状态.md 完整内容}
+```
+
+落盘时机：Phase 4 Stage G 投影第 3 目标。日更精简模式可延后到归档节点批量补建。

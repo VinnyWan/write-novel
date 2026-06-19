@@ -48,6 +48,7 @@
 |--------|------|-----------|
 | 字数达标 | `word_count` 对比 `target_words`（±20% 容忍） | 低于 80% 阻塞落盘 |
 | 合约合规 | 正文覆盖细纲 frontmatter 中所有 `must_cover` 项，无 `forbidden` 项出现 | 标注未完成项 |
+| 钩子议程履行 | 细纲含 `must_advance_hooks` 时，逐条核对正文是否**实际推进**该伏笔（写入新进展或明显推动其状态）；`eligible_resolve_hooks` 为非强制提示项，未回收仅提醒不阻塞 | 未推进项按错误目录 `hook-agenda-unfulfilled` 报为「必须处理」，阻塞本章提交 |
 | hook 有效 | 检查结尾段落是否包含有效的 hook（悬念/情绪/选择等，不含总结式结尾） | 标注弱结尾 |
 | 格式合规 | 段落长度（无超长段）、对话独立、无多余空行 | 自动修复 |
 | 禁用词扫描 | 对照 `references/banned-words.md`，一级词命中即替换 | 一级词阻塞落盘 |
@@ -77,6 +78,8 @@ contract_compliance:
   cen: pass | fail
   must_cover: "覆盖 Y/Z 项"
   forbidden: "零违规" | "发现 X 处违规"
+  must_advance_hooks: "推进 X/Y 项" | "未声明"   # 仅细纲声明了该字段时记录
+  eligible_resolve_hooks: "回收 X/Y 项" | "未声明"
 review_status: pass | partial | fail
 deai_status: pass | revised | skipped
 projection_status: full | partial | failed
