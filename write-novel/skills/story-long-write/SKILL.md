@@ -44,12 +44,12 @@ metadata:
 
 | 场景 | 触发条件 | 执行流程 |
 |------|----------|----------|
-| **开书** | "帮我开书" / 项目目录为空 | 完整 Phase 1→2→3→4→5（下方全部流程） |
+| **开书** | "帮我开书" / 项目目录为空 | 完整 Phase 1→2→3a→3b→4→5（下方全部流程） |
 | **日更续写** | 关键词（"日更"/"续写"/"继续写"）**且**项目已有正文+追踪 | 加载 `references/workflow-daily.md`（Phase 4 精简模式：跳过 Stage D 独立检查 + Stage H 中途快照，Stage G 投影精简为 2 目标，Stage A 使用三层摘要加载，质量检查合并执行） |
 | **大修** | "修改第X章" / "回炉" / "重写第X章" | 加载 `references/workflow-revision.md` |
 | **中断恢复** | "--resume" / "--continue" / "继续上次" | 读取 `追踪/run-ledger.md`，找到最后 checkpoint，跳过已完成步骤恢复 |
 
-> **开新卷**：如果新卷引入新角色/势力/设定，先回 Phase 2 增量补充，再进 Phase 3 补充新卷细纲，最后 Phase 4 写作。如果纯延续，直接回 Phase 3。
+> **开新卷**：如果新卷引入新角色/势力/设定，先回 Phase 2 增量补充，再进 Phase 3a 补充新卷卷纲+设定补全，然后 Phase 3b 补充新卷细纲，最后 Phase 4 写作。如果纯延续，直接回 Phase 3b。
 
 **匹配优先级**：同时命中多行时，按 日更续写 → 大修 → 开书 的顺序匹配。日更续写的 AND 条件（项目已有正文+追踪）不满足时，提示用户"项目还没有正文，建议先开书"。
 
@@ -148,9 +148,22 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 ---
 
-### Phase 3：大纲搭建
+### Phase 3a：卷纲 + 设定补全
+
+先产出所有卷的卷级大纲确定全书骨架，然后执行设定补全 Gate 把设定填实，最后再进入 Phase 3b 细纲。**不允许在设定空白的情况下直接推细纲。**
 
 #### 卷级大纲（全书结构）
+
+先产出所有卷的卷级大纲。重点打磨第一卷。
+
+**第一卷卷纲必须完整**，至少包含：
+- 卷名、字数、章数
+- 起承转合四个阶段的核心事件（每阶段标注大致章号范围）
+- 本卷的核心冲突和情绪弧线
+- 本卷引入的主要角色和势力列表
+- 本卷需要埋设的伏笔列表
+
+非第一卷可相对粗略，在进入该卷前再细化。
 
 ```
 ## 卷级大纲
@@ -159,6 +172,15 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 - 功能：{铺垫/起步/第一个大爽点}
 - 核心事件：{一句话}
 - 起始状态 → 结束状态：{主角从 {A} 变成 {B}}
+- 起承转合：
+  - 起（第 1-{N} 章）：{核心事件}
+  - 承（第 {N+1}-{M} 章）：{核心事件}
+  - 转（第 {M+1}-{P} 章）：{核心事件}
+  - 合（第 {P+1}-{Y} 章）：{核心事件}
+- 核心冲突：{}
+- 情绪弧线：{}
+- 引入角色/势力：{}
+- 本卷伏笔：{}
 
 ### 第二卷：{卷名}
 ...
@@ -171,14 +193,60 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 <!-- cross-book-recall:trigger:tempo-volume -->
 > **多对标书时**：参 `references/cross-book-recall.md`，副对标 `章节/*_摘要.md` + `剧情/*.md` 召回卷级节奏
 
-#### 细纲（全书每章）
+**卷纲落盘 artifact**（Phase 3a 产出）：
+- **大纲/大纲.md**：全书卷级鸟瞰（卷名+字数+章数+核心事件+状态变化，一段式汇总）
+- **大纲/卷纲_第1卷.md**：第一卷完整卷纲（含起承转合、核心冲突、情绪弧线、引入角色/势力、伏笔列表）
+
+#### 设定补全 Gate
+
+卷纲（特别是第一卷卷纲）产出后，**必须先执行设定补全 Gate**，扫描卷纲识别所有需要的设定项，逐项检查并建档，再进入 Phase 3b 细纲。
+
+**Gate 检查步骤**：
+
+1. **角色扫描**：从卷纲提取所有具名角色，检查 `设定/角色/{名}.md` 是否存在
+   - 主角/主要配角 → 不存在则建档（姓名、身份、与主角关系、本卷功能），填已确定信息，未定字段留占位符
+   - 一次性路人 → 跳过
+2. **势力扫描**：从卷纲提取所有势力/组织，检查 `设定/势力/{名}.md`，缺失则建档（名称、定位、核心目标、关键人物、与主角关系）
+3. **世界观规则扫描**：识别影响多章的世界观规则，检查 `设定/世界观/{主题}.md`，缺失则建档（规则、适用范围）
+4. **关系网扫描**：检查 `设定/关系.md` 是否覆盖卷纲中所有主要角色关系，不完整则补充
+5. **输出设定状态清单**：
+
+```
+## 第一卷设定补全状态
+
+### 已完备
+- 角色：{列表}
+- 势力：{列表}
+- 世界观：{列表}
+
+### 需补建
+- 角色：{列表} → 已建档
+- 势力：{列表} → 已建档
+- 世界观：{列表} → 已建档
+
+### 需补充
+- {文件名}：缺少 {字段}，待后续细纲/正文确定
+```
+
+Gate 执行完毕后，向用户展示清单摘要，确认后进入 Phase 3b。建档操作尽量自动化（AI 自行扫描+填写），只在关键决策点询问用户。
+
+**设定补全 artifact 产出**（Phase 3a 落盘）：
+- **追踪/伏笔.md** + **追踪/时间线.md** + **追踪/角色状态.md** + **追踪/功法状态.md**：伏笔状态表+故事时间线+角色状态快照+功法技能树（参考 plot-core-methods.md「连续性追踪」、state-tracking.md「角色状态快照格式」、technique-tracker-schema.md「功法状态追踪格式」）
+
+<!-- cross-book-recall:trigger:execution-output -->
+
+---
+
+### Phase 3b：细纲
+
+> **前置条件**：Phase 3a 卷纲 + 设定补全 Gate 已完成，用户已确认。
 
 ⚠️ **大纲四检（每卷/每章设计前必答）**：① 本卷交付什么情绪？什么剧情模式能可靠交付？② 本卷核心冲突是什么？③ 卷节奏（起承转合）哪段加速哪段减速？④ 本卷需要新埋设的伏笔有哪些？上一卷待回收的伏笔如何处理？
 
 **每章必须有一个细纲文件**（`大纲/细纲_第XXX章.md`），不允许跳章。
 
 默认分批建纲：先建前 10 章细纲进入 Phase 4 写作；每写完 5 章再滚动补齐后 5-10 章。不要在单次对话里强行产出 30 章完整细纲。
-如果全书章数较少（≤30 章），可以在 Phase 3 一次全部建完。
+如果全书章数较少（≤30 章），可以在 Phase 3b 一次全部建完。
 
 ```
 ## 细纲（第 N 章）
@@ -202,18 +270,13 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 **章节标题规则**：只做轻量去重；发现同名或明显重复标题时，按本章核心事件改名，并保持细纲标题与正文文件名一致。
 
-**细纲后设定补全（每批细纲建完后执行）**：扫描本批细纲新出现的具名角色/势力/关键设定，对**会复用**的（按卷纲/细纲判断：后续多次出场或承担剧情功能）自动建档，不等用户确认：
-- 角色 → 建 `设定/角色/{名}.md`（填空模板见 character-basics.md 主角卡/配角卡），并在 `追踪/角色状态.md` 登记初始状态（该文件若未建则一并创建）；
+**细纲后轻量设定补全（每批细纲建完后执行）**：仅扫描本批细纲中新出现的、Phase 3a Gate 未覆盖的具名角色/势力/关键设定，对**会复用**的（按卷纲/细纲判断：后续多次出场或承担剧情功能）自动建档，不等用户确认：
+- 角色 → 建 `设定/角色/{名}.md`（填空模板见 character-basics.md 主角卡/配角卡），并在 `追踪/角色状态.md` 登记初始状态；
 - 势力/组织 → 建 `设定/势力/{名}.md`（名称、定位、核心目标、关键人物、与主角关系）；
 - 影响多章的世界观规则 → 建/补 `设定/世界观/{主题}.md`（规则、适用范围）；
 - 功法/技能 → 建 `设定/功法技能/{名}.md`（模板见 `write-novel/templates/output/设定集-功法技能.md`，填入名称、类型、品阶、所属体系、效果简述、持有角色）。判断"会复用"的标准：同一功法/技能在后续细纲中出现 ≥2 次，或属于主角/重要配角的标志性技能。一次性路人技能不建档。
 
-已存在的设定文件按细纲新信息**增量补充、不覆盖**，同一角色不重复登记 `追踪/角色状态.md`。一次性路人、后文无戏份的配角不建档。建档只填细纲已确定的信息，未定字段留占位符，不提前杜撰。
-
-大纲完成后，创建以下 artifact（加载 [references/artifact-protocols.md](references/artifact-protocols.md) 中对应模板）：
-- **大纲/大纲.md**：全书卷级鸟瞰（卷名+字数+章数+核心事件+状态变化，一段式汇总）
-- **大纲/卷纲_第X卷.md**：每卷的爽点节奏+情绪弧线+人物弧线+伏笔+反转（参考 outline-methods.md「大纲三层结构法」 + emotional-arc-design.md「六种弧线速查」 + reversal-toolkit.md「反转类型」）
-- **追踪/伏笔.md** + **追踪/时间线.md** + **追踪/角色状态.md** + **追踪/功法状态.md**：伏笔状态表+故事时间线+角色状态快照+功法技能树（参考 plot-core-methods.md「连续性追踪」、state-tracking.md「角色状态快照格式」、technique-tracker-schema.md「功法状态追踪格式」）
+Phase 3a Gate 已建档的设定按细纲新信息**增量补充、不覆盖**，同一角色不重复登记 `追踪/角色状态.md`。一次性路人、后文无戏份的配角不建档。建档只填细纲已确定的信息，未定字段留占位符，不提前杜撰。
 
 前 3 章细纲额外加载 [references/opening-design.md](references/opening-design.md)（黄金三章法则+六大标准）。
 
@@ -244,7 +307,7 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 #### Agent 调用：story-architect
 
-大纲搭建阶段优先由主会话产出卷纲+首批细纲；只有结构复杂、反转链多或主会话方案不稳定时，才调用 story-architect agent。若项目已部署 story-architect agent（检查 `.claude/agents/story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "story-architect", prompt: "项目目录：{dir}\n任务类型：大纲搭建\n查询参数：卷级结构+细纲+钩子/反转/情绪弧线设计")` 辅助大纲排布、钩子/反转/情绪弧线设计。如 agent 不可用，由主线程直接执行。
+卷纲搭建阶段优先由主会话产出；只有结构复杂、反转链多或主会话方案不稳定时，才调用 story-architect agent。细纲阶段同理——主会话优先产出首批细纲。若项目已部署 story-architect agent（检查 `.claude/agents/story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "story-architect", prompt: "项目目录：{dir}\n任务类型：大纲搭建\n查询参数：卷级结构+细纲+钩子/反转/情绪弧线设计")` 辅助大纲排布、钩子/反转/情绪弧线设计。如 agent 不可用，由主线程直接执行。
 
 ---
 
@@ -289,17 +352,17 @@ story-architect 属于高层级结构设计 agent。轻量题材定位优先由�
 
 | 文件 | 粒度 | 创建阶段 | 读取时机 |
 |------|------|---------|---------|
-| 设定/关系.md | 全书 | Phase 2 | Phase 3 大纲、Phase 4 写作 |
-| 设定/题材定位.md（含 `主对标书` 字段，多对标时必填） | 全书 | Phase 2 | Phase 3 大纲、每卷开始前、Phase 4 文风召回 |
-| 设定/角色/{角色名}.md、设定/势力/{名}.md、设定/功法技能/{名}.md | 角色/势力/功法技能 | Phase 3 细纲后增量补全（首批含主角/主要角色） | Phase 4 状态筛选/写作 |
+| 设定/关系.md | 全书 | Phase 2 | Phase 3a 卷纲、Phase 3b 细纲、Phase 4 写作 |
+| 设定/题材定位.md（含 `主对标书` 字段，多对标时必填） | 全书 | Phase 2 | Phase 3a 卷纲、每卷开始前、Phase 4 文风召回 |
+| 设定/角色/{角色名}.md、设定/势力/{名}.md、设定/功法技能/{名}.md | 角色/势力/功法技能 | Phase 3a Gate 主要建档 + Phase 3b 细纲后轻量补全（首批含主角/主要角色） | Phase 4 状态筛选/写作 |
 | 对标/{书名}/文风.md | 对标书 | analyze Stage 6 输出 → story-import 同步 | Phase 4 每章写作前（文风召回） |
-| 大纲/卷纲_第X卷.md | 卷 | Phase 3 | Phase 4 写卷首章前 |
-| 追踪/伏笔.md | 全书 | Phase 3 起 | Phase 4 每章写作前 |
-| 追踪/时间线.md | 全书 | Phase 3 起 | Phase 4 每章写作前 |
-| 对标/{书名}/拆文报告.md | 对标书 | 用户手动+analyze | Phase 2 核心设定、Phase 3 大纲、Phase 4 写作 |
+| 大纲/卷纲_第X卷.md | 卷 | Phase 3a | Phase 4 写卷首章前 |
+| 追踪/伏笔.md | 全书 | Phase 3a 起 | Phase 4 每章写作前 |
+| 追踪/时间线.md | 全书 | Phase 3a 起 | Phase 4 每章写作前 |
+| 对标/{书名}/拆文报告.md | 对标书 | 用户手动+analyze | Phase 2 核心设定、Phase 3a 卷纲、Phase 3b 细纲、Phase 4 写作 |
 | 追踪/上下文.md | 全书 | Phase 4 首次日更（workflow-daily 自动创建） | 每次日更开始时 |
 | 参考资料/{topic}.md | 按需 | Phase 4（story-researcher 输出） | Phase 4 后续章节写作时复用 |
-| 追踪/角色状态.md | 全书 | Phase 3 | Phase 4 每章写作前（状态筛选步骤） |
+| 追踪/角色状态.md | 全书 | Phase 3a | Phase 4 每章写作前（状态筛选步骤） |
 | 对标/{书名}/角色/{角色名}.md | 对标书 | analyze 输出 | Phase 4 模块召回（角色参考） |
 | 对标/{书名}/剧情/{剧情线名}.md | 对标书 | analyze 输出 | Phase 4 模块召回（剧情模块参考） |
 | 对标/{书名}/设定/*.md | 对标书 | analyze 输出 | Phase 2 设定参考、Phase 4 世界观约束 |
@@ -415,13 +478,13 @@ agent 返回 `context_load`（角色/伏笔/时间线/角色状态）和 `benchm
 B3. **意图确认**：综合细纲+最简记忆包+模块召回结果，确认本章节奏和情绪目标，用一句话概括写作意图。
 
 B4. **Prewrite Gate 校验**（详见 `references/write-gates.md` Gate 1）：
-- **合约意外缺失兜底**：如合约文件被手动删除，从细纲重新生成合约（沿用 Phase 3 逻辑）
+- **合约意外缺失兜底**：如合约文件被手动删除，从细纲重新生成合约（沿用 Phase 3b 逻辑）
 - **爽点密度预估**：合约 `payoff_density` ≥ 体裁画像最低要求
 - **线配比检查**：合约 `strand` 连续同线达到上限（fire ≥ 2、constellation ≥ 1）时提示切换
 - **伏笔逾期检测**：逾期伏笔优先回收；检查合约 `foreshadowing_recycle` 覆盖情况
 - 输出 prewrite 检查报告（通过/警告/阻塞），阻塞项解决前不进入 Stage C
 
-> 合约存在性和 frontmatter 字段完整性已在 Phase 3 合约生成时自检保证，Prewrite Gate 不再重复检查。
+> 合约存在性和 frontmatter 字段完整性已在 Phase 3b 合约生成时自检保证，Prewrite Gate 不再重复检查。
 
 B5. **资料研究**（按需）：遇到需要查证的外部事实时，spawn `story-researcher` agent 输出到 `参考资料/`，完成后继续。
 
@@ -463,7 +526,7 @@ F1. **追踪原子更新**：在一次操作中按顺序更新以下文件：
    - `追踪/时间线.md`（记录事件时序）
    - `追踪/角色状态.md`（身份/能力/关系/公众形象变化，追加变更记录）
    - `追踪/功法状态.md`（功法获得或阶段升级）
-- 本章首次引入会复用的具名角色/势力/功法技能，按 Phase 3 规则补建 `设定/` 档案
+- 本章首次引入会复用的具名角色/势力/功法技能，按 Phase 3b「细纲后轻量设定补全」规则补建 `设定/` 档案
 
 F2. **CHAPTER_COMMIT**：创建不可变提交记录 `.story-system/commits/chapter_{N}.commit.md`：
    ```yaml
@@ -567,7 +630,7 @@ Stage B2 使用**单次 spawn** 同时完成上下文加载和文风召回（替
 | B1 | Step 4.1 | 状态筛选（前置到 Prewrite Gate 之前） |
 | B2 | Step 4.2 | 文风召回 + 卷级缓存；Agent 合并（context_load+style_load 单次 spawn） |
 | B3 | Step 4.3 | 意图确认（不变） |
-| B4 | Step 4（原 Prewrite Gate） | 移除合约存在性/完整性检查（已移至 Phase 3 自检）；保留爽点密度/线配比/伏笔逾期 |
+| B4 | Step 4（原 Prewrite Gate） | 移除合约存在性/完整性检查（已移至 Phase 3b 自检）；保留爽点密度/线配比/伏笔逾期 |
 | B5 | Step 5 | 资料研究（不变） |
 | C1 | Step 7-8 | 正文执行（不变） |
 | C2 | Step 9 | 字数验证（不变） |
@@ -681,20 +744,27 @@ Stage B2 使用**单次 spawn** 同时完成上下文加载和文风召回（替
 | 题材框架与定位 | `references/genre-catalog.md` + `references/genre-core-mechanics.md` |
 | 创建 artifact | `references/artifact-protocols.md` |
 
-### Phase 3：大纲搭建
+### Phase 3a：卷纲 + 设定补全
 
 | 场景 | 加载文件 |
 |------|---------|
-| 搭建大纲 | `references/outline-methods.md` |
+| 搭建卷纲 | `references/outline-methods.md` |
 | 设计矛盾与结构 | `references/outline-conflict.md` |
 | 深度结构设计 | `references/outline-structure-theory.md` |
 | 节奏与升级感 | `references/outline-rhythm.md` |
+| 情绪弧线 | `references/emotional-arc-design.md` |
+| 反转设计 | `references/reversal-toolkit.md` |
+| 设定角色（Gate） | `references/character-basics.md` + `references/character-relations.md` |
+| 创建 artifact | `references/artifact-protocols.md` |
+
+### Phase 3b：细纲
+
+| 场景 | 加载文件 |
+|------|---------|
 | 小纲与卡文 | `references/plot-core-methods.md` |
 | 选择叙事框架 | `references/plot-frameworks.md` |
 | 题材写作公式 | `references/genre-writing-formulas.md` |
 | 黄金三章 | `references/opening-design.md` |
-| 情绪弧线 | `references/emotional-arc-design.md` |
-| 反转设计 | `references/reversal-toolkit.md` |
 
 ### Phase 4：正文写作
 
