@@ -10,13 +10,13 @@
 
 ## Step 1：快速上下文加载
 
-### 优先路径：story-explorer agent
+### 优先路径：write-novel-story-explorer agent
 
-如果项目已部署 story-explorer agent（检查 `.claude/agents/story-explorer.md` 是否存在），使用 Agent 工具 spawn 执行 context_load 查询，一次性获取全部写作上下文：
+如果项目已部署 write-novel-write-novel-story-explorer agent（检查 `.claude/agents/write-novel-write-novel-story-explorer.md` 是否存在），使用 Agent 工具 spawn 执行 context_load 查询，一次性获取全部写作上下文：
 
 ```
 Agent(
-  subagent_type: "story-explorer",
+  subagent_type: "write-novel-write-novel-story-explorer",
   prompt: "项目目录：{dir}\n查询类型：context_load\n查询参数：准备写第 {N} 章"
 )
 ```
@@ -102,7 +102,7 @@ spawn 返回后直接使用其 results，跳过下方手动加载步骤。如果
 
 加载 `大纲/细纲_第{N}章.md`。如不存在，按下方补建流程处理，不允许直接写正文。
 
-细纲不存在的处理：停止本章写作，提示：「第 N 章细纲不存在。请用 `/write-novel:story-long-write` 补充第 N 章细纲后再继续。」
+细纲不存在的处理：停止本章写作，提示：「第 N 章细纲不存在。请用 `/write-novel:write-novel-long-write` 补充第 N 章细纲后再继续。」
 
 **2.2 按需加载角色**
 
@@ -127,7 +127,7 @@ spawn 返回后直接使用其 results，跳过下方手动加载步骤。如果
 **2.5 文风召回**
 
 - 如果项目有对标书：加载 `{对标书路径}/文风.md`（整书级文风）和 `{对标书路径}/章节/` 下与本章目标情绪最匹配的一章摘要
-- 如果对标书没有文风文件：报错「对标书 X 缺少文风.md。请用 `/write-novel:story-long-analyze` 跑 Stage 6 生成文风。」
+- 如果对标书没有文风文件：报错「对标书 X 缺少文风.md。请用 `/write-novel:write-novel-long-analyze` 跑 Stage 6 生成文风。」
 - 如果项目无对标书：跳过文风召回，在意图确认中标记"无对标参考"。不读不存在的文风、不阻塞、不警告。
 
 **2.6 正文起草**
@@ -139,7 +139,7 @@ spawn 返回后直接使用其 results，跳过下方手动加载步骤。如果
 
 **2.7 正文审查**
 
-调用 `story-review` 的 lean 模式检查本章，或使用 `consistency-checker` agent 检查事实冲突。如发现 blocking issue，必须修正后才能继续。
+调用 `write-novel-review` 的 lean 模式检查本章，或使用 `consistency-checker` agent 检查事实冲突。如发现 blocking issue，必须修正后才能继续。
 
 **2.8 追踪更新**
 

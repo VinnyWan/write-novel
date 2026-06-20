@@ -1,0 +1,59 @@
+# {项目名} — 网文写作工具集
+
+## 项目配置
+
+> 由 write-novel-setup 配置向导自动生成。后续 skill 从此段读取项目参数。
+
+| 配置项 | 值 |
+|--------|----|
+| 书名 | {书名} |
+| 作者 | {作者名} |
+| 目标平台 | {目标平台} |
+| 题材 | {题材} |
+| 目标字数 | {目标字数} |
+| 风格偏好 | 不指定 |
+
+## Skill 路由表
+
+| 命令 | Skill | 说明 |
+|------|-------|------|
+| `/write-novel-long-write`、`/写长篇` | write-novel-long-write | 长篇网文写作（逐章推进） |
+| `/write-novel-short-write`、`/写短篇` | write-novel-short-write | 短篇网文写作（情绪驱动） |
+| `/write-novel-long-analyze`、`/长篇拆文` | write-novel-long-analyze | 长篇小说深度拆解 |
+| `/write-novel-short-analyze`、`/短篇拆文` | write-novel-short-analyze | 短篇小说拆文分析 |
+| `/write-novel-long-scan`、`/长篇扫描` | write-novel-long-scan | 长篇小说批量扫描 |
+| `/write-novel-short-scan`、`/短篇扫描` | write-novel-short-scan | 短篇小说批量扫描 |
+| `/write-novel-deslop`、`/去AI味` | write-novel-deslop | 去除 AI 写作痕迹 |
+| `/write-novel-cover`、`/封面` | write-novel-cover | 生成封面图 |
+| `/write-novel-review`、`/审查` | write-novel-review | 多视角对抗式审查 |
+| `/write-novel-import`、`/导入` | write-novel-import | 逆向导入已有小说到项目结构 |
+| `/write-novel`、`/网文` | write-novel | 工具箱路由 · 模糊意图自动分发 |
+| `/write-novel-setup`、`/准备写书` | write-novel-setup | 环境部署 · hooks/rules/agents 一键部署 |
+| `/browser-cdp` | browser-cdp | 浏览器 CDP 工具 |
+
+> 旧触发词兼容：`/story-*` 命令仍可通过 write-novel 路由器的别名表映射到对应 `write-novel-*` skill，至少保留一个版本。
+
+## 文件结构
+
+- `拆文库/` — 拆文分析结果存放目录
+- `{书名}/正文/` — 长篇小说正文章节
+- `{书名}/设定/` — 角色设定、世界设定
+- `{书名}/大纲/` — 卷纲、细纲
+- `{书名}/追踪/` — 上下文.md（写作上下文）、伏笔.md
+- `{书名}/对标/` — 对标作品分析
+
+## 协作规则
+
+Agent 间的协调关系由各 Agent 定义文件的职责边界描述，不需要独立协调规则文件。
+
+## Compact 后恢复上下文
+
+此部分在 compact 后自动生效。CLAUDE.md 在每次 compact 后会被重新加载。
+写作中的关键上下文：
+1. 当前写作项目名称和进度
+2. 最近讨论的角色设定变更
+3. 未完成的伏笔列表
+4. 当前章节的情绪/节奏目标
+
+如果存在 {书名}/追踪/上下文.md，compact 后首先读取恢复上下文。
+

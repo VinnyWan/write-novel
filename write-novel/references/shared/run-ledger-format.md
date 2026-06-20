@@ -74,7 +74,7 @@
 **归档判断条件**：
 - 卷最后一章的步骤 9/9 postcommit-gate 状态为 `done`，且
 - 该章编号 ≥ 卷结束章（从卷纲读取），或
-- 用户显式执行 `/story-long-write archive` 触发
+- 用户显式执行 `/write-novel-long-write archive` 触发
 
 **归档日志**：每次归档后在 `追踪/projection-log.jsonl` 追加一条:
 ```json

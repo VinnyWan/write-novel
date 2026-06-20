@@ -5,7 +5,7 @@ set -euo pipefail
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if [ ! -f "$HOOK_DIR/lib/common.sh" ] || [ ! -f "$HOOK_DIR/lib/sentinel.sh" ]; then
-  printf '%b' "[WARN] story hook 函数库缺失。重新运行 /story-setup 恢复。\n"
+  printf '%b' "[WARN] story hook 函数库缺失。重新运行 /write-novel-setup 恢复。\n"
   exit 0
 fi
 
@@ -25,11 +25,11 @@ if sentinel_exists "$ROOT/.story-deployed"; then
     fi
   done
   if [ -n "$MISSING_HOOKS" ]; then
-    OUTPUT+="[WARN] 缺少 hook：$MISSING_HOOKS 重新运行 /story-setup。\n\n"
+    OUTPUT+="[WARN] 缺少 hook：$MISSING_HOOKS 重新运行 /write-novel-setup。\n\n"
     HAS_CONTENT=true
   fi
 else
-  OUTPUT+="[WARN] 写作环境未部署。运行 /story-setup 初始化。\n\n"
+  OUTPUT+="[WARN] 写作环境未部署。运行 /write-novel-setup 初始化。\n\n"
   HAS_CONTENT=true
 fi
 

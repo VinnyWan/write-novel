@@ -39,7 +39,7 @@
 ## 🔜 下一步
 
 ```bash
-/story-long-write 43
+/write-novel-long-write 43
 ```
 
 {或列出 2-3 个可选下一步命令}

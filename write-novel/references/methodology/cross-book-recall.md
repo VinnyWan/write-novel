@@ -32,7 +32,7 @@
 - 格式：「本卷最佳钩子：第X章章尾的悬念型（预期→破灭→新悬念）」
 
 ### 召回时
-- 开新书/新卷时，由 `story-doctor` 或 `story-long-write` 从 run-ledger 中提取模式记录
+- 开新书/新卷时，由 `write-novel-doctor` 或 `write-novel-long-write` 从 run-ledger 中提取模式记录
 - Agent 读取并内化模式，但不原文复制
 - 跨项目时，从 `references/methodology/` 读取通用方法论
 

@@ -12,8 +12,8 @@
     {
       "id": "long_write_contract",
       "type": "skill_contract",
-      "skill": "story-long-write",
-      "description": "/story-long-write 保留写前/写后自检、章节正式提交、状态结算、状态快照落盘的契约短语。",
+      "skill": "write-novel-long-write",
+      "description": "/write-novel-long-write 保留写前/写后自检、章节正式提交、状态结算、状态快照落盘的契约短语。",
       "required": [
         "Prewrite Gate",
         "Postwrite Gate",
@@ -25,7 +25,7 @@
     {
       "id": "gate_ordering",
       "type": "ordered_phrases",
-      "skill": "story-long-write",
+      "skill": "write-novel-long-write",
       "description": "单章流程执行顺序约束：写前自检先于章节正式提交，章节正式提交先于写后结算。",
       "ordered": [
         ["Prewrite Gate", "CHAPTER_COMMIT"],
@@ -35,7 +35,7 @@
     {
       "id": "hook_agenda_gate",
       "type": "skill_contract",
-      "skill": "story-long-write",
+      "skill": "write-novel-long-write",
       "description": "写后自检纳入 must_advance_hooks 履行校验，未履行经错误目录 hook-agenda-unfulfilled 报为必须处理。",
       "required": [
         "must_advance_hooks",
@@ -46,7 +46,7 @@
     {
       "id": "hook_agenda_backward_compat",
       "type": "skill_contract",
-      "skill": "story-long-write",
+      "skill": "write-novel-long-write",
       "description": "钩子议程字段为可选，既有细纲无该字段时跳过校验不报错（向后兼容）。",
       "required": [
         "无此两字段时跳过",
@@ -56,7 +56,7 @@
     {
       "id": "context_truncation_policy",
       "type": "skill_contract",
-      "skill": "story-long-write",
+      "skill": "write-novel-long-write",
       "description": "长文件受控截断策略存在且显式标注省略，不让写手误读为全文。",
       "required": [
         "长文件受控截断",
@@ -67,7 +67,7 @@
     {
       "id": "state_snapshot_rollback",
       "type": "skill_contract",
-      "skill": "story-long-write",
+      "skill": "write-novel-long-write",
       "description": "按章状态快照格式与回滚流程已文档化。",
       "required": [
         "按章状态快照与回滚",
@@ -80,8 +80,8 @@
       "type": "reference_exists",
       "description": "去 AI 味依赖的禁用词与反 AI 写作参考文件齐全。",
       "required_files": [
-        "skills/story-deslop/references/banned-words.md",
-        "skills/story-deslop/references/anti-ai-writing.md"
+        "skills/write-novel-deslop/references/banned-words.md",
+        "skills/write-novel-deslop/references/anti-ai-writing.md"
       ]
     },
     {
@@ -156,10 +156,10 @@
     {
       "id": "agent_templates_complete",
       "type": "file_exists",
-      "description": "story-setup 部署的 9 个 agent 模板齐全（含补建的 deconstruction-agent 与 reviewer）。",
+      "description": "write-novel-setup 部署的 9 个 agent 模板齐全（含补建的 deconstruction-agent 与 reviewer）。",
       "required_files": [
-        "skills/story-setup/references/templates/agents/deconstruction-agent.md",
-        "skills/story-setup/references/templates/agents/reviewer.md"
+        "skills/write-novel-setup/references/templates/agents/write-novel-deconstruction-agent.md",
+        "skills/write-novel-setup/references/templates/agents/write-novel-reviewer.md"
       ]
     },
     {

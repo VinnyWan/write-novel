@@ -27,7 +27,7 @@ SKILLS_DIR="$PLUGIN_ROOT/skills"
 # 已知有意差异（basename）：这些文件被允许在各 skill 间不同
 # - output-templates.md / material-decomposition.md：每个 skill 拥有自己的输出/拆解 schema
 # - quality-checklist.md：各 skill 的检查清单不同
-# - genre-* 文件：拆文 skill（story-short-analyze）会前置「用作拆文标尺时」分析镜头头，writer skill 没有
+# - genre-* 文件：拆文 skill（write-novel-short-analyze）会前置「用作拆文标尺时」分析镜头头，writer skill 没有
 # - female-audience-writing.md：长篇/短篇女频写法不同，有意分叉
 # - state-tracking.md：long-write（卷级伏笔+功法状态）/ import（逆向提取）/ short-write（轻量）追踪粒度不同，无 sync-source，有意分叉
 IGNORE_NAMES="output-templates.md material-decomposition.md quality-checklist.md \
@@ -35,7 +35,7 @@ genre-catalog.md genre-core-mechanics.md genre-readers.md \
 genre-writing-formulas.md genre-writing-techniques.md female-audience-writing.md \
 state-tracking.md"
 
-# 分析镜头分叉（basename）：story-short-analyze 的副本有意前置分析镜头头，从比较集中剔除；
+# 分析镜头分叉（basename）：write-novel-short-analyze 的副本有意前置分析镜头头，从比较集中剔除；
 # 其余副本（writer skill + agent-references）仍须逐字节一致。
 ANALYST_DIVERGENT_NAMES="character-basics.md character-design-methods.md character-relations.md"
 
@@ -69,7 +69,7 @@ for base in $dup_names; do
       filtered=()
       for p in ${paths[@]+"${paths[@]}"}; do
         case "$p" in
-          */story-short-analyze/*) ;;
+          */write-novel-short-analyze/*) ;;
           *) filtered+=("$p") ;;
         esac
       done

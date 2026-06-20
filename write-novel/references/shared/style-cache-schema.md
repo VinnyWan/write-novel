@@ -1,6 +1,6 @@
 # 文风缓存 Schema
 
-> 本文件定义 `追踪/文风缓存.md` 的格式和读写规则。story-long-write Phase 4 Stage B2 使用此缓存避免卷内章章重复文风召回。
+> 本文件定义 `追踪/文风缓存.md` 的格式和读写规则。write-novel-long-write Phase 4 Stage B2 使用此缓存避免卷内章章重复文风召回。
 
 ---
 

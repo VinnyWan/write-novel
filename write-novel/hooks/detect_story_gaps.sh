@@ -55,7 +55,7 @@ for BOOK_DIR in "${BOOK_DIRS[@]}"; do
       }
     ' "$BOOK_DIR/追踪/伏笔.md" 2>/dev/null || true)
     if [ -n "$ABNORMAL_FORESHADOW" ]; then
-      BOOK_OUTPUT+="[WARN] ${BOOK_NAME}：伏笔.md 中检测到过期或异常的伏笔条目，建议跑 /story-review lean 或做一次伏笔审计。\n"
+      BOOK_OUTPUT+="[WARN] ${BOOK_NAME}：伏笔.md 中检测到过期或异常的伏笔条目，建议跑 /write-novel-review lean 或做一次伏笔审计。\n"
     fi
   fi
 
@@ -74,7 +74,7 @@ for BOOK_DIR in "${BOOK_DIRS[@]}"; do
 	  if [ -f "$BOOK_DIR/追踪/run-ledger.md" ]; then
 	    LAW_CHECKS=$(grep -c "律条违反\|law_violation\|未登记\|未经登记" "$BOOK_DIR/追踪/run-ledger.md" 2>/dev/null || echo "0")
 	    if [ "$LAW_CHECKS" -gt 0 ] 2>/dev/null; then
-	      BOOK_OUTPUT+="[WARN] ${BOOK_NAME}：检测到 ${LAW_CHECKS} 处律条违规记录（大纲/设定/登记），建议跑 /story-review。\n"
+	      BOOK_OUTPUT+="[WARN] ${BOOK_NAME}：检测到 ${LAW_CHECKS} 处律条违规记录（大纲/设定/登记），建议跑 /write-novel-review。\n"
 	    fi
 	  fi
 	  # 检查是否所有正文章节都有对应细纲 (大纲即法律)
@@ -98,7 +98,7 @@ for BOOK_DIR in "${BOOK_DIRS[@]}"; do
 GLOBAL_PROGRESS_OUTPUT=""
 if [ -d "$ROOT/拆文库" ]; then
   while IFS= read -r -d '' progress_file; do
-    GLOBAL_PROGRESS_OUTPUT+="[WARN] 拆文未完成：${progress_file#$ROOT/}，运行 /story-long-analyze 继续。\n"
+    GLOBAL_PROGRESS_OUTPUT+="[WARN] 拆文未完成：${progress_file#$ROOT/}，运行 /write-novel-long-analyze 继续。\n"
   done < <(find "$ROOT/拆文库" -name "_progress.md" -print0 2>/dev/null || true)
 fi
 if [ -n "$GLOBAL_PROGRESS_OUTPUT" ]; then

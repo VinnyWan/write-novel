@@ -10,7 +10,7 @@
       "reason": "写前检查发现爽点密度预估低于题材阈值、线配比失衡，或检测到逾期未回收的伏笔。",
       "impact": "当前章节不能直接进入正文写作，否则情绪交付和伏笔回收会出问题。",
       "next_action": "按报告里的具体项调整细纲（补爽点、理线、回收或延期伏笔），再重新进入写作。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": false
     },
     {
@@ -21,7 +21,7 @@
       "reason": "写后检查发现字数未达标、细纲合约（must_cover/forbidden）未履行、章首/章尾钩子无效、格式不合规或命中禁用词。",
       "impact": "本章不会被提交为正式章节，追踪状态不会结算，后续章节不能可靠依赖它。",
       "next_action": "按报告里的不达标项修订正文（补字数、补钩子、改禁用词、补覆盖内容），再重新走写后自检。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": false
     },
     {
@@ -32,7 +32,7 @@
       "reason": "细纲 frontmatter 的 must_advance_hooks 声明了本章必须推进的伏笔，但正文未实际推进。",
       "impact": "长篇后期伏笔会越积越多、读者承诺落空。",
       "next_action": "在正文中推进这些伏笔，或回到细纲把该伏笔从 must_advance_hooks 移到后续章节并说明原因。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": false
     },
     {
@@ -43,7 +43,7 @@
       "reason": "正文字数低于细纲目标字数的 90%。",
       "impact": "章节偏短会影响节奏和爽点密度。",
       "next_action": "补充正文内容（扩写情节点、加细节、加情绪层），达到目标字数。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": true
     },
     {
@@ -54,7 +54,7 @@
       "reason": "某条伏笔的埋设章距当前章已超过题材设定的回收阈值，仍未回收。",
       "impact": "读者会忘记或觉得坑没填，降低信任度。",
       "next_action": "在近几章安排回收，或在细纲里明确延期并标注回收章号。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": false
     },
     {
@@ -65,7 +65,7 @@
       "reason": "细纲 YAML frontmatter 缺少必需的合约字段（cbn/cpns/cen）或字段值不合法。",
       "impact": "写后自检无法校验本章是否履行合约。",
       "next_action": "补全细纲 frontmatter 的合约字段后重写。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": false
     },
     {
@@ -76,7 +76,7 @@
       "reason": "本章仍有写后自检未通过项或追踪更新失败，CHAPTER_COMMIT 未生成。",
       "impact": "本章不会被当作已正式写入，断点续传无法定位到下一章。",
       "next_action": "先修复写后自检不达标项，再重新提交本章。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": false
     },
     {
@@ -87,7 +87,7 @@
       "reason": "写后投影（追踪/状态.md 角色状态 section、章节摘要、按章状态快照 chapter_{N}.state.md）更新失败。",
       "impact": "追踪文件或快照可能与正文不一致，后续章节上下文加载会用到过时状态，按章回滚也可能定位不到正确断点。",
       "next_action": "手动核对 追踪/状态.md、追踪/快照/chapter_{N}.state.md 与本章正文，补齐状态变化、摘要与快照。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": true
     },
     {
@@ -98,7 +98,7 @@
       "reason": "要写的章节没有对应的细纲文件（大纲/细纲_第XXX章.md）。",
       "impact": "正文写作没有合约依据，写后自检无法校验。",
       "next_action": "先在 Phase 3b 补建该章细纲（含 frontmatter 合约），再写正文。",
-      "command": "/story-long-write",
+      "command": "/write-novel-long-write",
       "auto_handle": false
     },
     {
@@ -108,8 +108,8 @@
       "title": "缺少写作所需的追踪文件",
       "reason": "写作上下文加载时发现 追踪/状态.md 或 追踪/上下文.md 缺失。",
       "impact": "上下文不完整可能写错角色状态或漏伏笔。",
-      "next_action": "按缺失文件回退规则从旧追踪文件合并重建，或运行 /story-doctor 诊断。",
-      "command": "/story-doctor",
+      "next_action": "按缺失文件回退规则从旧追踪文件合并重建，或运行 /write-novel-doctor 诊断。",
+      "command": "/write-novel-doctor",
       "auto_handle": true
     },
     {
@@ -120,7 +120,7 @@
       "reason": "run-ledger 末行记录上次操作状态为 interrupted，写作流程未走完。",
       "impact": "需要先确认断点再继续，避免重复或遗漏步骤。",
       "next_action": "按断点诊断读取 run-ledger 定位中断 Phase/Stage，验证交付物完整性后接续。",
-      "command": "/story-long-write --resume",
+      "command": "/write-novel-long-write --resume",
       "auto_handle": true
     },
     {
@@ -130,8 +130,8 @@
       "title": "正文里出现了禁用词",
       "reason": "正文命中 banned-words.md 中的 AI 味或套路禁用词。",
       "impact": "文字会有 AI 痕迹，影响阅读体验。",
-      "next_action": "按禁用词扫描报告替换或改写，必要时运行 /story-deslop 深度去 AI 味。",
-      "command": "/story-deslop",
+      "next_action": "按禁用词扫描报告替换或改写，必要时运行 /write-novel-deslop 深度去 AI 味。",
+      "command": "/write-novel-deslop",
       "auto_handle": true
     }
   ]

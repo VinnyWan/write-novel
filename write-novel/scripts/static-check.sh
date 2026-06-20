@@ -58,7 +58,7 @@ resolve_ref() {
   local base="${link##*/}"
   # 1. skill-local: skills/<skill>/<link>
   if [ -e "$skill_dir/$link" ]; then return 0; fi
-  # 2. 跨 skill / 插件根形式（link 已含 story-X/ 或 references/ 前缀）：相对插件根
+  # 2. 跨 skill / 插件根形式（link 已含 write-novel-X/ 或 story-X/ 或 references/ 前缀）：相对插件根
   if [ -e "$PLUGIN_ROOT/$link" ]; then return 0; fi
   # 3. 部署根回退
   if [ -f "$REFERENCES_ROOT/methodology/$base" ]; then return 0; fi
@@ -103,7 +103,7 @@ check_skill() {
     [ -z "$ref_path" ] && continue
     # 仅检查 references/ scripts/ assets/ 开头的路径
     case "$ref_path" in
-      references/*|scripts/*|assets/*|story-*/references/*) ;;
+      references/*|scripts/*|assets/*|write-novel-*/references/*|story-*/references/*) ;;
       *) continue ;;
     esac
     if ! resolve_ref "$skill_dir" "$ref_path"; then
