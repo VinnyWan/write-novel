@@ -478,6 +478,69 @@ check_skill() {
   fi
 }
 
+# ---------- shared references integrity (跨 skill 顶层检查) ----------
+# Check 10: references/shared/ 内 wikilink [[...]] 与路径引用 ](...) 的悬空检测
+# 只校验「引用目标是否存在」，不校验「文件是否被消费」（引用计数），
+# 以免误伤 contract-schema（仅 eval 引用）、pattern-schema（仅 agent 引用）等合法低频文件。
+check_shared_references() {
+  local shared_dir="$REFERENCES_ROOT/shared"
+  TOTAL=$((TOTAL + 1))
+  echo ""
+  echo "--- references/shared (跨 skill) ---"
+  if [ ! -d "$shared_dir" ]; then
+    echo "  [SKIP] references/shared/ 不存在"
+    PASS=$((PASS + 1))
+    return
+  fi
+
+  local errors=0
+  local broken=()
+  local any_ref=false
+  while IFS= read -r -d '' ref_file; do
+    [ "$(basename "$ref_file")" = ".gitkeep" ] && continue
+    local ref_dir
+    ref_dir="$(dirname "$ref_file")"
+    # 1) wikilink [[name]] 或 [[path/to/name]]：取末段 basename，在所在目录查找 .md
+    while IFS= read -r wl; do
+      [ -z "$wl" ] && continue
+      any_ref=true
+      [[ "$wl" == http* ]] && continue
+      local wl_base="${wl##*/}"
+      if [ ! -e "$ref_dir/$wl_base.md" ] && [ ! -e "$ref_dir/$wl_base" ] && [ ! -e "$ref_dir/$wl" ] && [ ! -e "$ref_dir/${wl}.md" ]; then
+        broken+=("$(basename "$ref_file") -> [[$wl]]")
+      fi
+    done < <(grep -oE '\[\[[^]]+\]\]' "$ref_file" 2>/dev/null | sed 's/\[\[//; s/\]\]//' | grep -v '^http' || true)
+
+    # 2) markdown 路径引用 ](path)：相对该文件目录解析
+    while IFS= read -r xref; do
+      [ -z "$xref" ] && continue
+      any_ref=true
+      [[ "$xref" == http* ]] && continue
+      [[ "$xref" == \#* ]] && continue
+      [[ "$xref" == *"{"* ]] && continue
+      if [ ! -e "$ref_dir/$xref" ]; then
+        broken+=("$(basename "$ref_file") -> $xref")
+      fi
+    done < <(grep -oE '\]\([^)]+\)' "$ref_file" 2>/dev/null | sed 's/](\(.*\))/\1/' | grep -v '^http' | grep -v '^#' || true)
+  done < <(find "$shared_dir" -type f -name "*.md" -print0 2>/dev/null)
+
+  if [ ${#broken[@]} -eq 0 ]; then
+    if [ "$any_ref" = true ]; then
+      echo "  [PASS] no broken wikilinks/path refs in references/shared/"
+    else
+      echo "  [PASS] references/shared/ has no internal refs to validate"
+    fi
+    PASS=$((PASS + 1))
+  else
+    echo "  [FAIL] broken references in references/shared/:"
+    for x in "${broken[@]}"; do
+      echo "         -> $x"
+    done
+    errors=$((errors + 1))
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ---------- main ----------
 
 echo "Skill Static Check (write-novel)"
@@ -487,6 +550,9 @@ echo "Plugin: $PLUGIN_ROOT"
 for skill_dir in "$SKILLS_DIR"/*/; do
   check_skill "$skill_dir"
 done
+
+# 跨 skill 顶层检查（在 per-skill 循环之后）
+check_shared_references
 
 echo ""
 echo "================================="

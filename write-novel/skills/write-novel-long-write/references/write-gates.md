@@ -12,7 +12,8 @@
 
 | 检查项 | 方法 | 不通过处理 |
 |--------|------|-----------|
-| frontmatter 字段完整 | 检查细纲 frontmatter 必需字段齐全：`cbn`/`cpns`/`cen`/`target_words`/`strand`/`hook_type`/`payoff_density` | 缺失则从细纲正文重新提取补全 frontmatter，最多重试 2 次；仍失败标记该章 `status: needs_review` 提示用户，不阻塞其他章 |
+| frontmatter 字段完整 | 检查细纲 frontmatter 必需字段齐全：`cbn`/`cpns`/`cen`/`target_words`/`strand`/`hook_type`/`payoff_density`/`event`/`conflict`/`turning_point` | 缺失则从细纲正文重新提取补全 frontmatter，最多重试 2 次；仍失败标记该章 `status: needs_review` 提示用户，不阻塞其他章 |
+| 三要素存在性 | 检查 `event`/`conflict`/`turning_point` 三个字段均非空（D8 新增） | 任一缺失 → **阻塞**，Gate 拒绝通过，提示补全后重新提交 |
 
 > 自检责任统一在 Gate 1（写前最后一道关）兜底，不再依赖 Phase 3b 生成时自检。
 
@@ -54,6 +55,10 @@
 | 禁用词扫描 | 对照 `references/banned-words.md`，一级词命中即替换 | 一级词阻塞落盘 |
 | 去 AI 味 | 对照 `references/banned-words.md` 手动扫描正文，并参照 `references/anti-ai-writing.md` 对高频 AI 指纹做定性裁定 | 报告问题数 |
 | 投影一致性 | 正文中角色状态与 `追踪/状态.md` 角色状态 section 一致 | 标注差异 |
+| 段落覆盖率（D8 新增） | 实际段落数 vs 计划段落数（偏差 ≤1），整体段落覆盖率 ≥ 80% | 未达标 → 警告级，不阻塞，写入 `追踪/状态.md` 问题列表 |
+| 冲突强度节奏（D8 新增） | 连续 3 章 `conflict.intensity` ≤ 2 | 生成「节奏过缓」警告，建议下章安排强度 ≥4 的事件 |
+| 转折点落地（D8 新增） | 检查标记 `turning_point.is_turning: true` 的章节，按 type 交叉校验后续章节是否体现了转折 | 未体现 → 生成「转折未落地」问题 |
+| 剧情线推进（D8 新增） | 支线连续 30 章无推进（strand 字段未引用该线名） | 生成「支线停滞」警告 |
 
 ### 追踪原子更新
 

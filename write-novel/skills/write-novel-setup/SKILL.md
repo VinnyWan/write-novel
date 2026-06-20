@@ -60,6 +60,57 @@ metadata:
 
 > **run-ledger**：Phase 1.5 完成后追加 `{timestamp} | phase-1.5-config | {book_name}/{target_platform} | success`。
 
+## Phase 1.6：世界观初始化（D8 新增）
+
+> 在配置向导完成后、Phase 2 部署前执行。产出 `设定/世界观.md` 和 `设定/题材定位.md`，建立故事的基础时空框架。
+> 后续 story-long-write Phase 2 在此基础上细化角色和核心冲突，不再从零构建世界观。
+
+### 1.6.1 触发条件
+
+- 长篇项目（已有书名目录或 Phase 1.5 刚创建）→ 执行 Phase 1.6
+- 短篇项目 → 跳过，提示「短篇可跳过世界观初始化，写作时按需构建设定」
+
+### 1.6.2 重跑检测
+
+检查 `设定/世界观.md` 是否存在：
+- 存在 → 跳过 Phase 1.6，提示「世界观已存在。使用 `--rebuild-worldbuilding` 重建」
+- 不存在 → 进入 1.6.3 产出
+
+### 1.6.3 世界观产出
+
+从 `.story-config.json` 读取 `target_words`/`genre`/`style_preference`，调用 story-architect agent 产出两个文件：
+
+**产出 A：`设定/世界观.md`**
+
+按目标字数分级确定详细程度：
+- `< 100 万字`：简化模板，各板块 2-5 行描述
+- `>= 100 万字`：完整模板，各板块 5-15 行描述，含子条目
+
+模板见 `references/artifact-protocols.md`「设定/世界观.md」。必含：
+- 时代背景（时代/年份/历史阶段/关键历史事件）
+- 地理环境（主要地域/势力范围/特色地貌）
+- 势力格局（核心势力+次级势力+关系矩阵）
+- 力量体系（体系类型/等级划分/晋升规则，如适用）
+- 社会结构（阶层/资源分配/货币经济/信仰）
+
+**产出 B：`设定/题材定位.md`**
+
+模板见 `references/artifact-protocols.md`「设定/题材定位.md」。必含：
+- 题材类型 + 风格定位 + 目标读者画像
+- 核心梗三分法（表层卖点/深层爽点/长线钩子）
+- 对标作品（1-3 部，如用户在 Phase 1.5 提供了对标信息）
+
+**Agent 调用**：spawn `Agent(subagent_type: "write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：世界观初始化\n参数：字数={target_words} 题材={genre} 风格={style_preference}\n产出：设定/世界观.md + 设定/题材定位.md\n按字数分级选择模板详细程度。")`。agent 不可用时由主线程直接执行。
+
+### 1.6.4 产出后 Gate
+
+产出后校验两个文件：
+- `设定/世界观.md` frontmatter 含 `era`/`world_type`/`power_system`/`target_words` 字段
+- `设定/题材定位.md` 含「核心梗三分法」段落
+- 任一缺失 → 补全后重新校验
+
+> **run-ledger**：Phase 1.6 完成后追加 `{timestamp} | phase-1.6-worldbuilding | 世界观+题材定位 | success`。
+
 ## Phase 2：部署基础设施
 
 使用 AskUserQuestion 确认部署位置后，依次执行。**部署位置确认保留**（D7 仅合并验证环节的二次确认，部署位置确认不取消）。
@@ -122,7 +173,8 @@ metadata:
 5. **部署标记**：`.story-deployed` 存在且含 `agents_version: 11`/`setup_skill_version: 1.2.0`/`target_cli`/`resolver_strategy`/`references_dir`
 6. **项目配置**：`.story-config.json` 存在且必填字段（`author_name`/`book_name`/`target_platform`/`target_words`）非空；缺失输出警告
 7. **Dashboard wrapper**：`start-dashboard.sh` 存在且可执行，含正确 `novel-dashboard` 绝对路径
-8. **输出安装报告**（一次性）：列出已部署文件 + 注意事项（已有配置已合并等）+ 提示开始使用 `/write-novel-long-write` 或 `/write-novel-short-write`
+8. **世界观文件**（长篇项目）：`设定/世界观.md` 存在且 frontmatter 含 `era`/`world_type`/`power_system`/`target_words` 字段；`设定/题材定位.md` 存在且含「核心梗三分法」段落。短篇项目跳过本项
+9. **输出安装报告**（一次性）：列出已部署文件 + 注意事项（已有配置已合并等）+ 提示开始使用 `/write-novel-long-write` 或 `/write-novel-short-write`
 
 > **run-ledger**：Phase 3 完成后追加 `{timestamp} | phase-3-verify | {验证通过项数}/{总项数} | success`。
 

@@ -100,7 +100,11 @@ write-novel-story-architect 属于高层级结构设计 agent。轻量题材定�
 
 从 Phase 1 确定的目标情绪出发，在题材框架中找到对应的剧情模式，从对标书提取可复用模块（做角色位抽象），用用户自己的角色和设定填充。
 
-帮用户确立以下核心要素：
+> **前置加载**：Phase 2 启动时加载 `设定/世界观.md` + `设定/题材定位.md`（story-setup Phase 1.6 产出）。如缺失（跳过了 Phase 1.6 的短篇项目），在本 Phase 中一并构建。
+
+#### 2.1 核心设定 + 世界观细化
+
+帮用户确立以下核心要素，在 Phase 1.6 产出的世界观基础上细化：
 
 ```
 ## 核心设定表
@@ -136,7 +140,32 @@ write-novel-story-architect 属于高层级结构设计 agent。轻量题材定�
 
 完成核心设定后，创建以下 artifact（加载 [references/artifact-protocols.md](references/artifact-protocols.md) 中对应模板）：
 - **设定/关系.md**：角色关系映射（参考 character-relations.md「四种关系类型」）
-- **设定/题材定位.md**：题材核心梗三分法+对标分析（参考 genre-core-mechanics.md「核心梗解析」）。对标分析表保留 2-3 行摘要，详细数据见 `对标/` 目录
+- **设定/题材定位.md**：题材核心梗三分法+对标分析（参考 genre-core-mechanics.md「核心梗解析」）。如 Phase 1.6 已产出，本阶段只做细化补充
+
+#### 2.2 角色集中设计
+
+角色设计在 Phase 2 一次性集中完成，**不再分散到 Phase 3b**。由 character-designer agent 执行，产出：
+
+**主角卡** (`设定/角色/主角_<姓名>.md`)：
+- 基本信息（姓名/年龄/身份/起点状态）
+- 性格与底色（核心性格/行为底线/情绪触发点）
+- 动机与目标（短期/中期/长期/真正渴望）
+- 缺陷与代价（性格缺陷/能力限制/心理阴影）
+- 语言风格档案（口癖/节奏/信息偏好/立场/身份/性格/进度）
+- 动机链（起因→意图→约束→风险）
+- 人物弧线（成长触发→变化铺垫→转折点→新状态）
+- **OOC 行为护栏**：绝对不做的事 / 容易触发的情绪点 / 行为模式边界 / 道德底线 / 辨识锚点（3个标志性行为）/ 对话禁忌
+
+**核心配角卡** (`设定/角色/配角_<姓名>.md`，每人一个文件)：
+- 身份 + 性格 + 与主角关系 + 功能定位（对手/盟友/催化剂/导师/恋人）
+- OOC 护栏（行为边界+情绪触发点）
+- 配角数量上限 = 目标字数 / 20万（如 200万字最多 10 个核心配角）
+
+**人物羁绊图** (`设定/关系.md`)：
+- 所有已建角色之间的关系连线
+- 每对关系标注：关系类型（核心对立/核心同盟/核心羁绊/功能关系）、当前状态、冲突点、变化预期（如"第3卷决裂、第5卷和解"）
+
+> Phase 3b 的角色建档改为**增量补全**——只为新出场的次要角色建简化卡（身份/性格/功能定位），不重复触碰 Phase 2 已建角色。已在 Phase 2 建档的角色后续只更新状态，不重建档案。
 
 <!-- cross-book-recall:trigger:structure-positioning -->
 > **多对标书时**：参 `references/cross-book-recall.md`，副对标 anchor 入「对标分析」表附录
@@ -153,9 +182,21 @@ write-novel-story-architect 属于高层级结构设计 agent。轻量题材定�
 
 ---
 
-### Phase 3a：卷纲 + 设定补全
+### Phase 3a：卷纲 + 剧情线 + 设定补全
 
-先产出所有卷的卷级大纲确定全书骨架，然后执行设定补全 Gate 把设定填实，最后再进入 Phase 3b 细纲。**不允许在设定空白的情况下直接推细纲。**
+先产出剧情线和所有卷的卷级大纲确定全书骨架，然后执行设定补全 Gate 把设定填实，最后再进入 Phase 3b 细纲。**不允许在设定空白的情况下直接推细纲。**
+
+#### 剧情线设计 Gate（新增，卷纲前）
+
+**在卷纲产出前，必须先产出 `大纲/剧情线.md`**（模板见 `references/artifact-protocols.md`「大纲/剧情线.md」）。
+
+剧情线文件包含：
+- **主线 1 条**：线名 / 核心冲突 / 起止卷 / 关键节点列表（卷:章粒度，每节点1-2句描述）
+- **支线 2-5 条**：每条含线名 / 类型（感情线/成长线/势力线/悬疑线/复仇线/日常线）/ 核心冲突 / 起止卷 / 关键节点列表
+- **状态追踪**：每条线的当前状态（未开始/推进中/已完成）
+- **线间关系**：线A与线B的交汇点/因果关系
+
+剧情线缺失或主线不完整 → **阻塞卷纲产出**，提示先完成剧情线设计。
 
 #### 卷级大纲（全书结构）
 
@@ -186,6 +227,7 @@ write-novel-story-architect 属于高层级结构设计 agent。轻量题材定�
 - 情绪弧线：{}
 - 引入角色/势力：{}
 - 本卷伏笔：{}
+- **本卷推进的剧情线**：{列出线名 + 推进到的关键节点}
 
 ### 第二卷：{卷名}
 ...
@@ -199,8 +241,9 @@ write-novel-story-architect 属于高层级结构设计 agent。轻量题材定�
 > **多对标书时**：参 `references/cross-book-recall.md`，副对标 `章节/*_摘要.md` + `剧情/*.md` 召回卷级节奏
 
 **卷纲落盘 artifact**（Phase 3a 产出）：
-- **大纲/大纲.md**：全书卷级鸟瞰（卷名+字数+章数+核心事件+状态变化，一段式汇总）
-- **大纲/卷纲_第1卷.md**：第一卷完整卷纲（含起承转合、核心冲突、情绪弧线、引入角色/势力、伏笔列表）
+- **大纲/剧情线.md**：主线+支线+线间关系（卷纲前产出）
+- **大纲/大纲.md**：全书卷级鸟瞰（卷名+字数+章数+核心事件+状态变化+剧情线推进，一段式汇总）
+- **大纲/卷纲_第1卷.md**：第一卷完整卷纲（含起承转合、核心冲突、情绪弧线、引入角色/势力、伏笔列表、本卷推进的剧情线）
 
 #### 设定补全 Gate
 
@@ -235,7 +278,7 @@ write-novel-story-architect 属于高层级结构设计 agent。轻量题材定�
 
 <!-- cross-book-recall:trigger:execution-output -->
 
-> **Phase 3a checkpoint**：卷纲落盘（`大纲/大纲.md` + `大纲/卷纲_第1卷.md`）且设定需求预览经用户确认后，向 `追踪/run-ledger.md` 追加一行 `openbook | - | phase3a | completed | - | {卷纲摘要}`。中途中断追加 `interrupted` 行。
+> **Phase 3a checkpoint**：剧情线+卷纲落盘（`大纲/剧情线.md` + `大纲/大纲.md` + `大纲/卷纲_第1卷.md`）且设定需求预览经用户确认后，向 `追踪/run-ledger.md` 追加一行 `openbook | - | phase3a | completed | - | {卷纲摘要}`。中途中断追加 `interrupted` 行。
 
 ---
 
@@ -264,6 +307,15 @@ cen: "章尾钩子描述"
 strand: "主线"
 hook_type: "悬念"
 payoff_density: 2
+event: "本章核心事件（1句话）"
+conflict:
+  type: "利益争夺"
+  parties: ["主角", "对手"]
+  intensity: 3
+turning_point:
+  is_turning: false
+  type: ""
+  description: ""
 must_cover:
   - "必须覆盖内容1"
 forbidden: []
@@ -281,11 +333,13 @@ forbidden: []
 - 字数目标：{X} 字
 ```
 
-**合约信息嵌入细纲**：YAML frontmatter 中 `cbn`/`cpns`/`cen`/`payoff_density`/`strand`/`hook_type`/`must_cover`/`forbidden` 字段即为本章合约。不生成独立 `.story-system/contracts/` 文件。字段说明见 [artifact-protocols.md](references/artifact-protocols.md)「大纲/细纲_第XXX章.md」。
+**合约信息嵌入细纲**：YAML frontmatter 中 `cbn`/`cpns`/`cen`/`payoff_density`/`strand`/`hook_type`/`event`/`conflict`/`turning_point`/`must_cover`/`forbidden` 字段即为本章合约。不生成独立 `.story-system/contracts/` 文件。字段说明见 [artifact-protocols.md](references/artifact-protocols.md)「大纲/细纲_第XXX章.md」。
 
 **大纲锁定**：已进入正文写作的前 10 章细纲锁定，未经用户确认不得修改；后续滚动细纲可随正文反馈微调。
 
-**细纲质量要求**：每章细纲一视同仁，全部用最高标准打磨——钩子+人设+爽点+悬念+伏笔。
+**细纲质量要求**：每章细纲一视同仁，全部用最高标准打磨——钩子+人设+爽点+悬念+伏笔+三要素（事件/冲突/转折点）。
+
+**细纲产出 Gate**：产出后校验 frontmatter 三要素（event/conflict/turning_point）完整性——任一缺失则 Gate 拒绝，提示补全后重新提交。`strand` 字段必须引用 `大纲/剧情线.md` 中已定义的线名。
 
 <!-- cross-book-recall:trigger:tempo-chapter -->
 > **多对标书时**：参 `references/cross-book-recall.md`，副对标同基调 `章节/*_摘要.md` 作细纲钩子
@@ -432,12 +486,12 @@ A4. **钩子议程优先加载**：若细纲 frontmatter 含 `must_advance_hooks
 B1. 从上下文中提取最简记忆包（角色状态、相关伏笔、世界约束）。
 B2. 模块召回 + 文风召回（含卷级缓存）。write-novel-story-researcher agent 可用时单次 spawn 合并 context_load + benchmark_style_load。
 B3. 意图确认：用一句话概括本章节奏和情绪目标。
-B4. **Prewrite Gate**（详见 `references/write-gates.md` Gate 1）：爽点密度预估 + 线配比检查 + 伏笔逾期检测。
+B4. **Prewrite Gate**（详见 `references/write-gates.md` Gate 1）：frontmatter 字段完整性自检（含三要素 event/conflict/turning_point）+ 细纲拆段（3-6段，标注叙事功能/预期字数）+ 爽点密度预估 + 线配比检查 + 伏笔逾期检测。
 B5. 资料研究（按需）。
 
 **Stage C：正文执行**
 
-C1. spawn narrative-writer agent 执行正文写作，输出写入 `正文/第XXX章_章名.md`。agent 未部署时由主线程直接写作。
+C1. spawn narrative-writer agent 执行正文写作。默认按细纲 `## 写作段落` 分段写作（段间 `---` 分隔，每段标注叙事功能），日更模式默认连续输出（通过 `--segmented-writing` 启用分段）。输出写入 `正文/第XXX章_章名.md`。agent 未部署时由主线程直接写作。
 C2. 跨平台 Python 字符统计验证字数。字数 < 目标 90% → 补充正文。
 
 **Stage D：质量初检**（日更模式跳过，合并到批量质量检查）
@@ -447,7 +501,7 @@ C2. 跨平台 Python 字符统计验证字数。字数 < 目标 90% → 补充�
 **Stage E：Postwrite Gate（写后校验 + 追踪更新 + 落盘）**
 
 详见 `references/write-gates.md` Gate 2。合并原 Precommit + Postcommit Gate：
-- 质量校验：字数达标、合约合规（细纲 frontmatter `must_cover`/`forbidden`）、钩子议程履行（`must_advance_hooks` 逐条核对，未推进按 `hook-agenda-unfulfilled` 阻塞提交）、hook 有效、格式合规、禁用词扫描、去AI味
+- 质量校验：字数达标、合约合规（细纲 frontmatter `must_cover`/`forbidden`/三要素）、钩子议程履行（`must_advance_hooks` 逐条核对，未推进按 `hook-agenda-unfulfilled` 阻塞提交）、hook 有效、格式合规、禁用词扫描、去AI味、段落覆盖率（≥80%，警告级不阻塞）
 - 追踪原子更新：一次性更新 `追踪/状态.md`（伏笔+时间线+角色状态+功法状态 section）
 - CHAPTER_COMMIT：创建 `.story-system/commits/chapter_{N}.commit.md`
 - 收尾：ledger 写入、连续线索计数、备份（可选）

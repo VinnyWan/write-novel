@@ -1,7 +1,7 @@
 {
   "name": "write-novel",
   "description": "中文长篇网文创作工作台——从大纲到正文，辅助超长篇网络小说创作，包含世界观设计、人物塑造、情节线管理、去AI味润色、多Agent审稿。",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "author": {
     "name": "VinnyWan"
   },

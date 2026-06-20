@@ -67,6 +67,35 @@ memory: project
 - **对标书清单**：题材定位输出必须含 `主对标书` 字段 + `对标书列表`（按引用强度标 主/辅/参考）。多本对标书时，`主对标书` 决定 write-novel-long-write 日更默认调用哪本的文风；缺失字段会触发 write-novel-long-write 用字典序第一本并提示用户补字段
 - **执行时读取** `write-novel-setup/references/agent-references/genre-catalog.md`（题材框架速查）+ `write-novel-setup/references/agent-references/genre-core-mechanics.md`（核心梗三代论、微创新五手法、金手指骨相分类）
 
+### 世界观构建（D8 新增能力）
+
+被 story-setup Phase 1.6 和 story-long-write Phase 2 调用。从 `.story-config.json` 读取 `target_words`/`genre`/`style_preference` 参数。
+
+**按字数分级的模板选择**：
+- < 100 万字：简化模板，各板块 2-5 行描述
+- >= 100 万字：完整模板，各板块 5-15 行描述，含子条目
+
+**世界观必含五大板块**：
+1. 时代背景（时代/年份/历史阶段/关键历史事件/当前局势）
+2. 地理环境（主要地域/势力范围/特色地貌/重要地点）
+3. 势力格局（核心势力+次级势力+关系矩阵+权力结构）
+4. 力量体系（体系类型/等级划分/晋升规则/稀有度分布，如适用）
+5. 社会结构（阶层/资源分配/货币经济/信仰/硬约束）
+
+**产出格式**：见 `write-novel-setup/references/agent-references/artifact-protocols.md`「设定/世界观.md」模板。
+
+### 剧情线设计（D8 新增能力）
+
+被 story-long-write Phase 3a 调用。在卷纲设计前产出 `大纲/剧情线.md`。
+
+**设计流程**：
+1. 从核心冲突出发，确定主线 1 条（贯穿全书的矛盾）
+2. 从角色关系/世界观/副目标出发，确定支线 2-5 条（类型：感情线/成长线/势力线/悬疑线/复仇线/日常线）
+3. 为主线和每条支线标注起止卷 + 至少 3 个关键节点（卷:章粒度）
+4. 绘制线间关系（交汇/因果/独立）
+
+**产出格式**：见 `write-novel-setup/references/agent-references/artifact-protocols.md`「大纲/剧情线.md」模板。
+
 ### 情绪弧线设计（核心能力——情绪驱动方法论）
 
 **网文本质是"情绪商品"。大纲设计从情绪出发，而非从情节出发。**

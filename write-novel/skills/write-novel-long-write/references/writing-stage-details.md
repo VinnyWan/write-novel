@@ -70,8 +70,9 @@
 
 ### B4. Prewrite Gate 校验
 
-详见 `references/write-gates.md` Gate 1。四项检查（首项为字段自检，后三项为既有检查）：
-- **frontmatter 字段完整性自检**（首项）：检查细纲 frontmatter 必需字段 `cbn`/`cpns`/`cen`/`target_words`/`strand`/`hook_type`/`payoff_density` 齐全，缺失则从细纲正文重新提取补全，重试 2 次仍失败标记 `needs_review`，不阻塞其他章
+详见 `references/write-gates.md` Gate 1。五项检查（前两项为新增，后三项为既有检查）：
+- **frontmatter 字段完整性自检**（首项）：检查细纲 frontmatter 必需字段 `cbn`/`cpns`/`cen`/`target_words`/`strand`/`hook_type`/`payoff_density`/`event`/`conflict`/`turning_point` 齐全，缺失则从细纲正文重新提取补全，重试 2 次仍失败标记 `needs_review`，不阻塞其他章
+- **细纲拆段**（新增）：将细纲的 event/conflict/turning_point 拆分为 3-6 个写作段落。每段标注：预期字数（不超过该章目标字数的 40%）、叙事功能（铺垫/推进/爆发/余韵）、对应的事件或冲突点。若 conflict.intensity >= 4 或 turning_point.is_turning = true，至少含 1 段"爆发"且预期字数不低于该章总字数的 25%。拆段结果写入细纲文件的 `## 写作段落` 段落。
 - **爽点密度预估**：细纲 frontmatter `payoff_density` ≥ 适用画像（默认或题材覆盖）最低要求
 - **线配比检查**：`strand` 连续同线达到适用画像上限时提示切换
 - **伏笔逾期检测**：逾期伏笔优先回收
@@ -90,7 +91,13 @@
 
 第 1 章如果以内心戏、设定认知或独处开场，必须先把内心变化外化为可见事件。
 
-如果项目已部署 narrative-writer agent，spawn `Agent(subagent_type: "write-novel-narrative-writer", prompt: "项目目录：{dir}\n任务描述：写正文\n章节：第{N}章\n...")` 执行正文写作，输出写入 `正文/第XXX章_章名.md`。
+**分段写作模式**（默认启用）：narrative-writer 按细纲 `## 写作段落` 逐段产出正文，段间 `---` 分隔。每段写作时只关注当前段的叙事功能（铺垫/推进/爆发/余韵），不跨越段落边界。每段开头标注叙事功能注释（如 `<!-- 铺垫 -->`）。
+
+**连续模式**（日更默认）：不拆分段落，连续输出全文。通过 `--segmented-writing` 标志切换回分段模式。
+
+如果项目已部署 narrative-writer agent，spawn `Agent(subagent_type: "write-novel-narrative-writer", prompt: "项目目录：{dir}\n任务描述：写正文\n章节：第{N}章\n写作模式：{segmented/continuous}\n分段计划：{## 写作段落 内容}\n...")` 执行正文写作，输出写入 `正文/第XXX章_章名.md`。
+
+**写作偏离处理**：允许段落数 ±1 的偏差，叙事功能可调整。偏离情况记录在文件末尾的 `<!-- deviation: ... -->` 注释中。
 
 ### C2. 字数验证
 
@@ -119,6 +126,7 @@
 - 禁用词扫描（一级词命中即阻塞）
 - 去 AI 味检查
 - 投影一致性
+- **段落覆盖率校验**（新增，日更模式默认跳过）：实际段落数与计划段落数偏差 ≤ 1，整体段落覆盖率 ≥ 80%（即至少 80% 的计划段落有对应正文）。未达标→生成警告写入 `追踪/状态.md` 问题列表，**不阻塞正文提交**（警告级而非阻塞级）。
 
 ### 追踪原子更新
 
