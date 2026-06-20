@@ -23,14 +23,23 @@ metadata:
 
 ---
 
+## 上下文加载（核心+按需）
+
+启动时只读**核心三项**，对照标尺文件在对应维度/题材时按需 Read：
+
+1. **进度**：`拆文库/{书名}/_meta.json`（`stages_completed[]`、`last_stage_in_progress`、`genre_detected`、`word_count`）。
+2. **本阶段计划**：根据 resume 契约确定下一 Stage 及其输入（前一 Stage 的产出段）。
+3. **（拆文时必读）方法论三件套**：`output-contract.md`（Stage→文件映射 + `_meta.json` schema）、`output-templates.md`（模板 + 质量门控 [BLOCK]/[WARN]）、`material-decomposition.md`（情节节点提取/写作手法/情感线/共鸣/质量标准唯一权威）。
+
+其余对照标尺（genre-catalog、hooks-*、character-* 等）在**拆解对应题材/维度时按需 Read**，不启动时全量预读。所有 references 在本 skill 中都是**对照标尺**——用源文与文件描述的标准模式做对比，**不是**按文件指引写新作品。
+
+---
+
 ## Phase 1：确认拆解对象 + 字数路由 + 续跑检查
 
 ### 1.1 拿到原文
 
-问用户：**「你要拆哪篇？（标题+平台/来源）」**
-
-**无文本时**：用户没有提供原文文件路径、也没有在对话中贴出原文，引导用户提供
-——「请提供这篇短篇的原文文件路径，或直接把原文贴给我。」
+问用户：**「你要拆哪篇？（标题+平台/来源）」**。无文本时引导用户提供原文文件路径或直接贴原文。
 
 ### 1.2 字数探针（长短篇路由）
 
@@ -44,66 +53,23 @@ word_count = 全文字数
                            仍要按短篇拆请明确回复『按短篇继续』」
 ```
 
-**为什么必须探针**：短篇与长篇的节点密度、情感曲线节奏、共鸣层数差异显著；用短篇
-管道拆 100k+ 长篇会把节点采样过疏，模型把单卷误判成全书。
+**为什么必须探针**：短篇与长篇的节点密度、情感曲线节奏、共鸣层数差异显著；用短篇管道拆 100k+ 长篇会把节点采样过疏，模型把单卷误判成全书。
 
 ### 1.3 题材识别
 
-```
-用户提到具体题材（追妻 / 重生 / 虐文 / ...）？
-  ├─ 是 → 加载 genre-catalog.md 对应题材的「短篇视角」章节作为拆文标尺
-  └─ 否 → 关键词扫描确定题材；扫不到则 genre_detected = "通用"，用通用模板（Stage 2-6）
-```
-
-题材识别关键词参考：
-
-- 追妻火葬场 / 渣男后悔 → 追妻
-- 重生复仇 / 前世今生 → 重生复仇
-- 死后视角 / 灵魂旁观 → 死人文学
-- 小三 / 出轨 / 知三当三 → 小三
-- 世情 / 现实 / 婆媳 → 世情
-- 仙侠 / 修仙 / 门派 → 仙侠
-
-题材作为「对照标尺」加载——见 `references/genre-catalog.md` 等文件首段「## 用作
-拆文标尺时」说明。
+用户提到具体题材（追妻 / 重生 / 虐文 / …）→ 加载 `genre-catalog.md` 对应题材的「短篇视角」章节作拆文标尺；否 → 关键词扫描确定题材，扫不到则 `genre_detected = "通用"`，用通用模板。常见题材关键词（追妻火葬场/渣男后悔→追妻、重生复仇/前世今生→重生复仇、死后视角/灵魂旁观→死人文学、小三/出轨/知三当三→小三、世情/现实/婆媳→世情、仙侠/修仙/门派→仙侠）。题材作为「对照标尺」加载，见各标尺文件首段「## 用作拆文标尺时」说明。
 
 ### 1.4 续跑检查（lightweight resume）
 
-进入管道前检查 `拆文库/{书名}/_meta.json`：
-
-```
-存在 _meta.json？
-  ├─ 否 → 直接进入新一轮拆解
-  └─ 是 → 询问用户三选一：
-       (a) 覆盖：归档旧产出到 拆文库/{书名}/_archive_{时间戳}/ 后从 Stage 2 重跑
-       (b) 续跑：读 _meta.json.last_stage_in_progress（非空 → 从该 Stage 整段重跑）
-                 或读 _meta.json.stages_completed[]（从 max+1 续跑）
-       (c) 取消
-```
-
-完整 resume 契约见 [references/output-contract.md](references/output-contract.md)。
+进入管道前检查 `拆文库/{书名}/_meta.json`：存在 → 询问用户三选一：(a) 覆盖（归档旧产出到 `_archive_{时间戳}/` 后从 Stage 2 重跑）；(b) 续跑（`last_stage_in_progress` 非空→从该 Stage 整段重跑，否则从 `stages_completed[]` 的 max+1 续跑）；(c) 取消。不存在 → 直接进入新一轮拆解。完整 resume 契约见 [references/output-contract.md](references/output-contract.md)。
 
 ---
 
 ## 输出目录
 
-输出到 `拆文库/{书名}/`（项目根目录下）。用户指定了其他路径时按用户指定路径输出。
+输出到 `拆文库/{书名}/`（项目根目录下）。用户指定了其他路径时按用户指定路径输出。标准文件树：`原文/`（备份）、`拆文报告.md`（Stage 2-6 所有可读段）、`情节节点.md`（Stage 2 清单）、`写作手法.md`（Stage 4 分析）、`_meta.json`（管道元数据 + 结构计数）。
 
-**标准输出文件树**：
-
-```
-拆文库/{书名}/
-├── 原文/                # 原文备份（管道前置步骤产出）
-├── 拆文报告.md           # 人类可读综合报告（Stage 2-6 所有可读段）
-├── 情节节点.md           # Stage 2 情节节点清单（独立成文，方便定位）
-├── 写作手法.md           # Stage 4 写作手法分析（独立成文，方便复用）
-└── _meta.json           # 管道元数据 + 结构计数（resume + Phase 7 数值依据）
-```
-
-> **下游契约**：`write-novel-short-write` 同时读全套产出——`拆文报告.md` 取分析叙事，
-> `情节节点.md` 看节奏锚点，`写作手法.md` 抄手法，`原文/` 抄语感，`_meta.json`
-> 看题材识别和结构计数。完整字段定义见
-> [references/output-contract.md](references/output-contract.md)。
+> **下游契约**：`write-novel-short-write` 同时读全套产出——`拆文报告.md` 取分析叙事，`情节节点.md` 看节奏锚点，`写作手法.md` 抄手法，`原文/` 抄语感，`_meta.json` 看题材识别和结构计数。完整字段定义见 [references/output-contract.md](references/output-contract.md)。
 
 ### Stage → 文件映射
 
@@ -117,26 +83,13 @@ word_count = 全文字数
 
 ### 原文备份（管道前置步骤）
 
-**拆解开始前，必须先备份原文**：
-
-1. 检查 `拆文库/{书名}/原文/` 目录是否已存在
-2. 如果不存在，从用户提供的源路径复制原文文件到 `拆文库/{书名}/原文/`
-3. 如果用户未提供源文件路径（直接在对话中贴文本），将原始文本保存到
-   `拆文库/{书名}/原文/原文.md`
-4. 备份完成后验证 `原文/` 目录下文件非空（>0 bytes）
-5. 此步骤确保即使拆文过程中出现异常，原始材料不会丢失
-
-备份完成后初始化 `_meta.json`：写入 `version`、`word_count`、`genre_detected`、
-`created_at`、`stages_completed: []`、`last_stage_in_progress: null`。
+拆解开始前必须备份：`拆文库/{书名}/原文/` 不存在 → 从源路径复制（或对话贴文本存为 `原文.md`），验证非空（>0 bytes）。备份后初始化 `_meta.json`：`version`/`word_count`/`genre_detected`/`created_at`/`stages_completed: []`/`last_stage_in_progress: null`。
 
 ---
 
 ## Stage 2-6：拆文流程
 
-### 5 阶段管道
-
-**预期耗时提示**：短篇拆文通常 10-30 分钟；同类对比或平台适配会更久。若文本很短，
-先降采样提取关键节点，不要为满足节点数量硬拆。
+**预期耗时提示**：短篇拆文通常 10-30 分钟；同类对比或平台适配会更久。文本很短时先降采样提取关键节点，不要为满足节点数量硬拆。
 
 | 阶段 | 名称 | 输入 | 输出 | 完成标志 |
 |------|------|------|------|----------|
@@ -146,21 +99,13 @@ word_count = 全文字数
 | 5 | 人物+开头结尾 | 情节节点+全文 | 所有人物（分类+功能标签+功能评估）+ 开头分析（前50/100字）+ 结尾分析（收束检查）。 | 人物功能评估完成 |
 | 6 | 综合评估 + `_meta.json` 写计数 | 全部数据 | 五维评分 + 爆点性 + 话题性 + 共鸣分析（≥3层）+ 可复用结构（≥3条）+ 节奏速报 + **算出并写入 `_meta.json.structure_counts`**。 | 五维评分完成 + 爆点性/话题性已分析 + 共鸣≥3层 + 可复用≥3条 + 节奏速报已包含 + `_meta.json.structure_counts` 各字段达 Phase 7.2 阈值 |
 
-> 管道执行顺序：2 → 3 → 4 → 5 → 6（严格串行，每阶段依赖前一阶段数据）。可选模块
-> （同类对比、平台适配、详细节奏）可在 Stage 6 后执行。
+> 管道执行顺序：2 → 3 → 4 → 5 → 6（严格串行，每阶段依赖前一阶段数据）。可选模块（同类对比、平台适配、详细节奏）可在 Stage 6 后执行。
 
-**Stage 写盘协议**（crash safety）：每个 Stage 开始前先把 `_meta.json.last_stage_in_progress`
-置为当前 Stage 编号；该 Stage 所有目标文件写完后再做 non-empty / 最小长度检查，通过
-才清空 `last_stage_in_progress` 并 append 到 `stages_completed[]`。半成品文件不被
-信任，resume 时该 Stage 整段重跑。完整协议见
-[references/output-contract.md](references/output-contract.md) 「写入顺序 (crash safety)」段。
+**Stage 写盘协议**（crash safety）：每个 Stage 开始前先把 `_meta.json.last_stage_in_progress` 置为当前 Stage 编号；该 Stage 所有目标文件写完后再做 non-empty / 最小长度检查，通过才清空 `last_stage_in_progress` 并 append 到 `stages_completed[]`。半成品文件不被信任，resume 时该 Stage 整段重跑。完整协议见 [references/output-contract.md](references/output-contract.md)「写入顺序 (crash safety)」段。
 
-**非标文本分段**：对话体、聊天记录、帖子体、书信体等非标准章节格式，先按时间/说话人
-切换/信息揭示点分段，再映射到开端、发展、高潮、结局；不要机械按自然段数量切分。
+**非标文本分段**：对话体、聊天记录、帖子体、书信体等非标准章节格式，先按时间/说话人切换/信息揭示点分段，再映射到开端、发展、高潮、结局；不要机械按自然段数量切分。
 
-详细模板见 [output-templates.md](references/output-templates.md)，方法论见
-[material-decomposition.md](references/material-decomposition.md)，输出契约见
-[output-contract.md](references/output-contract.md)。
+详细模板见 [output-templates.md](references/output-templates.md)，方法论见 [material-decomposition.md](references/material-decomposition.md)，输出契约见 [output-contract.md](references/output-contract.md)。
 
 ---
 
@@ -170,20 +115,16 @@ Stage 6 内容写完后，**不**立刻 append `6` 到 `stages_completed[]`。�
 
 ### 7.1 拆文报告 AI 腔自检
 
-扫描 `拆文报告.md` 全文 against [references/banned-words.md](references/banned-words.md)
-词表 + [references/anti-ai-writing.md](references/anti-ai-writing.md) 句式规则。
-扫描时跳过源文引用——以 `>` 开头的引用行、以及表格中「关键台词 / 原文引用」列的引号直引不计入，只扫分析师本人写的措辞。
+扫描 `拆文报告.md` 全文 against [references/banned-words.md](references/banned-words.md) 词表 + [references/anti-ai-writing.md](references/anti-ai-writing.md) 句式规则。扫描时跳过源文引用——以 `>` 开头的引用行、以及表格中「关键台词 / 原文引用」列的引号直引不计入，只扫分析师本人写的措辞。
 
-- **命中** → 不写 `stages_completed[6]`，列出命中位置，提示用户人工修订**拆文报告
-  本身**的 AI 腔（不是源文——源文里有 AI 腔正常报告即可，但报告本身不能写成 AI 腔）。
+- **命中** → 不写 `stages_completed[6]`，列出命中位置，提示用户人工修订**拆文报告本身**的 AI 腔（不是源文——源文里有 AI 腔正常报告即可，但报告本身不能写成 AI 腔）。
 - **未命中** → 继续 7.2。
 
 > 守门员定位：本节门控的是「我们写的拆文报告」，不是「源文是不是 AI 写的」。
 
 ### 7.2 `_meta.json.structure_counts` 数值校验
 
-按 [references/output-contract.md](references/output-contract.md) 「Phase 7.2」表
-逐项检查 `_meta.json` 里 Stage 6 写入的结构计数：
+按 [references/output-contract.md](references/output-contract.md)「Phase 7.2」表逐项检查 Stage 6 写入的结构计数：
 
 | 字段 | 最低值 |
 |------|--------|
@@ -199,26 +140,17 @@ Stage 6 内容写完后，**不**立刻 append `6` 到 `stages_completed[]`。�
 
 ### 7.3 `output-templates.md` [BLOCK] 项扫描
 
-扫描 `output-templates.md` 中所有 `[BLOCK]` 标注项，确认对应产出段已完成。任一缺失
-→ 阻断。`[WARN]` 项不阻断，但写入 `拆文报告.md` 末尾的「待补」清单供用户决定。
+扫描 `output-templates.md` 中所有 `[BLOCK]` 标注项，确认对应产出段已完成。任一缺失 → 阻断。`[WARN]` 项不阻断，但写入 `拆文报告.md` 末尾的「待补」清单供用户决定。
 
 ### 7.4 通过
 
-7.1 + 7.2 + 7.3 全通过 → 清空 `_meta.json.last_stage_in_progress`，append `6` 到
-`stages_completed[]`，提示用户「拆解完成，可调用 `/write-novel-short-write` 写下一篇」。
+7.1 + 7.2 + 7.3 全通过 → 清空 `_meta.json.last_stage_in_progress`，append `6` 到 `stages_completed[]`，提示用户「拆解完成，可调用 `/write-novel-short-write` 写下一篇」。
 
 ---
 
 ## 质量门控概要
 
-各阶段完成后需通过质量检查。逐项 checklist 见
-[output-templates.md 质量门控必填字段](references/output-templates.md)。
-
-质量标准的阈值、数值与计算方式的唯一权威定义见
-[material-decomposition.md 质量标准](references/material-decomposition.md)。
-
-强阻断 / 警告区分：见 `output-templates.md` 每条 checklist 末尾的 `[BLOCK]` /
-`[WARN]` 标注。`[BLOCK]` 不通过 → Phase 7.3 阻断。
+各阶段完成后需通过质量检查。逐项 checklist 见 [output-templates.md 质量门控必填字段](references/output-templates.md)。质量标准的阈值、数值与计算方式的唯一权威定义见 [material-decomposition.md 质量标准](references/material-decomposition.md)。强阻断 / 警告区分：见 `output-templates.md` 每条 checklist 末尾的 `[BLOCK]` / `[WARN]` 标注。`[BLOCK]` 不通过 → Phase 7.3 阻断。
 
 ---
 
@@ -237,7 +169,7 @@ Stage 6 内容写完后，**不**立刻 append `6` 到 `stages_completed[]`。�
 
 ## 参考资料
 
-### 核心方法论（拆文时必须加载）
+### 核心方法论（拆文时必须加载，见上方「上下文加载」）
 
 | 文件 | 何时加载 |
 |------|----------|
@@ -266,14 +198,9 @@ Stage 6 内容写完后，**不**立刻 append `6` 到 `stages_completed[]`。�
 
 ### 补充资料（拆 Stage 6「可复用结构」时按需对照）
 
-> **题材写作公式**：`references/genre-writing-formulas.md`（21 大题材公式作为
-> 「这篇是否合标」的对照标尺）
-> **通用写作技法**：`references/genre-writing-techniques.md`（情绪操控 / 感情线 /
-> 震惊场景 / 喜剧机制——拆 reusable_structures.fail_mode 时引用 L329 「禁忌」列）
+> **题材写作公式**：`references/genre-writing-formulas.md`（21 大题材公式作为「这篇是否合标」的对照标尺）
+> **通用写作技法**：`references/genre-writing-techniques.md`（情绪操控 / 感情线 / 震惊场景 / 喜剧机制——拆 reusable_structures.fail_mode 时引用「禁忌」列）
 > **市场数据**：`references/real-market-data.md`（跨平台写作差异对照表）
-
-所有 references 在 `write-novel-short-analyze` 中都是**对照标尺**——用源文与文件描述的
-标准模式做对比，找出该篇用了哪种、做得多到位，**不是**按文件指引写新作品。
 
 ---
 
