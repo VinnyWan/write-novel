@@ -419,6 +419,51 @@ check_skill() {
     errors=$((errors + 1))
   fi
 
+  # Check 9: 外移引用完整性——SKILL.md 引用的 references/<流程文件>.md 必须存在且非空
+  # 仅检查本地 markdown 链接 (references/X.md) 与反引号路径 `references/X.md`
+  # 路径解析走三级：skill-local → 插件根 → 部署根 methodology/shared 回退
+  # 防止瘦身后指针指向空文件或不存在文件
+  local broken_external=()
+  local any_external=false
+  while IFS= read -r ext_ref; do
+    [ -z "$ext_ref" ] && continue
+    any_external=true
+    local ext_base="${ext_ref##*/}"
+    local ext_path="$skill_dir/$ext_ref"
+    # 三级解析定位真实文件
+    local resolved=""
+    if [ -f "$ext_path" ]; then
+      resolved="$ext_path"
+    elif [ -f "$PLUGIN_ROOT/$ext_ref" ]; then
+      resolved="$PLUGIN_ROOT/$ext_ref"
+    elif [ -f "$REFERENCES_ROOT/methodology/$ext_base" ]; then
+      resolved="$REFERENCES_ROOT/methodology/$ext_base"
+    elif [ -f "$REFERENCES_ROOT/shared/$ext_base" ]; then
+      resolved="$REFERENCES_ROOT/shared/$ext_base"
+    elif [ -f "$REFERENCES_ROOT/$ext_base" ]; then
+      resolved="$REFERENCES_ROOT/$ext_base"
+    fi
+    if [ -z "$resolved" ]; then
+      broken_external+=("$ext_ref (不存在)")
+    elif [ ! -s "$resolved" ]; then
+      broken_external+=("$ext_ref (空文件)")
+    elif [ "$(grep -c '.' "$resolved")" -eq 0 ]; then
+      broken_external+=("$ext_ref (无有效内容)")
+    fi
+  done < <({ grep -oE '\]\(references/[A-Za-z0-9_/.-]+\.md\)' "$skill_file" 2>/dev/null | sed 's/](//; s/)$//'; grep -oE '`references/[A-Za-z0-9_/.-]+\.md`' "$skill_file" 2>/dev/null | tr -d '`'; } | sort -u)
+
+  if [ ${#broken_external[@]} -eq 0 ]; then
+    if [ "$any_external" = true ]; then
+      echo "  [PASS] externalized reference files exist and non-empty"
+    fi
+  else
+    echo "  [FAIL] broken externalized reference files:"
+    for x in "${broken_external[@]}"; do
+      echo "         -> $x"
+    done
+    errors=$((errors + 1))
+  fi
+
   if [ "$errors" -eq 0 ]; then
     PASS=$((PASS + 1))
     if [ "$warnings" -gt 0 ]; then
