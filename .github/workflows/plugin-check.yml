@@ -1,0 +1,35 @@
+name: plugin-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Plugin structure & references integrity
+        run: bash write-novel/scripts/static-check.sh
+
+      - name: Shared files consistency
+        run: bash write-novel/scripts/check-shared-files.sh
+
+      - name: No bare python3 invocation
+        run: bash write-novel/scripts/check-python-invocation.sh
+
+      - name: Charcount portability
+        run: bash write-novel/scripts/test-charcount-portable.sh
+
+      - name: Version consistency (plugin.json / marketplace.json / CHANGELOG)
+        run: bash write-novel/scripts/check-version-consistency.sh
+
+      - name: Behavior evals
+        run: bash write-novel/scripts/run-behavior-evals.sh

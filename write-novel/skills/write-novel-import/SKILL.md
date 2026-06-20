@@ -219,7 +219,7 @@ frontmatter 完整性校验**异步化**，不阻断主流程：
 
 - 设置 `.active-book` 指向导入的书名/标题目录
 - 确认项目可以被对应写作 skill 识别（长篇 → write-novel-long-write，短篇 → write-novel-short-write）
-- 可选验证：如果项目已部署 write-novel-story-researcher agent（检查 `.claude/agents/write-novel-story-researcher.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel-story-researcher", prompt: "项目目录：{dir}\n查询类型：progress\n查询参数：导入验证")` 交叉验证迁移数据完整性
+- 可选验证：如果项目已部署 write-novel-story-researcher agent（检查 `.claude/agents/write-novel-story-researcher.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel:write-novel-story-researcher", prompt: "项目目录：{dir}\n查询类型：progress\n查询参数：导入验证")` 交叉验证迁移数据完整性
 
 > setup 环境检测已在 Phase 1「环境检测前置」完成，此处不再重复检测。
 

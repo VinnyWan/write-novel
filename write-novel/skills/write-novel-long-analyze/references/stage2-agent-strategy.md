@@ -10,7 +10,7 @@ Stage 2 使用 deconstruction-agent agent 并行处理每章，替代原来的�
 
 ```python
 Agent(
-  subagent_type: "write-novel-deconstruction-agent",
+  subagent_type: "write-novel:write-novel-deconstruction-agent",
   prompt: "章节编号：第{N}章\n章节标题：{标题}\n章节字数：{字数}\n\n章节原文：\n{原文文本}"
 )
 ```
@@ -42,7 +42,7 @@ Agent(
 
 ```python
 Agent(
-  subagent_type: "write-novel-deconstruction-agent",
+  subagent_type: "write-novel:write-novel-deconstruction-agent",
   model: "sonnet",            # 显式覆盖 frontmatter 的 haiku
   prompt: "章节编号：第{N}章\n...（同首次 prompt，可追加：'上次校验失败原因：{自检失败项}'）"
 )

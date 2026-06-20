@@ -190,6 +190,8 @@ check_skill() {
   if [ -d "$AGENTS_DIR" ]; then
     for f in "$AGENTS_DIR/"*.md; do
       [ -f "$f" ] && agent_names+=("$(basename "$f" .md)")
+      # Also accept write-novel: namespaced form (plugin-level spawn)
+      [ -f "$f" ] && agent_names+=("write-novel:$(basename "$f" .md)")
     done
   fi
 
@@ -541,6 +543,57 @@ check_shared_references() {
   fi
 }
 
+# ---------- Check 11/12/13: 引用审计（Python 脚本）----------
+# 由 reference_audit.py 执行反向引用计数 + 循环引用检测 + Agent 调用方审计
+run_reference_audit() {
+  local audit_script="$PLUGIN_ROOT/scripts/reference_audit.py"
+  if [ ! -f "$audit_script" ]; then
+    echo ""
+    echo "--- Check 11/12/13: reference audit ---"
+    echo "  [SKIP] reference_audit.py not found"
+    TOTAL=$((TOTAL + 3))
+    PASS=$((PASS + 3))
+    return
+  fi
+
+  local audit_output
+  audit_output="$(python3 "$audit_script" 2>&1)" || true
+
+  local in_check11=false in_check12=false in_check13=false
+  local check11_result="PASS" check12_result="PASS" check13_result="PASS"
+
+  echo ""
+  while IFS= read -r line; do
+    case "$line" in
+      "--- Check 11:"*)
+        in_check11=true; in_check12=false; in_check13=false
+        TOTAL=$((TOTAL + 1))
+        ;;
+      "--- Check 12:"*)
+        in_check11=false; in_check12=true; in_check13=false
+        TOTAL=$((TOTAL + 1))
+        ;;
+      "--- Check 13:"*)
+        in_check11=false; in_check12=false; in_check13=true
+        TOTAL=$((TOTAL + 1))
+        ;;
+      CHECK11:PASS) check11_result="PASS"; PASS=$((PASS + 1)) ;;
+      CHECK11:WARN) check11_result="WARN"; WARN=$((WARN + 1)) ;;
+      CHECK12:PASS) check12_result="PASS"; PASS=$((PASS + 1)) ;;
+      CHECK12:WARN) check12_result="WARN"; WARN=$((WARN + 1)) ;;
+      CHECK12:FAIL) check12_result="FAIL"; FAIL=$((FAIL + 1)) ;;
+      CHECK13:PASS) check13_result="PASS"; PASS=$((PASS + 1)) ;;
+      CHECK13:WARN) check13_result="WARN"; WARN=$((WARN + 1)) ;;
+      CHECK11_COUNT:*) ;;
+      *)
+        if [ "$in_check11" = true ] || [ "$in_check12" = true ] || [ "$in_check13" = true ]; then
+          echo "$line"
+        fi
+        ;;
+    esac
+  done <<< "$audit_output"
+}
+
 # ---------- main ----------
 
 echo "Skill Static Check (write-novel)"
@@ -553,6 +606,7 @@ done
 
 # 跨 skill 顶层检查（在 per-skill 循环之后）
 check_shared_references
+run_reference_audit
 
 echo ""
 echo "================================="

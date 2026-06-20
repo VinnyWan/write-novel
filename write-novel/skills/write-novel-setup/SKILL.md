@@ -100,7 +100,7 @@ metadata:
 - 核心梗三分法（表层卖点/深层爽点/长线钩子）
 - 对标作品（1-3 部，如用户在 Phase 1.5 提供了对标信息）
 
-**Agent 调用**：spawn `Agent(subagent_type: "write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：世界观初始化\n参数：字数={target_words} 题材={genre} 风格={style_preference}\n产出：设定/世界观.md + 设定/题材定位.md\n按字数分级选择模板详细程度。")`。agent 不可用时由主线程直接执行。
+**Agent 调用**：spawn `Agent(subagent_type: "write-novel:write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：世界观初始化\n参数：字数={target_words} 题材={genre} 风格={style_preference}\n产出：设定/世界观.md + 设定/题材定位.md\n按字数分级选择模板详细程度。")`。agent 不可用时由主线程直接执行。
 
 ### 1.6.4 产出后 Gate
 

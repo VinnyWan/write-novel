@@ -95,7 +95,7 @@
 
 **连续模式**（日更默认）：不拆分段落，连续输出全文。通过 `--segmented-writing` 标志切换回分段模式。
 
-如果项目已部署 narrative-writer agent，spawn `Agent(subagent_type: "write-novel-narrative-writer", prompt: "项目目录：{dir}\n任务描述：写正文\n章节：第{N}章\n写作模式：{segmented/continuous}\n分段计划：{## 写作段落 内容}\n...")` 执行正文写作，输出写入 `正文/第XXX章_章名.md`。
+如果项目已部署 narrative-writer agent，spawn `Agent(subagent_type: "write-novel:write-novel-narrative-writer", prompt: "项目目录：{dir}\n任务描述：写正文\n章节：第{N}章\n写作模式：{segmented/continuous}\n分段计划：{## 写作段落 内容}\n...")` 执行正文写作，输出写入 `正文/第XXX章_章名.md`。
 
 **写作偏离处理**：允许段落数 ±1 的偏差，叙事功能可调整。偏离情况记录在文件末尾的 `<!-- deviation: ... -->` 注释中。
 

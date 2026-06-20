@@ -166,7 +166,7 @@ Stage 3-4 完成前需通过质量检查（置信度、覆盖率、重叠率）�
 Stage 2 使用 deconstruction-agent agent 并行处理每章，替代原来的串行分块。
 
 **决策点（主文件保留）**：
-- **spawn 条件**：`.claude/agents/write-novel-deconstruction-agent.md` 已部署 + 当前不在子代理上下文 → 每章 spawn `Agent(subagent_type: "write-novel-deconstruction-agent")`，每批 5-8 个并发，批次全部完成才进 Stage 3。
+- **spawn 条件**：`.claude/agents/write-novel-deconstruction-agent.md` 已部署 + 当前不在子代理上下文 → 每章 spawn `Agent(subagent_type: "write-novel:write-novel-deconstruction-agent")`，每批 5-8 个并发，批次全部完成才进 Stage 3。
 - **降级触发**：agent 未部署或环境不支持 spawn 子代理 → 自动退回串行，主线程按 deconstruction-agent 方法论逐章处理（结果同样套 output-templates.md 章节摘要模板，质量不受影响，仅速度变慢）。
 - **质量升级重试**：执行失败（crash/超时/空输出）→ 同模型（haiku）重试 1 次；质量失败（agent 10 条自检不达标 / 主线程硬门控 grep 命中）→ `model: "sonnet"` 升级重试 1 次。硬门控含情节点数、`基调：` 全角冒号数量、基调/主题标签枚举校验。
 - **最终落盘**：通过即写 `章节/第{N}章_摘要.md` 并标记 `success`（retry 备注模型/方式）；sonnet retry 仍失败 → 标 `⚠️ 跳过`，写入 `_progress.md`「失败记录」表；单章失败不阻断管道。

@@ -291,7 +291,7 @@ Stage 2 的角色轻量提及数据在此阶段升级为完整档案。
 | 特殊设定 | 区别于现实的独特设定 | `设定/世界观/背景设定.md`（与核心规则同文件） |
 | 金手指 | 见上方「金手指合并规则」 | `设定/世界观/金手指.md`（统一在 `设定/世界观/` 子目录下，不放扁平 `设定/金手指.md`） |
 
-> 模板与示例见 [output-templates.md](output-templates.md) 「Stage 4 设定+关系」节。下游 `write-novel-import` 的 3.5 拆分步骤检测到 `设定/世界观/` 子目录已存在时直接 pass-through，不再 re-split。
+> 模板与示例见 output-templates.md 「Stage 4 设定+关系」节。下游 `write-novel-import` 的 3.5 拆分步骤检测到 `设定/世界观/` 子目录已存在时直接 pass-through，不再 re-split。
 
 ### 阶段 5：人物关系提取
 
@@ -491,6 +491,6 @@ Stage 2 使用 deconstruction-agent agent 并行处理（每章一个 agent，�
 四件套各自职责：
 
 - `SKILL.md` = 路由逻辑 + 管道概要（阶段名称/输入/输出/停靠点定义）
-- 本文件（`material-decomposition.md`）= 方法论细节（5 阶段操作步骤 + 六大铁律 + 输出结构）+ **质量阈值唯一权威**（置信度/覆盖率/重叠率）+ 分块策略唯一权威
-- `references/output-templates.md` = 各 Stage 具体输出格式模板 + 快速预览报告模板 + 通用速查表
-- `references/pipeline-ops.md` = 管道运维：`_progress.md` 模板与状态值、错误处理表、恢复机制操作步骤（不含阈值实体值，质量阈值见本文件）
+- 本文件（material-decomposition.md）= 方法论细节（5 阶段操作步骤 + 六大铁律 + 输出结构）+ **质量阈值唯一权威**（置信度/覆盖率/重叠率）+ 分块策略唯一权威
+- output-templates.md = 各 Stage 具体输出格式模板 + 快速预览报告模板 + 通用速查表
+- pipeline-ops.md = 管道运维：`_progress.md` 模板与状态值、错误处理表、恢复机制操作步骤（不含阈值实体值，质量阈值见本文件）

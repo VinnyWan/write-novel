@@ -80,7 +80,7 @@ metadata:
 
 #### Agent 调用：write-novel-story-architect
 
-构思阶段，如果项目已部署 write-novel-story-architect agent（检查 `.claude/agents/write-novel-story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：短篇构思\n查询参数：{情绪目标+题材方向}")` 辅助框架设计。如 agent 不可用，由主线程直接执行。
+构思阶段，如果项目已部署 write-novel-story-architect agent（检查 `.claude/agents/write-novel-story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel:write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：短篇构思\n查询参数：{情绪目标+题材方向}")` 辅助框架设计。如 agent 不可用，由主线程直接执行。
 
 帮用户确定短篇核心框架（标题/目标字数 8000-20000/平台/情绪目标 + 一句话梗概 + 核心反转含≥3铺垫点 + 情绪设计含反转前1节升温反转后1节维持不骤降 + 人设速写）。框架确定后完成设计任务，然后在工作目录下创建文件。
 
@@ -97,7 +97,7 @@ metadata:
 
 #### Agent 调用：character-designer
 
-设计任务完成后，如果项目已部署 character-designer agent（检查 `.claude/agents/write-novel-character-designer.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel-character-designer", prompt: "项目目录：{dir}\n任务类型：角色设定\n查询参数：{人设速写+关系}")` 辅助角色设定和语言风格档案。如 agent 不可用，由主线程直接执行。
+设计任务完成后，如果项目已部署 character-designer agent（检查 `.claude/agents/write-novel-character-designer.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel:write-novel-character-designer", prompt: "项目目录：{dir}\n任务类型：角色设定\n查询参数：{人设速写+关系}")` 辅助角色设定和语言风格档案。如 agent 不可用，由主线程直接执行。
 
 ### Phase 3：逐场景写作
 
@@ -106,7 +106,7 @@ metadata:
 #### 关键决策点
 
 - **分批 vs 串行**：正文写作默认由主会话按 2-3 节/批分批写正文，主会话输出是短篇正文的标准形态。不要要求单次 agent spawn 完成 8000+ 字全文。每批写完后先更新"已写小节摘要"（3-5 条：已揭示信息、情绪位置、未回收伏笔、下一批衔接句），下一批必须先读取该摘要和 `正文.md` 尾部 300-500 字再续写。
-- **spawn narrative-writer 条件**：只有在用户明确要求子代理、主会话上下文不足，或需要隔离一段试写时，才检查 `.claude/agents/write-novel-narrative-writer.md` 并 spawn `Agent(subagent_type: "write-novel-narrative-writer", prompt: "项目目录：{dir}\n任务描述：写正文\n输出文件：正文.md\n情绪目标：{从核心框架读取}\n小节大纲：小节大纲.md\n涉及角色：{从核心框架读取}\n对标/拆文路径：{本次查找到的 对标/{书名}/ 或 拆文库/{书名}/，没有则写 无}\n拆文召回摘要：{本场景最相关的结构/情绪/反转/写作手法模块，最多5条；没有则写 无}\n格式硬约束：必须完全遵守 write-novel-short-write/references/format-and-structure.md；全文小节标记统一，默认 ###1.、###2.；段落之间不加空行；对话独立成行，引号风格按项目/平台约定统一（默认半角双引号，盐言可用「」）；禁止使用 --- 分隔正文片段；禁止把自检/说明/审查报告写入正文.md。\n写作硬约束：按三维度织入写场景，但仍必须按镜头断段；一段只承载一个动作/信息变化，优先一段一句，避免一段到底。输出前做密度重排：段落 >60 字按句号/动作转折拆开，单句 >45 字拆短。")`。无论由谁写作，最终写入 `正文.md` 前都必须按同一格式规范重排一次。
+- **spawn narrative-writer 条件**：只有在用户明确要求子代理、主会话上下文不足，或需要隔离一段试写时，才检查 `.claude/agents/write-novel-narrative-writer.md` 并 spawn `Agent(subagent_type: "write-novel:write-novel-narrative-writer", prompt: "项目目录：{dir}\n任务描述：写正文\n输出文件：正文.md\n情绪目标：{从核心框架读取}\n小节大纲：小节大纲.md\n涉及角色：{从核心框架读取}\n对标/拆文路径：{本次查找到的 对标/{书名}/ 或 拆文库/{书名}/，没有则写 无}\n拆文召回摘要：{本场景最相关的结构/情绪/反转/写作手法模块，最多5条；没有则写 无}\n格式硬约束：必须完全遵守 write-novel-short-write/references/format-and-structure.md；全文小节标记统一，默认 ###1.、###2.；段落之间不加空行；对话独立成行，引号风格按项目/平台约定统一（默认半角双引号，盐言可用「」）；禁止使用 --- 分隔正文片段；禁止把自检/说明/审查报告写入正文.md。\n写作硬约束：按三维度织入写场景，但仍必须按镜头断段；一段只承载一个动作/信息变化，优先一段一句，避免一段到底。输出前做密度重排：段落 >60 字按句号/动作转折拆开，单句 >45 字拆短。")`。无论由谁写作，最终写入 `正文.md` 前都必须按同一格式规范重排一次。
 
 #### 字数硬约束（必须在主文件可见）
 
@@ -123,8 +123,8 @@ metadata:
 #### Agent 调用：narrative-writer（去AI味）+ reviewer
 
 精修阶段，如果项目已部署对应 agent，可 spawn：
-- `Agent(subagent_type: "write-novel-narrative-writer", prompt: "项目目录：{dir}\n任务描述：去AI味+格式检查\n检查范围：{正文文件}")` — 执行去AI味（6 Gate）和格式合规检查
-- `Agent(subagent_type: "write-novel-reviewer", prompt: "项目目录：{dir}\n检查范围：{正文文件}\n检查类型：事实冲突+伏笔断线+角色属性不一致")` — 执行一致性检查
+- `Agent(subagent_type: "write-novel:write-novel-narrative-writer", prompt: "项目目录：{dir}\n任务描述：去AI味+格式检查\n检查范围：{正文文件}")` — 执行去AI味（6 Gate）和格式合规检查
+- `Agent(subagent_type: "write-novel:write-novel-reviewer", prompt: "项目目录：{dir}\n检查范围：{正文文件}\n检查类型：事实冲突+伏笔断线+角色属性不一致")` — 执行一致性检查
 
 如 agent 不可用，由主线程直接执行。
 

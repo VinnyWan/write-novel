@@ -90,7 +90,7 @@ metadata:
 
 #### Agent 调用：write-novel-story-architect
 
-write-novel-story-architect 属于高层级结构设计 agent。轻量题材定位优先由主会话完成；只有涉及复杂世界观、多线结构、强反转工程或用户明确要求时，才调用 write-novel-story-architect。确认选题方向后，如果项目已部署 write-novel-story-architect agent（检查 `.claude/agents/write-novel-story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：题材定位\n查询参数：{用户选择的方向+对标信息}")` 辅助题材分析和核心梗设计。如 agent 不可用，由主线程直接执行。
+write-novel-story-architect 属于高层级结构设计 agent。轻量题材定位优先由主会话完成；只有涉及复杂世界观、多线结构、强反转工程或用户明确要求时，才调用 write-novel-story-architect。确认选题方向后，如果项目已部署 write-novel-story-architect agent（检查 `.claude/agents/write-novel-story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel:write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：题材定位\n查询参数：{用户选择的方向+对标信息}")` 辅助题材分析和核心梗设计。如 agent 不可用，由主线程直接执行。
 
 > **Phase 1 checkpoint**：选题方向确认后，向 `追踪/run-ledger.md` 追加一行 `openbook | - | phase1 | completed | - | {选题关键决策}`。若 Phase 1 中途中断，追加 `interrupted` 行记录断点。
 
@@ -173,8 +173,8 @@ write-novel-story-architect 属于高层级结构设计 agent。轻量题材定�
 #### Agent 调用：write-novel-story-architect + character-designer
 
 核心设定阶段，如果项目已部署对应 agent，可 spawn 以下 agent 辅助：
-- `Agent(subagent_type: "write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：核心设定\n查询参数：世界观构建+核心冲突设计")` — 辅助世界观和核心冲突设计
-- `Agent(subagent_type: "write-novel-character-designer", prompt: "项目目录：{dir}\n任务类型：角色设定\n查询参数：{主角设定信息}")` — 辅助角色设定和语言风格档案
+- `Agent(subagent_type: "write-novel:write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：核心设定\n查询参数：世界观构建+核心冲突设计")` — 辅助世界观和核心冲突设计
+- `Agent(subagent_type: "write-novel:write-novel-character-designer", prompt: "项目目录：{dir}\n任务类型：角色设定\n查询参数：{主角设定信息}")` — 辅助角色设定和语言风格档案
 
 如 agent 不可用，由主线程直接执行。
 
@@ -364,7 +364,7 @@ forbidden: []
 
 #### Agent 调用：write-novel-story-architect
 
-卷纲搭建阶段优先由主会话产出；只有结构复杂、反转链多或主会话方案不稳定时，才调用 write-novel-story-architect agent。细纲阶段同理——主会话优先产出首批细纲。若项目已部署 write-novel-story-architect agent（检查 `.claude/agents/write-novel-story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：大纲搭建\n查询参数：卷级结构+细纲+钩子/反转/情绪弧线设计")` 辅助大纲排布、钩子/反转/情绪弧线设计。如 agent 不可用，由主线程直接执行。
+卷纲搭建阶段优先由主会话产出；只有结构复杂、反转链多或主会话方案不稳定时，才调用 write-novel-story-architect agent。细纲阶段同理——主会话优先产出首批细纲。若项目已部署 write-novel-story-architect agent（检查 `.claude/agents/write-novel-story-architect.md` 是否存在），可 spawn `Agent(subagent_type: "write-novel:write-novel-story-architect", prompt: "项目目录：{dir}\n任务类型：大纲搭建\n查询参数：卷级结构+细纲+钩子/反转/情绪弧线设计")` 辅助大纲排布、钩子/反转/情绪弧线设计。如 agent 不可用，由主线程直接执行。
 
 ---
 
@@ -527,7 +527,7 @@ C2. 跨平台 Python 字符统计验证字数。字数 < 目标 90% → 补充�
 
 #### Agent 调用：reviewer
 
-项目已部署 reviewer agent 时，spawn `Agent(subagent_type: "write-novel-reviewer", ...)` 执行一致性检查。agent 不可用时由主线程参照 quality-checklist.md 直接检查。
+项目已部署 reviewer agent 时，spawn `Agent(subagent_type: "write-novel:write-novel-reviewer", ...)` 执行一致性检查。agent 不可用时由主线程参照 quality-checklist.md 直接检查。
 
 #### 追踪文件归档
 

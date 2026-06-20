@@ -189,4 +189,4 @@ A: 检查当前章节的完成度。如果内容已经达到正常字数且结�
 
 ---
 
-> **借鉴来源**：本文内容综合自 oh-story-claudecode 的 `workflow-daily.md`（2026-06 版本），以及 webnovel-writer 的上下文管理策略，经过去重和与当前项目目录结构适配。
+> **借鉴来源**：本文内容综合自 oh-story-claudecode 的 workflow-daily.md（2026-06 版本），以及 webnovel-writer 的上下文管理策略，经过去重和与当前项目目录结构适配。

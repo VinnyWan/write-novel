@@ -25,7 +25,7 @@
 
 ## Step 1：快速上下文加载
 
-**可选：使用 write-novel-story-researcher agent 批量加载上下文**。如果项目已部署 write-novel-story-researcher agent（检查 `.claude/agents/write-novel-story-researcher.md` 是否存在），spawn `Agent(subagent_type: "write-novel-story-researcher", prompt: "项目目录：{dir}\n查询类型：context_load + benchmark_style_load\n章节号：{N}\n目标情绪：{从细纲读取}\n爽点类型：{如有}\n目标字数：{从细纲读取}")` 一次拿到上下文和文风召回结果。spawn 返回后直接使用其 results，跳过下方手动加载。agent 不可用时回退到手动加载。
+**可选：使用 write-novel-story-researcher agent 批量加载上下文**。如果项目已部署 write-novel-story-researcher agent（检查 `.claude/agents/write-novel-story-researcher.md` 是否存在），spawn `Agent(subagent_type: "write-novel:write-novel-story-researcher", prompt: "项目目录：{dir}\n查询类型：context_load + benchmark_style_load\n章节号：{N}\n目标情绪：{从细纲读取}\n爽点类型：{如有}\n目标字数：{从细纲读取}")` 一次拿到上下文和文风召回结果。spawn 返回后直接使用其 results，跳过下方手动加载。agent 不可用时回退到手动加载。
 
 手动加载：
 

@@ -372,4 +372,4 @@ P{序号} **{标题}**：类型{转折点/信息揭示/冲突/解决/铺垫/行�
 
 **总上限 ~4000 字**。
 
-完整模板与生成方法见 [style-profile-protocol.md](style-profile-protocol.md) + [style-profile-generator.md](style-profile-generator.md)。
+完整模板与生成方法见 style-profile-protocol.md + style-profile-generator.md。
