@@ -139,7 +139,137 @@ echo ""
 echo "============================================="
 echo "Files checked (shared): $checked | Mismatches: $mismatches"
 
-if [ "$mismatches" -gt 0 ]; then
+# ============================================================
+# 新增校验模式：指针文件 + 共享源 + 版本指纹 + 命名空间
+# ============================================================
+
+SHARED_DIR="$PLUGIN_ROOT/references/shared"
+MANIFEST="$SHARED_DIR/MANIFEST.yaml"
+
+# 11.1 指针文件验证：识别 `> **共享参考文件**` 首行，提取版本指纹，验证共享源存在
+echo ""
+echo "--- Pointer File Validation ---"
+pointer_errors=0
+pointer_checked=0
+
+while IFS= read -r ptr; do
+  [ -z "$ptr" ] && continue
+  pointer_checked=$((pointer_checked + 1))
+  first_line="$(head -1 "$ptr" 2>/dev/null)"
+  if [[ "$first_line" != *"*共享参考文件*"* ]]; then
+    continue
+  fi
+  # 提取共享源路径
+  shared_src_line="$(grep -m1 '共享源：' "$ptr" 2>/dev/null)"
+  shared_src_path="${shared_src_line#*共享源：}"
+  shared_src_path="$(echo "$shared_src_path" | tr -d '[:space:]')"
+  if [ -z "$shared_src_path" ]; then
+    echo "  [FAIL] $ptr: 缺少共享源字段"
+    pointer_errors=$((pointer_errors + 1))
+    continue
+  fi
+  # 解析为绝对路径：相对 PLUGIN_ROOT
+  abs_src="$PLUGIN_ROOT/$shared_src_path"
+  if [ ! -f "$abs_src" ]; then
+    echo "  [FAIL] $ptr: 共享源不存在 $shared_src_path"
+    pointer_errors=$((pointer_errors + 1))
+    continue
+  fi
+  # 提取版本指纹
+  version_line="$(grep -m1 '版本指纹：' "$ptr" 2>/dev/null)"
+  version="${version_line#*版本指纹：}"
+  version="$(echo "$version" | tr -d '[:space:]')"
+  if [ -z "$version" ]; then
+    echo "  [WARN] $ptr: 缺少版本指纹"
+  fi
+done < <(find "$SKILLS_DIR" -type f -name '*.md' -path '*/references/*' 2>/dev/null)
+
+echo "Pointer files checked: $pointer_checked | Errors: $pointer_errors"
+
+# 11.2 新副本阻断：白名单中的文件必须是指针格式，不得为实体副本
+echo ""
+echo "--- Whitelist Enforcement ---"
+whitelist_errors=0
+whitelist_checked=0
+
+if [ -f "$MANIFEST" ]; then
+  # 从 MANIFEST.yaml 提取 shared_sources 下的文件名
+  shared_names="$(awk '/^shared_sources:/,/^whitelist_real_files:/' "$MANIFEST" | grep -E '^  [a-z].*\.md:' | sed 's/^  //' | sed 's/:$//')"
+  for name in $shared_names; do
+    # 找到所有同名文件
+    while IFS= read -r fpath; do
+      [ -z "$fpath" ] && continue
+      whitelist_checked=$((whitelist_checked + 1))
+      first_line="$(head -1 "$fpath" 2>/dev/null)"
+      if [[ "$first_line" != *"*共享参考文件*"* ]]; then
+        echo "  [FAIL] $fpath: 在共享白名单中但不是指针文件（应为指针格式）"
+        whitelist_errors=$((whitelist_errors + 1))
+      fi
+    done < <(find "$SKILLS_DIR" -type f -name "$name" -path '*/references/*' 2>/dev/null)
+  done
+fi
+
+echo "Whitelist files checked: $whitelist_checked | Errors: $whitelist_errors"
+
+# 11.4 命名空间校验：拒绝 skills/story-* 目录；拒绝 agents/ 裸名 agent
+echo ""
+echo "--- Namespace Validation ---"
+namespace_errors=0
+
+# skills/ 下不应有 story-* 目录
+for d in "$SKILLS_DIR"/story-*; do
+  if [ -d "$d" ]; then
+    echo "  [FAIL] 旧命名 skill 目录存在: $d（应迁移为 write-novel-*）"
+    namespace_errors=$((namespace_errors + 1))
+  fi
+done
+
+# agents/ 下不应有裸名 agent 文件
+AGENTS_DIR="$PLUGIN_ROOT/agents"
+BARE_AGENT_NAMES="narrative-writer reviewer character-designer consistency-checker deconstruction-agent chapter-extractor story-architect story-explorer story-researcher"
+for name in $BARE_AGENT_NAMES; do
+  if [ -f "$AGENTS_DIR/$name.md" ]; then
+    echo "  [FAIL] 裸名 agent 文件存在: $AGENTS_DIR/$name.md（应迁移为 write-novel-$name.md）"
+    namespace_errors=$((namespace_errors + 1))
+  fi
+done
+
+# 代码中不应有 subagent_type: "裸名" 调用
+bare_refs="$(grep -rn 'subagent_type: "narrative-writer"\|subagent_type: "reviewer"\|subagent_type: "character-designer"\|subagent_type: "consistency-checker"\|subagent_type: "deconstruction-agent"\|subagent_type: "chapter-extractor"\|subagent_type: "story-architect"\|subagent_type: "story-explorer"\|subagent_type: "story-researcher"' "$SKILLS_DIR" "$AGENTS_DIR" 2>/dev/null | wc -l | tr -d ' ' || true)"
+if [ "$bare_refs" -gt 0 ]; then
+  echo "  [FAIL] 发现 $bare_refs 处裸名 subagent_type 调用（应加 write-novel- 前缀）"
+  namespace_errors=$((namespace_errors + 1))
+fi
+
+echo "Namespace errors: $namespace_errors"
+
+# 11.5 部署态一致性：.claude/skills/ 不应同时存在 story-* 和 write-novel-* 同语义目录
+echo ""
+echo "--- Deploy State Validation ---"
+deploy_errors=0
+# 本校验仅对已部署项目生效（检查项目根 .claude/）
+PROJECT_CLAUDE_DIR="$REPO_ROOT/.claude"
+if [ -d "$PROJECT_CLAUDE_DIR/skills" ]; then
+  for d in "$PROJECT_CLAUDE_DIR/skills"/story-*; do
+    if [ -d "$d" ]; then
+      base="${d##*/story-}"
+      if [ -d "$PROJECT_CLAUDE_DIR/skills/write-novel-$base" ]; then
+        echo "  [FAIL] 部署态新旧并存: story-$base 和 write-novel-$base 同时存在"
+        deploy_errors=$((deploy_errors + 1))
+      fi
+    fi
+  done
+fi
+echo "Deploy state errors: $deploy_errors"
+
+# 汇总
+total_errors=$((mismatches + pointer_errors + whitelist_errors + namespace_errors + deploy_errors))
+
+echo ""
+echo "============================================="
+echo "Total errors: $total_errors"
+
+if [ "$total_errors" -gt 0 ]; then
   echo ""
   echo "NOTE: Some mismatches may be intentional (skill-specific customizations)."
   echo "      Review each case before syncing."
