@@ -22,17 +22,35 @@ metadata:
 
 ---
 
+## 上下文加载（核心三项 + 按需）
+
+启动管道时只读**核心三项**，不预读全部章节摘要与设定——降低启动 token：
+
+1. **进度摘要**：`拆文库/{书名}/_progress.md`（断点 / 已完成阶段 / 章节边界表）。
+2. **本阶段计划**：根据断点确定下一 Stage，及其输入文件清单（见各 Stage 入口）。
+3. **（仅 Stage 3+ 需要）待回收伏笔**：`拆文库/{书名}/剧情/散落情节.md`、`剧情/*.md`（聚合时校验覆盖率用）。
+
+其余文件在**对应 Stage 入口按需 Read**，不启动时全量预读：
+
+| Stage | 入口按需 Read |
+|-------|--------------|
+| 0 | 原文（首版 thin first-pass 概要） |
+| 1 | Stage 0.5 章节边界表中前 3 章切片 |
+| 2 | Stage 0.5 章节边界表中本章切片（每章一个 agent） |
+| 3 | 全部 `章节/*_摘要.md`（聚合输入） |
+| 4 | Stage 2 情节点 + 章节摘要（4a）；Stage 3 合并后角色数据（4b/4c） |
+| 5 | 全部输出（汇总报告 + 全书概要覆盖） |
+| 6 | `拆文报告.md` + `章节/第1-3章_深度拆解.md` + `章节/*_摘要.md` + `原文/原文.txt` |
+
+---
+
 ## Phase 1：确认拆解对象 + 进入管道
 
 问用户：**「你要拆哪本书？（书名+平台）有原文文件路径吗？」**
 
 如果没有明确目标，按题材或用户想写的类型推荐 2-3 本对标作品。
 
-### 统一入口
-
-确认拆解对象后直接进入拆解管道（Phase 2）。**没有快速/深度分叉**——只有一条深度拆解管道，跑到 Stage 1（黄金三章）后自动停靠产出快速预览报告。
-
-**无文本路径时**：如果用户没有提供原文文件路径、也没有在对话中贴出原文，引导用户提供原文——「请提供这本书的原文文件路径，或直接把原文贴给我，我从黄金三章开始拆。」拿到原文后进入管道。
+**统一入口**：确认拆解对象后直接进入拆解管道（Phase 2）。没有快速/深度分叉——只有一条深度拆解管道，跑到 Stage 1（黄金三章）后自动停靠产出快速预览报告。无文本路径时，引导用户提供原文文件路径或直接贴原文，拿到原文后进入管道。
 
 ---
 
@@ -42,72 +60,24 @@ metadata:
 
 默认输出到 `拆文库/{书名}/`（项目根目录下）。用户指定了其他路径时按用户指定路径输出。
 
-### 已有分析利用
+### 管道前置（按需执行，非启动时预读）
 
-**深度拆解开始前，检查是否已有部分拆解结果**：
-
-1. 检查 `拆文库/{书名}/` 目录下是否存在已有的拆文文件
-2. 如果存在 _progress.md，读取断点信息，从断点恢复（已有恢复机制）
-3. 如果存在 角色/*.md 或 设定/*.md，读取已有的角色和设定数据
-4. 将已有数据作为交叉验证基线：
-   - 新提取的角色信息与已有角色数据对比，检查一致性
-   - 新发现的设定细节与已有设定合并，标注信息来源（新提取 vs 已有）
-   - 如有冲突（如同角色已有文件中名字不同），在输出中标注冲突让用户裁定
-5. 避免重复提取已有信息，提升处理效率
-
-### 原文备份（管道前置步骤）
-
-**拆解开始前，必须先备份原文**：
-
-1. 检查 `拆文库/{书名}/原文/` 目录是否已存在
-2. 如果不存在，从用户提供的源路径复制原文文件到 `拆文库/{书名}/原文/`
-3. 如果用户未提供源文件路径（直接在对话中贴文本），将原始文本保存到 `拆文库/{书名}/原文/原文.md`
-4. 备份完成后验证：
-   - 源文件路径模式：确认 `原文/` 目录下的文件数量和大小与源文件一致
-   - 对话贴文本模式：确认 `原文.md` 文件非空（>0 bytes）
-5. 此步骤确保即使拆文过程中出现异常，原始材料不会丢失
+| 步骤 | 操作 | 完成标志 |
+|------|------|----------|
+| **已有分析利用** | 若 `拆文库/{书名}/_progress.md` 存在 → 读断点恢复；若 `角色/*.md`、`设定/*.md` 已存在 → 读作交叉验证基线（新提取信息与之对比，冲突在输出中标注让用户裁定，避免重复提取） | 已有数据已加载为基线 |
+| **原文备份** | 若 `拆文库/{书名}/原文/` 不存在 → 从源路径复制（或对话贴文本存为 `原文.md`），验证文件非空且与源一致 | `原文/` 落盘且非空 |
 
 ### 输出目录结构
 
-```
-拆文库/{书名}/
-├── 原文/
-│   └── 原文.txt          # 扩展名随源文件；对话直接贴入的文本存为 原文.md
-├── 概要.md
-├── 章节/
-│   ├── 第1章_深度拆解.md
-│   ├── 第2章_深度拆解.md
-│   ├── 第3章_深度拆解.md
-│   ├── 第1章_摘要.md
-│   └── ...
-├── 快速预览.md
-├── 角色/
-│   ├── {角色名}.md
-│   └── 角色关系.md
-├── 剧情/
-│   ├── {剧情标题}.md
-│   ├── 故事线.md
-│   └── 散落情节.md
-├── 设定/
-│   ├── 世界观/
-│   │   ├── 背景设定.md   # 核心规则 + 特殊设定（无法独立的内容合并）
-│   │   ├── 力量体系.md
-│   │   ├── 地理.md
-│   │   └── 金手指.md
-│   └── 势力/
-│       └── {势力名}.md   # 内容 >= 200 字时独立；不足合并到 世界观/背景设定.md
-├── 拆文报告.md
-├── 文风.md          # Stage 6 文风：句长/标点/对话潜台词/情绪交替 + 原文锚点 few-shot
-└── _progress.md
-```
+`拆文库/{书名}/` 下：`原文/`（备份）、`概要.md`、`章节/`（第N章_深度拆解.md + 第N章_摘要.md）、`快速预览.md`、`角色/`（{角色名}.md + 角色关系.md）、`剧情/`（{剧情标题}.md + 故事线.md + 散落情节.md）、`设定/`（世界观/{背景设定,力量体系,地理,金手指}.md + 势力/{势力名}.md）、`拆文报告.md`、`文风.md`、`_progress.md`。字段级落盘规则（势力≥200字独立否则并入背景设定等）见 [material-decomposition.md](references/material-decomposition.md)。
 
-> **预留产物（当前不写）**：`剧情/节奏.md`（爽点密度 / 章节情绪曲线）和 `剧情/时间线.md`（全书时间标记聚合）是 Stage 3 的预留输出，**当前管道不产出这两个文件**——等 write-novel-long-write 日更循环加入对应读取逻辑后再启动。不要把这两份文件当作既有契约。
+> **预留产物（当前不写）**：`剧情/节奏.md`、`剧情/时间线.md` 是 Stage 3 预留输出，**当前管道不产出**——等 write-novel-long-write 日更循环加入对应读取逻辑后再启动。不要把这两份文件当作既有契约。
 
-### 管道主体：Stage 0-5
+### 管道主体：Stage 0-6（路由表，执行骨架，保留在主文件）
 
 这是 write-novel-long-analyze 唯一的执行管道。Stage 0-1 跑完后**自动停靠**产出快速预览报告（见下「Stage 1 停靠点」），用户确认后从 Stage 2 续跑。
 
-**预期耗时提示**：开始前根据章节数给用户一个粗估：<50 章通常 30-60 分钟；50-200 章通常 1-3 小时；>200 章可能需要多轮会话。Stage 2 可并行提取，但 Stage 3-6 仍依赖前序产物，需按阶段推进。
+**预期耗时提示**：开始前根据章节数给用户粗估：<50 章 30-60 分钟；50-200 章 1-3 小时；>200 章可能多轮会话。Stage 2 可并行，但 Stage 3-6 依赖前序产物，按阶段推进。
 
 
 | 阶段 | 名称 | 输入 | 输出 | 完成标志 |
@@ -122,22 +92,17 @@ metadata:
 
 ### Stage 0.5 章节边界表（Stage 0 子步骤）
 
-Stage 0 完成概要 + 章节索引之后、转入 Stage 1 之前，**必须**额外产出一份「章节边界」表写入 `_progress.md`。这是后续 Stage 1（黄金三章原文切片）/ Stage 2（每章传给 deconstruction-agent agent）/ Stage 6（文风采样）共用的**唯一切片来源**——避免每个阶段各跑一次 regex 切片，结果可能不一致。
+Stage 0 完成概要 + 章节索引之后、转入 Stage 1 之前，**必须**产出「章节边界」表写入 `_progress.md`。这是 Stage 1 / Stage 2 / Stage 6 共用的**唯一切片来源**——避免每个阶段各跑一次 regex 切片导致结果不一致。
 
-操作：
-- 用 `style-profile-generator.md` Step 4 的章节正则（已含 `千` / `两`，覆盖 1000+ 章长篇）grep 出全部章节行号
-- 按 `| 章号 | 标题 | 起始行 | 字数 |` 四列写入 `_progress.md` 的「章节边界」section（见 [pipeline-ops.md](references/pipeline-ops.md) 模板）
-- `_progress.md` 顶部 `schema_version: 2` 同时落盘
+操作：用 `style-profile-generator.md` Step 4 的章节正则（含 `千`/`两`，覆盖 1000+ 章）grep 全部章节行号 → 按 `| 章号 | 标题 | 起始行 | 字数 |` 四列写入 `_progress.md`「章节边界」section（模板见 [pipeline-ops.md](references/pipeline-ops.md)），顶部 `schema_version: 2` 同时落盘。**旧拆文库续跑兼容**：旧 `_progress.md`（schema v1，无章节边界表）resume 时由 [pipeline-ops.md](references/pipeline-ops.md)「恢复机制操作步骤 0」做 lazy migration，现场重建切片表后正常续跑，不破 `paused_after_stage1` 契约。
 
-**旧拆文库续跑兼容**：旧 `_progress.md`（schema v1，无 `章节边界` 表）resume 时由 `pipeline-ops.md` 「恢复机制操作步骤 0」做 lazy migration——现场重建一次切片表后正常续跑，不破 `paused_after_stage1` 契约。
-
-### Stage 1 停靠点
+### Stage 1 停靠点（保留在主文件）
 
 Stage 0+1 完成后，管道**自动停靠**，产出快速预览报告并询问用户是否继续全量拆解：
 
-1. **生成停靠交付物**：写 `拆文库/{书名}/快速预览.md`（模板见 [output-templates.md](references/output-templates.md) 的「快速预览报告」）。此时 `概要.md`、`章节/第1章_深度拆解.md`、`章节/第2章_深度拆解.md`、`章节/第3章_深度拆解.md`、`原文/` 均已落盘。
-2. **写停靠状态**：`_progress.md` 的「最终状态」字段写 `paused_after_stage1`，「断点」段记录「下一操作：Stage 2 逐章摘要」。
-3. **询问用户**（用 AskUserQuestion 风格的明确二选一）：
+1. **生成停靠交付物**：写 `拆文库/{书名}/快速预览.md`（模板见 [output-templates.md](references/output-templates.md)「快速预览报告」）。此时 `概要.md`、`章节/第1-3章_深度拆解.md`、`原文/` 均已落盘。
+2. **写停靠状态**：`_progress.md`「最终状态」字段写 `paused_after_stage1`，「断点」段记录「下一操作：Stage 2 逐章摘要」。
+3. **询问用户**（AskUserQuestion 风格明确二选一）：
    > 「黄金三章已拆完，快速预览报告见 `快速预览.md`。是否继续全量拆解（Stage 2-6：逐章摘要 / 聚合分析 / 设定关系 / 汇总报告 / 文风）？预计耗时 {基于章节数粗估}。」
    - 选「继续全量拆解」→ 读 `_progress.md`，从 **Stage 2** 续跑，**不重跑 Stage 0/1**。
    - 选「就到这里」→ 管道结束，`_progress.md` 状态保持 `paused_after_stage1`，告知用户「之后可随时 `/write-novel-long-analyze` 同一本书，会自动从 Stage 2 续跑」。
@@ -145,7 +110,7 @@ Stage 0+1 完成后，管道**自动停靠**，产出快速预览报告并询问
 
 ### Stage 5 后：选题决策回填（可选）
 
-`拆文报告.md` 出来后（Stage 5 跑完）执行——和 Stage 6 无关，Stage 6 失败也不影响这步。
+`拆文报告.md` 出来后（Stage 5 跑完）执行，与 Stage 6 无关，Stage 6 失败也不影响这步。
 
 **仅当**项目根存在 `选题决策.md` 时：按本书题材，在它的推荐选题里找**题材关键词对得上**的那个——
 - 正好对上一个 → 把该选题的"能爆的原因"从 `待拆文验证` 改成带出处的支撑：「本书拆解支撑：{`拆文报告.md` 的 写法技巧 Top + 可借鉴套路 + 核心机制 摘要}（`拆文库/{书名}/拆文报告.md`）」。注意还只是假设（只拆了一本，不算坐实）。
@@ -163,7 +128,7 @@ Stage 5 完成后追加 Stage 6，生成 `文风.md`：句长分布、标点习�
 
 原文缺失或章节分隔符识别不出 → 在 `文风.md` 的「生成记录」写明 `文风可用：否：{原因}`。Stage 6 失败不阻断管道。
 
-### Stage 3-4 并行执行
+### Stage 3-4 并行执行图（保留在主文件）
 
 **并行执行图**：
 ```
@@ -178,15 +143,9 @@ Stage 4b（角色完整档案）— 串行，依赖 Stage 3 合并后的角色�
 Stage 4c（角色关系提取）— 串行，依赖 4b 角色实体存在
 ```
 
-**依赖来源**（事实依据，非投票）：
-- Stage 3 包含「角色合并（跨章节去重+别名归一）」（见上表 Stage 3 列）—— Stage 4 的角色完整档案构建需要这份合并后实体。
-- material-decomposition.md:218-225「阶段 B：完整档案 — 合并所有章节的角色提及数据」明确依赖 Stage 3 合并产物 → **Stage 4b/4c 必须串行**。
-- material-decomposition.md:278-287 世界观字段表（类型/力量体系/地理/势力/核心规则/特殊设定）的数据源是 Stage 2 章节摘要 + 情节点，**不依赖 Stage 3 输出** → **Stage 4a 可与 Stage 3 并行**。
-- 金手指（material-decomposition.md:268-276）同 4a，来源是 Stage 2 情节点中的能力 / 物品 mention，不需要 Stage 3 角色合并。
+**依赖来源**（事实依据，非投票）：Stage 4b/4c 必须串行——角色完整档案构建依赖 Stage 3「角色合并（跨章节去重+别名归一）」产物（material-decomposition.md「阶段 B」明确依赖 Stage 3 合并实体）。Stage 4a 可与 Stage 3 并行——世界观/金手指字段数据源是 Stage 2 章节摘要 + 情节点，不依赖 Stage 3 输出（见 material-decomposition.md 世界观字段表、金手指合并规则）。
 
-### 部分失败容忍
-
-单章/单阶段失败不阻断管道。失败记录到 `_progress.md` 的「失败记录」表（`| 类型 | 章节/阶段 | 错误信息 | 重试状态 |`）。最终状态可为 `completed_with_errors`（在拆文报告中注明失败详情）。
+**部分失败容忍**：单章/单阶段失败不阻断管道，记入 `_progress.md`「失败记录」表（`| 类型 | 章节/阶段 | 错误信息 | 重试状态 |`）；最终状态可为 `completed_with_errors`（拆文报告中注明失败详情）。
 
 > 与 material-decomposition.md 的对应关系：Stage 0 含 Material 阶段1（章节解析）；Stage 1、5 为新增；Stage 2 = Material 阶段2；Stage 3 = Material 阶段3；Stage 4 合并 Material 阶段4+5。
 
@@ -198,7 +157,7 @@ Stage 4c（角色关系提取）— 串行，依赖 4b 角色实体存在
 
 Stage 3-4 完成前需通过质量检查（置信度、覆盖率、重叠率）。阈值、计算方式与自检清单的唯一权威定义见 [material-decomposition.md 质量阈值体系](references/material-decomposition.md)。
 
-**Stage 3-5 还须过「事实可溯源」自检**：设定/角色/报告里的硬事实（等级/数值/距离/属性/势力数/出场章/谁说的话）必须能 grep 回原文，原文没给的写「原文未明确」、禁推断填空。这是拆文事实错误的最大来源（强模型也会漂移，因为合成阶段离原文两跳、靠合理性填空）。详见 [material-decomposition.md 合成阶段事实保真](references/material-decomposition.md)。
+**Stage 3-5 还须过「事实可溯源」自检**：设定/角色/报告里的硬事实（等级/数值/距离/属性/势力数/出场章/谁说的话）必须能 grep 回原文，原文没给的写「原文未明确」、禁推断填空。详见 [material-decomposition.md 合成阶段事实保真](references/material-decomposition.md)。
 
 ---
 
@@ -206,61 +165,13 @@ Stage 3-4 完成前需通过质量检查（置信度、覆盖率、重叠率）�
 
 Stage 2 使用 deconstruction-agent agent 并行处理每章，替代原来的串行分块。
 
-### 调用方式
+**决策点（主文件保留）**：
+- **spawn 条件**：`.claude/agents/write-novel-deconstruction-agent.md` 已部署 + 当前不在子代理上下文 → 每章 spawn `Agent(subagent_type: "write-novel-deconstruction-agent")`，每批 5-8 个并发，批次全部完成才进 Stage 3。
+- **降级触发**：agent 未部署或环境不支持 spawn 子代理 → 自动退回串行，主线程按 deconstruction-agent 方法论逐章处理（结果同样套 output-templates.md 章节摘要模板，质量不受影响，仅速度变慢）。
+- **质量升级重试**：执行失败（crash/超时/空输出）→ 同模型（haiku）重试 1 次；质量失败（agent 10 条自检不达标 / 主线程硬门控 grep 命中）→ `model: "sonnet"` 升级重试 1 次。硬门控含情节点数、`基调：` 全角冒号数量、基调/主题标签枚举校验。
+- **最终落盘**：通过即写 `章节/第{N}章_摘要.md` 并标记 `success`（retry 备注模型/方式）；sonnet retry 仍失败 → 标 `⚠️ 跳过`，写入 `_progress.md`「失败记录」表；单章失败不阻断管道。
 
-```python
-Agent(
-  subagent_type: "write-novel-deconstruction-agent",
-  prompt: "章节编号：第{N}章\n章节标题：{标题}\n章节字数：{字数}\n\n章节原文：\n{原文文本}"
-)
-```
-
-### 批量策略
-
-- 每次 spawn 5-8 个 agent（避免并发限制）
-- 等待当前批次全部完成后，再 spawn 下一批
-- 每批完成后更新 `_progress.md` 记录已处理章节
-
-### Agent 输出收集
-
-- 每个 agent 返回 markdown 格式的提取结果
-- 主线程将 agent 输出写入 `章节/第{N}章_摘要.md`
-- 收集所有 agent 的出场人物表，供 Stage 3 合并使用
-
-### 失败处理 + 质量升级重试
-
-**两类失败**：
-1. **执行失败**（agent crash / 超时 / 空输出）→ 同模型（haiku）重试 1 次
-2. **质量失败**（输出落盘后跑 write-novel-deconstruction-agent.md「质量检查」10 条自检，任一不达标——典型：情节点 < 10、原文引用缺失、类型/基调/主题标签超出枚举、`基调：` 漏全角冒号、角色名为昵称/通用称呼）→ **升级到 sonnet 重试 1 次**
-
-**可机械校验的硬门控**（主线程落盘后直接 grep，命中即判质量失败，不依赖 agent 自报）：
-- 情节点数 `N = grep -cE '^P[0-9]+ '`；`grep -c '基调：'` 必须 == N（少于 N = 有情节点漏 `基调：` 或漏全角冒号 → 下游 Stage 6 文风采样按全角 `基调：` grep，会静默漏章）
-- `grep -hoE '基调：[^ |]+'` 去重后 ⊆ {紧张, 轻松, 悲伤, 热血, 爽, 甜, 温馨, 恐怖, 压抑, 其他}
-- `grep -hoE '主题标签[：]?[^ |]+'` 去重（去 `主题标签`/冒号前缀后）⊆ {爱情, 亲情, 友情, 权力, 金钱, 成长, 复仇, 悬念, 搞笑, 热血, 日常, 其他}（出现 `主题标签：` 带冒号、或值为基调词均判失败）
-
-**升级重试调用方式**（主线程在校验失败后执行）：
-
-```python
-Agent(
-  subagent_type: "write-novel-deconstruction-agent",
-  model: "sonnet",            # 显式覆盖 frontmatter 的 haiku
-  prompt: "章节编号：第{N}章\n...（同首次 prompt，可追加：'上次校验失败原因：{自检失败项}'）"
-)
-```
-
-**最终落盘规则**：
-- haiku 首次通过 → 写入 `章节/第{N}章_摘要.md`，`_progress.md` 标记 `success`
-- haiku 失败 + 同模型 retry 通过 → 同上，备注 `retry_same_model`
-- 质量失败 + sonnet retry 通过 → 同上，备注 `retry_sonnet`
-- sonnet retry 仍失败 → 章节标记 `⚠️ 跳过`，失败原因写入 `_progress.md` 「失败记录」表，拆文报告中注明
-- 单章失败不阻断管道；批次全部 spawn 完成后才决定是否进入 Stage 3
-
-### Agent 不可用降级
-
-以下任一情况，Stage 2 自动退回串行模式，由主线程按 deconstruction-agent 方法论逐章处理（结果同样套 output-templates.md 的章节摘要模板，质量不受影响，只是改为串行、速度略慢）：
-
-- **agent 未部署**：`.claude/agents/write-novel-deconstruction-agent.md` 不存在。`.claude/agents/` 通常不随仓库提交，由 `/write-novel-setup` 部署；模板源在 `skills/write-novel-setup/references/templates/agents/write-novel-deconstruction-agent.md`，必要时可手动复制部署。
-- **环境不支持 spawn 子代理**：本 skill 正运行在某个子代理上下文中，无法再起下一层 agent。
+完整 spawn prompt、硬门控 grep 模式、升级重试调用方式、落盘规则、降级细节见 [references/stage2-agent-strategy.md](references/stage2-agent-strategy.md)。
 
 ---
 
@@ -279,7 +190,7 @@ Stage 3-5 的分块策略（规模分级、智能分块、跨块合并、输出�
 3. **断点状态为 `paused_after_stage1`**（Stage 1 停靠点）→ 跳过 Stage 0/1，直接从 Stage 2 续跑逐章摘要，不重跑已完成的概要与黄金三章。
 4. 其他断点状态 → 从断点所在块的起始章节恢复，覆盖该块已有输出。
 
-`_progress.md` 模板与各状态值说明见 [pipeline-ops.md](references/pipeline-ops.md)。
+`_progress.md` 模板与各状态值说明、schema v1 lazy migration 操作步骤见 [pipeline-ops.md](references/pipeline-ops.md)。
 
 ---
 
@@ -305,6 +216,7 @@ Stage 3-5 的分块策略（规模分级、智能分块、跨块合并、输出�
 | [references/output-templates.md](references/output-templates.md) | 管道全程：各 Stage 输出模板 + 快速预览报告模板 + 通用速查表 |
 | [references/material-decomposition.md](references/material-decomposition.md) | Stage 2-5：素材拆解方法论 + 质量阈值 + 分块策略；Stage 6 另见文风资料 |
 | [references/pipeline-ops.md](references/pipeline-ops.md) | 管道运维：_progress.md 模板、错误处理、恢复机制操作步骤 |
+| [references/stage2-agent-strategy.md](references/stage2-agent-strategy.md) | Stage 2：deconstruction-agent 完整 spawn prompt、批量策略、硬门控 grep、sonnet 升级重试、降级 |
 | [references/deconstruction-notes.md](references/deconstruction-notes.md) | 拆书方法+影视拆解+抽象拆解法+题材实战 |
 | [references/style-profile-protocol.md](references/style-profile-protocol.md) | Stage 6：文风模板 + 可信度/可用性说明 |
 | [references/style-profile-generator.md](references/style-profile-generator.md) | Stage 6：文风生成 SOP（6 步，含中文数字章节识别 + 全角冒号基调 grep） |
