@@ -21,7 +21,7 @@ metadata:
 ## Review Mode 选择
 
 - `/write-novel-review` 或 `/write-novel-review full` → 优先 spawn 全部 5 个 Agent；如果当前已经在子代理内，核心 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
-- `/write-novel-review lean` → 优先 spawn `write-novel-story-architect` + `reviewer`；如果当前已经在子代理内，任一所需 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
+- `/write-novel-review lean` → 优先 spawn `write-novel-story-architect` + `write-novel-reviewer`；如果当前已经在子代理内，任一所需 Agent 未部署/异常，或 spawn 失败，自动降级为 solo。
 - `/write-novel-review solo` → 不 spawn Agent，由当前会话执行基础审查。
 - 未指定 → 默认 full，并在报告里写明最终实际执行模式。
 
@@ -50,7 +50,7 @@ metadata:
 
 ### 报告元数据字段（必须逐字输出）
 
-最终报告开头必须逐行输出以下英文 key，**不要翻译、不要改名、不要只输出中文同义词**。可以在英文 key 后追加中文说明，但 key 本身必须逐字出现，便于脚本和用户核对实际执行路径：
+最终报告开头必须逐行输出以下英文 key，**不要翻译、不要改名、不要只输出中文同义词**。可以在英文 key 后追加中文说明，但 key 本身必须逐字出现：
 
 ```md
 Requested Mode: full | lean | solo
@@ -80,10 +80,11 @@ Rubric Source: file | embedded fallback
 | 审查禁用词 | `write-novel-review/references/banned-words.md` |
 | 平台 rubric | `write-novel-review/references/rubrics/{fanqie,qidian,zhihu}.md` |
 | 标点预检脚本 | `write-novel-review/scripts/normalize-punctuation.js` |
+| Agent spawn 模板 | `write-novel-review/references/reviewer-spawn-templates.md` |
 
 ### 内置审查基准包（路径不可读时必用）
 
-如果上述参考文件在当前项目中不可读，**不要把审查降级为无 rubric，也不要在报告里说“无法加载具体 rubric”后停止使用标准**。必须使用本节内置基准包，并报告：`Rubric Source: embedded fallback`。
+如果上述参考文件在当前项目中不可读，**不要把审查降级为无 rubric，也不要在报告里说"无法加载具体 rubric"后停止使用标准**。必须使用本节内置基准包，并报告：`Rubric Source: embedded fallback`。
 
 通用网文内容 rubric：
 - 核心卖点：本章是否围绕明确卖点推进；看不出卖点至少 S2。
@@ -103,9 +104,9 @@ Rubric Source: file | embedded fallback
 AI 味 / 禁用词 fallback 速查：
 - 高频套话：`命运的齿轮开始转动`、`心猛地一沉`、`眼神复杂`、`深刻变化`、`踏上新的旅程`。
 - 章末总结体：`这一切都说明...`、`他终于明白...`、`新的篇章开始了...`。
-- 信息倾倒：角色直接说“我要解释世界观/规则/关系变化”。
-- 论文体/万能结论：过度使用“然而、与此同时、不可否认、这意味着”。
-- 处理原则：有原文证据才输出 finding；给出可执行替换方向，不只评价“AI 味重”。
+- 信息倾倒：角色直接说"我要解释世界观/规则/关系变化"。
+- 论文体/万能结论：过度使用"然而、与此同时、不可否认、这意味着"。
+- 处理原则：有原文证据才输出 finding；给出可执行替换方向，不只评价"AI 味重"。
 
 平台 fallback 摘要：
 - 番茄：强开局、强冲突、高频爽点/情绪反馈、低理解门槛。
@@ -114,7 +115,7 @@ AI 味 / 禁用词 fallback 速查：
 
 ### 传给子 Agent 的规则
 
-full/lean 模式下，主会话必须把“审查基准包摘要”直接写进每个 Agent prompt。**不要要求子 Agent 必须读取 `write-novel-review/references/*` 才能完成任务**；子 Agent 可读取 `write-novel-setup/references/agent-references/*` 作为补充，但最终必须遵守本 skill 注入的 rubric 摘要和统一 Findings Schema。
+full/lean 模式下，主会话必须把"审查基准包摘要"直接写进每个 Agent prompt。**不要要求子 Agent 必须读取 `write-novel-review/references/*` 才能完成任务**；子 Agent 可读取 `write-novel-setup/references/agent-references/*` 作为补充，但最终必须遵守本 skill 注入的 rubric 摘要和统一 Findings Schema。
 
 ---
 
@@ -123,10 +124,7 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
 1. **确定审查范围**：
    - 用户指定了章节/文件 → 只审查指定内容。
    - 用户未指定 → 优先审查最近修改的正文文件（`git diff --name-only` 中的正文/设定/大纲相关文件），否则审查当前书的当前章节。
-2. **范围传递策略**：
-   - 优先把文件路径、章节名、行号范围传给 reviewer，不要把整本或大量章节完整复制进每个 prompt。
-   - 单文件或短片段可附 300-1200 字关键摘录。
-   - 多章/整卷/整本审查必须分批：按章节或文件组拆分，每批输出独立 findings，再综合。
+2. **范围传递策略**：优先把文件路径、章节名、行号范围传给 reviewer，不整本复制；单文件或短片段可附 300-1200 字关键摘录；多章/整卷/整本审查必须分批，每批输出独立 findings 再综合。
 3. **读取相关支撑材料**：正文、相关设定、角色档案、大纲、追踪/上下文、伏笔文件、`.story-system/contracts/chapter_{N}.contract.md`（合约文件，如存在则必须读取）；缺失时在报告中标记证据不足。
 4. **识别目标平台并加载 rubric**：
    - 优先使用用户显式指定的平台。
@@ -137,24 +135,9 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
    - 知乎盐言 → 优先读取 `write-novel-review/references/rubrics/zhihu.md`；不可读时使用内置知乎 fallback 摘要。
    - 未识别平台 → 优先读取 `write-novel-review/references/quality-rubric.md`；不可读时使用内置通用网文内容 rubric，并报告 `Rubric: generic web-fiction` 与 `Rubric Source: file | embedded fallback`。
 5. **形成审查基准包摘要**：把已加载的文件内容或内置 fallback 摘要压缩为 5-12 条审查标准，后续 solo 和子 Agent 都必须使用这份摘要。
-6. **确定性标点预检（只报告，不修改）**：当审查范围包含本地正文文件路径时，运行本 skill 自带脚本：
-   ```bash
-   node scripts/normalize-punctuation.js --check <正文文件...>
-   ```
-   - 将 `em-dash`、`double-hyphen`、`markdown-divider` 结果作为 `format` 或 `prose` findings 合并进报告。
-   - `write-novel-review` 不修改文件；需要自动修复时建议转 `/write-novel-deslop`。
-   - 默认 `--quote-mode keep`，不把知乎盐言短篇的 `「」` 当作问题；只有项目明确指定引号风格时才检查对应转换建议。
-   - 该脚本位于共享位置 `scripts/normalize-punctuation.js`，由 write-novel-deslop 和 write-novel-review 共用。
+6. **确定性标点预检（只报告，不修改）**：当审查范围包含本地正文文件路径时，运行 `node scripts/normalize-punctuation.js --check <正文文件...>`，将 `em-dash`、`double-hyphen`、`markdown-divider` 结果作为 `format` 或 `prose` findings 合并进报告。`write-novel-review` 不修改文件；需要自动修复时建议转 `/write-novel-deslop`。默认 `--quote-mode keep`，不把知乎盐言短篇的 `「」` 当作问题。该脚本位于共享位置 `scripts/normalize-punctuation.js`，由 write-novel-deslop 和 write-novel-review 共用。
 
-**Phase 1.5：可选 write-novel-story-researcher 预查询**。仅当 `Effective Mode` 仍为 `full`/`lean`、当前允许 spawn 且 Agent/Task 工具可用时，才可检查 `.claude/agents/write-novel-story-researcher.md` 并 spawn `write-novel-story-researcher` 预查设定摘要；`solo` 或子代理递归保护场景下不得 spawn，只能直接 Read/Grep。Prompt 示例：
-
-```text
-项目目录：{dir}
-查询类型：setting_appearances
-查询参数：{审查涉及的设定关键词}
-```
-
-此步可选，跳过不影响审查流程。
+**Phase 1.5：可选 write-novel-story-researcher 预查询**。仅当 `Effective Mode` 仍为 `full`/`lean`、当前允许 spawn 且 Agent/Task 工具可用时，才可检查 `.claude/agents/write-novel-story-researcher.md` 并 spawn `write-novel-story-researcher` 预查设定摘要；`solo` 或子代理递归保护场景下不得 spawn，只能直接 Read/Grep。此步可选，跳过不影响审查流程。
 
 ---
 
@@ -162,7 +145,7 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
 
 所有 reviewer（包括 solo）输出问题时必须使用统一结构，方便综合排序。`location` 必须使用工具读取结果显示的原始文件行号；不要删除空行后重新编号。
 
-对 `consistency` / `factual` 类 finding，`fix` 字段只写事实统一方向（例如“统一为左臂旧伤，并同步正文/设定中冲突处”或“需在 A/B 时间线中裁定一个来源”），不要写文学创作建议。
+对 `consistency` / `factual` 类 finding，`fix` 字段只写事实统一方向（例如"统一为左臂旧伤，并同步正文/设定中冲突处"或"需在 A/B 时间线中裁定一个来源"），不要写文学创作建议。
 
 ```yaml
 - severity: S1 | S2 | S3 | S4
@@ -183,147 +166,25 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
 
 ## Phase 2：并行 Spawn Agent（full/lean 模式）
 
-使用 Agent 工具并行调用。每个 Agent 不继承父对话上下文，prompt 必须自包含项目路径、审查范围、文件路径、必要摘录、审查基准包摘要、Rubric Source 和统一 Findings Schema。
+使用 Agent 工具并行调用。每个 Agent 不继承父对话上下文，prompt 必须自包含。
 
-**调用规则**：执行 Phase 0 后，只有实际模式仍是 full/lean 时才 spawn。不要 spawn 缺失 Agent。
+**调度决策点**：
+- 执行 Phase 0 后，只有实际模式仍是 full/lean 时才 spawn。不要 spawn 缺失 Agent。
+- **full 模式**：并行 spawn 全部 5 个 Agent（story-architect、character-designer、narrative-writer、reviewer、consistency-checker）
+- **lean 模式**：只 spawn story-architect + reviewer
+- **上下文传递（D6）**：prompt 不嵌入完整角色/伏笔/设定列表，只传「项目目录 + 共享路径 + 审查基准包摘要（必须内联）」，Agent 自行 Read 设定/大纲/角色/合约文件。
 
-**Agent 1: write-novel-story-architect**（subagent_type: write-novel-story-architect）
-- full/lean 均调用。
-- 审查视角：主题对齐、大纲结构、钩子/反转质量、范围控制、平台期待。
-- 提示指令：
-  ```
-  你是 write-novel-story-architect，从故事架构层面审查以下内容。
-  你的任务是【找问题】，不是验证正确性。以最严苛的标准审视。
-  项目路径：{项目根}
-  审查范围：{文件路径/章节/必要摘录}
-  审查基准包摘要：{Phase 1 形成的 rubric / fallback 摘要，必须内联}
-  Rubric Source: file | embedded fallback
-  相关文件路径：{设定/大纲/细纲文件路径}
-  可选补充参考：如项目已部署 write-novel-setup reference bundle，可读取 `write-novel-setup/references/agent-references/quality-checklist.md`、`write-novel-setup/references/agent-references/plot-core-methods.md`；若不可读，不影响审查。
-  检查项：
-  1. 这一章是否推进了故事主题？
-  2. 大纲结构是否完整（钩子/爽点/悬念）？
-  3. 情绪节奏是否合理？
-  4. 钩子和反转设计质量如何？
-  5. 范围控制：有无角色/设定膨胀？
-  6. 剧情循环是否存在且可重复？（参照审查基准包摘要里的剧情循环原则）
-  7. 高潮场景是否用了蓄能→假胜→崩解结构？（参照审查基准包摘要里的高潮构建原则）
-  8. 伏笔密度、连载期待和结构信息量是否合理？（伏笔密度通常只作为 S4 结构风险，除非已造成理解混乱）
-  9. 按平台 rubric 或通用内容 rubric 逐项对照，标记 PASS/FAIL。
-  10. 线索约束检查（参考 `write-novel-long-write/references/strand-weave-rhythm.md`）：Fire 连续≤2章、Constellation 连续≤1章、任意5章窗口至少2种线索、Fire 后5章内回归 Quest。偏离标记 S3。
+**每个 Agent 的完整 spawn prompt 模板**（含检查项、输出格式、subagent_type）详见 [references/reviewer-spawn-templates.md](references/reviewer-spawn-templates.md)。调度顺序：
 
-  输出格式：
-  VERDICT: APPROVE / CONCERNS / REJECT
-  FINDINGS: 必须使用统一 Findings Schema，severity 必须是 S1/S2/S3/S4。
-  RECOMMENDATIONS: [修改建议]
-  ```
+| # | subagent_type | full | lean | 视角 |
+|---|---|---|---|---|
+| 1 | write-novel-story-architect | ✓ | ✓ | 主题/大纲/钩子反转/范围/平台 |
+| 2 | write-novel-character-designer | ✓ | — | 角色/对话/人物弧线/关系 |
+| 3 | write-novel-narrative-writer | ✓ | — | AI味/格式/节奏/文字自然度 |
+| 4 | write-novel-reviewer | ✓ | ✓ | 事实冲突/合约合规（grep-first） |
+| 5 | write-novel-consistency-checker | ✓ | — | 时间线/战力/地点/伏笔/知识边界 |
 
-**Agent 2: character-designer**（subagent_type: character-designer）
-- full 模式调用。
-- 审查视角：角色语言风格一致性、对话质量、人物弧线、关系推进。
-- 提示指令：
-  ```
-  你是 character-designer，从角色和对话层面审查以下内容。
-  你的任务是【找问题】，不是验证正确性。以最严苛的标准审视。
-  项目路径：{项目根}
-  审查范围：{文件路径/章节/必要摘录}
-  审查基准包摘要：{Phase 1 形成的 rubric / fallback 摘要，必须内联}
-  Rubric Source: file | embedded fallback
-  相关角色文件：{角色设定文件路径}
-  可选补充参考：如项目已部署 write-novel-setup reference bundle，可读取 `write-novel-setup/references/agent-references/character-relations.md`、`write-novel-setup/references/agent-references/dialogue-mastery.md`；若不可读，不影响审查。
-  检查项：
-  1. 角色语言风格是否与语言风格档案一致？
-  2. 对话是否千篇一律或信息过满？
-  3. 人物弧线是否连贯？
-  4. 角色行为是否符合其动机？
-  5. 对话是否有潜台词和信息控制？
-  6. 爱情线好感度与 CP 行为是否匹配？（参照审查基准包摘要或可选 `write-novel-setup` 角色关系参考）
-  7. 好感度进度是否可感知？
-
-  输出格式：
-  VERDICT: APPROVE / CONCERNS / REJECT
-  FINDINGS: 必须使用统一 Findings Schema，severity 必须是 S1/S2/S3/S4。
-  RECOMMENDATIONS: [修改建议]
-  ```
-
-**Agent 3: narrative-writer**（subagent_type: narrative-writer）
-- full 模式调用。
-- 审查视角：AI味检测、格式合规、节奏均匀度、文字自然度。
-- 提示指令：
-  ```
-  你是 narrative-writer，从文字质量层面审查以下内容。
-  你的任务是【找问题】，不是验证正确性。以最严苛的标准审视。
-  项目路径：{项目根}
-  审查范围：{文件路径/章节/必要摘录}
-  审查基准包摘要：{Phase 1 形成的 rubric / fallback 摘要，必须内联}
-  Rubric Source: file | embedded fallback
-  AI 味 / 禁用词摘要：{从 anti-ai-writing、banned-words 或内置 fallback 提取，必须内联}
-  可选补充参考：如项目已部署 write-novel-setup reference bundle，可读取 `write-novel-setup/references/agent-references/anti-ai-writing.md`、`write-novel-setup/references/agent-references/banned-words.md`、`write-novel-setup/references/agent-references/quality-checklist.md`；若不可读，不影响审查。
-  检查项：
-  1. 是否存在禁用词/套话/陈词滥调？
-  2. 是否出现 AI 写作指纹、7 种 AI 写作模式或章末总结体？
-  3. 格式是否合规（一段一句、≤60字、无空行、对话独立成行）？
-  4. 节奏是否均匀（有无连续多节无情绪变化）？
-  5. 身体部位同一词是否超 5 次？
-  6. AI味分级（轻度/中度/重度）及证据。
-  7. 钩子密度与类型分布：章首/章尾钩子是否到位、文中微钩子密度是否达标（每1000字≥1）、钩子五分类（危机/悬念/欲望/情绪/选择）配比是否符合题材偏好（参考审查基准包摘要中的 hooks-taxonomy 参数）。
-
-  输出格式：
-  VERDICT: APPROVE / CONCERNS / REJECT
-  FINDINGS: 必须使用统一 Findings Schema，severity 必须是 S1/S2/S3/S4；AI味级别写入 issue 或 category。
-  RECOMMENDATIONS: [修改建议]
-  ```
-
-**Agent 4: reviewer**（subagent_type: reviewer）
-- full/lean 均调用。
-- 审查视角：grep-first 事实冲突检测 + 合约合规检查，输出 S1-S4 报告。
-- 提示指令：
-  ```
-  你是 reviewer，使用 grep-first 方式检测事实矛盾。
-  你的任务是【找事实矛盾和状态断线】，不做创作评判，不评价文学质量，不输出创作修改建议。
-  项目路径：{项目根}
-  审查范围：{文件路径/章节/必要摘录}
-  合约文件：`.story-system/contracts/chapter_{N}.contract.md`（如存在，审查前必读）
-  已知角色：{从设定文件提取角色列表}
-  审查基准包摘要：{Phase 1 形成的 rubric / fallback 摘要，必须内联}
-  Rubric Source: file | embedded fallback
-  可选补充参考：如项目已部署 write-novel-setup reference bundle，可读取 `write-novel-setup/references/agent-references/quality-checklist.md`；若不可读，不影响事实冲突扫描。
-  检查项：
-  1. 合约合规（如合约文件存在）：must_cover 覆盖检查、forbidden 违规检测、CBN/CPNs/CEN 完成度
-  2. 角色属性是否前后一致？
-  3. 世界规则是否被违反？
-  4. 伏笔状态是否前后一致（已埋/计划回收/已回收/断线）？
-  5. 时间线是否自洽？
-  6. 术语、身份、地点、能力边界是否前后一致？
-
-  输出格式：
-  VERDICT: APPROVE / CONCERNS / REJECT
-  FINDINGS: 必须使用统一 Findings Schema，severity 必须是 S1/S2/S3/S4；category 只能使用 consistency / factual / format。
-  FACTUAL_RECONCILIATION: [仅列需统一的事实来源或需人工裁决项，不写文学创作建议]
-  ```
-
----
-
-**Agent 5: consistency-checker**（subagent_type: consistency-checker）
-- full 模式调用。
-- 审查视角：客观事实冲突扫描 — 时间线、战力体系、地点连续性、伏笔状态、角色知识边界。
-- 提示指令：
-  ```
-  你是 consistency-checker，使用 grep-first 方式检测客观事实矛盾。
-  你的任务是【找确定的、可验证的事实冲突】，不做创作评判，不评价文学质量。
-  项目路径：{项目根}
-  审查范围：{文件路径/章节/必要摘录}
-  检查项：
-  1. 时间线一致性：本章时间标记是否与上章衔接、倒计时是否正确推进
-  2. 战力体系一致性：角色是否使用了超等级能力
-  3. 地点连续性：场景切换是否合理
-  4. 伏笔状态：新埋/回收的伏笔是否有遗漏登记
-  5. 角色知识边界：角色是否使用了不应知道的信息
-
-  输出格式：
-  VERDICT: APPROVE / CONCERNS / REJECT
-  FINDINGS: 使用统一 Findings Schema，severity 为 S1/S2/S3/S4；category 只能使用 consistency / factual
-  ```
+任一必需 Agent 缺失/malformed/stale/spawn 失败 → 按 Phase 0 降级 solo，不把部分成功当 full/lean 结论。
 
 ---
 
@@ -331,17 +192,19 @@ full/lean 模式下，主会话必须把“审查基准包摘要”直接写进�
 
 1. 收集实际执行的 reviewer VERDICT 和 FINDINGS。
 2. 合并去重：按 `severity` 排序（S1 > S2 > S3 > S4），同级内按影响范围排序。
-3. **可选事实核查**：如果审查内容涉及需要验证的外部事实（历史年代、地理方位、职业细节等），只有在 `Effective Mode` 仍为 `full`/`lean`、当前不是子 Agent、Agent/Task 工具可用且 `.claude/agents/write-novel-story-researcher.md` 已部署时，才可额外 spawn `write-novel-story-researcher` 搜索验证；`solo`、missing/malformed/stale/spawn failed 降级或子代理递归保护场景下不得 spawn，只能在报告中标记“需人工事实核查”。
+3. **可选事实核查**：如果审查内容涉及需要验证的外部事实（历史年代、地理方位、职业细节等），只有在 `Effective Mode` 仍为 `full`/`lean`、当前不是子 Agent、Agent/Task 工具可用且 `.claude/agents/write-novel-story-researcher.md` 已部署时，才可额外 spawn `write-novel-story-researcher` 搜索验证；`solo`、missing/malformed/stale/spawn failed 降级或子代理递归保护场景下不得 spawn，只能在报告中标记"需人工事实核查"。
 4. **分歧呈现**：如果 reviewer 间有冲突意见，明确呈现分歧让用户裁决；不要自动妥协。
 5. 输出综合审查报告。报告必须列出实际模式、fallback 原因、使用的 rubric、Rubric Source、审查范围和证据不足项。
 
 ---
 
-## Phase 4：输出报告（full / lean 模式）
+## Phase 4：输出报告
 
-只有 `Effective Mode` 确实为 `full` 或 `lean` 时才使用本模板；如果 Phase 0 或运行时失败导致降级 `solo`，必须改用 solo 模式模板。
+只有 `Effective Mode` 确实为 `full` 或 `lean` 时才使用 full/lean 模板；如果 Phase 0 或运行时失败导致降级 `solo`，必须改用 solo 模式模板。
 
-注意：下列 `Requested Mode`、`Effective Mode`、`Fallback`、`Rubric`、`Rubric Source` 五个英文 key 必须逐字保留；不要改成“请求模式/实际模式/回退/评估标准”等中文 key。
+注意：下列 `Requested Mode`、`Effective Mode`、`Fallback`、`Rubric`、`Rubric Source` 五个英文 key 必须逐字保留；不要改成"请求模式/实际模式/回退/评估标准"等中文 key。
+
+### full / lean 模式输出格式
 
 ```md
 === 故事审查报告 ===
@@ -354,18 +217,15 @@ Rubric Source: file | embedded fallback
 
 ## Verdict Summary / 结论汇总
 - write-novel-story-architect: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
-- character-designer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
-- narrative-writer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
-- reviewer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
-- consistency-checker: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
+- write-novel-character-designer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
+- write-novel-narrative-writer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
+- write-novel-reviewer: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
+- write-novel-consistency-checker: APPROVE / CONCERNS(n) / REJECT / NOT_RUN
 
 > `NOT_RUN` 只用于 lean 模式排除的 reviewer 或可选 reviewer（character-designer、narrative-writer、consistency-checker）；如果 full/lean 必需 reviewer 缺失或 spawn 失败，应降级 solo，而不是在 full/lean 报告中标记 NOT_RUN 后继续综合。
 
 ## Severity Counts
-- S1: n
-- S2: n
-- S3: n
-- S4: n
+- S1: n / S2: n / S3: n / S4: n
 
 ## 综合评定
 APPROVE(通过) / CONCERNS(有问题) / REJECT(需重写)
@@ -383,15 +243,7 @@ APPROVE(通过) / CONCERNS(有问题) / REJECT(需重写)
 {按 S1→S4 优先级排列}
 ```
 
----
-
-## lean 模式
-
-lean 模式只 spawn `write-novel-story-architect` + `reviewer`。如果任一缺失，按 Phase 0 自动降级 solo。其余流程同 full。
-
----
-
-## solo 模式
+### solo 模式
 
 不 spawn Agent。先按 Phase 1 第 4 步识别目标平台并加载对应 rubric；即使是 solo，也必须用平台 rubric、`write-novel-review/references/quality-rubric.md` 或内置审查基准包校准判断。
 
@@ -405,8 +257,6 @@ solo 必须执行基础检查：
 7. 按统一 Findings Schema 输出简化版报告。
 
 ### solo 模式输出格式
-
-注意：下列 `Requested Mode`、`Effective Mode`、`Fallback`、`Rubric`、`Rubric Source` 五个英文 key 必须逐字保留；不要改成“请求模式/实际模式/回退/评估标准”等中文 key。
 
 ```md
 === 故事审查报告（solo）===
@@ -425,7 +275,7 @@ Rubric Source: file | embedded fallback
 - [{x| }] 对话独立成行：通过/不通过；证据：...
 - 违规位置：{列出}
 
-> checklist 约定：`[x]` 只表示通过，`[ ]` 表示未通过；不得出现“`[x] ... 不通过`”这种矛盾写法。
+> checklist 约定：`[x]` 只表示通过，`[ ]` 表示未通过；不得出现"`[x] ... 不通过`"这种矛盾写法。
 
 ### 设定一致性（grep 扫描）
 - {列出发现的矛盾或证据不足}
