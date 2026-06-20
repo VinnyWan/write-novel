@@ -1,0 +1,175 @@
+# 共享参考文件清单
+# 所有 skill 通过指针文件引用这些共享源，避免副本漂移。
+# 指针文件格式：首行 `> **共享参考文件**`，次行 `> 共享源：references/shared/<file>`，第三行 `> 版本指纹：v<X.Y>`
+
+shared_sources:
+  anti-ai-writing.md:
+    path: references/shared/anti-ai-writing.md
+    version: v2.3
+    base_skill: write-novel-deslop
+    notes: 去 AI 味核心方法论，功能最完整版本
+
+  banned-words.md:
+    path: references/shared/banned-words.md
+    version: v1.5
+    base_skill: write-novel-deslop
+    notes: 禁用词表
+
+  quality-checklist.md:
+    path: references/shared/quality-checklist.md
+    version: v2.1
+    base_skill: write-novel-short-analyze
+    notes: 合并 long-write/short-write/short-analyze 三方特有条目（追妻雷区+拆书定位）
+
+  character-relations.md:
+    path: references/shared/character-relations.md
+    version: v1.8
+    base_skill: write-novel-short-analyze
+    notes: 含 short-analyze 的「用作拆文标尺时」前置说明，写作 skill 忽略该段
+
+  hooks-suspense.md:
+    path: references/shared/hooks-suspense.md
+    version: v1.2
+    base_skill: write-novel-short-write
+
+  hooks-chapter.md:
+    path: references/shared/hooks-chapter.md
+    version: v1.3
+    base_skill: write-novel-setup
+
+  format-and-structure.md:
+    path: references/shared/format-and-structure.md
+    version: v1.4
+    base_skill: write-novel-import
+
+  dialogue-mastery.md:
+    path: references/shared/dialogue-mastery.md
+    version: v1.6
+    base_skill: write-novel-setup
+
+  genre-writing-formulas.md:
+    path: references/shared/genre-writing-formulas.md
+    version: v1.9
+    base_skill: write-novel-short-analyze
+    notes: 行数最多版本，含 short-analyze 额外条目
+
+  genre-readers.md:
+    path: references/shared/genre-readers.md
+    version: v1.7
+    base_skill: write-novel-short-analyze
+
+  genre-core-mechanics.md:
+    path: references/shared/genre-core-mechanics.md
+    version: v1.5
+    base_skill: write-novel-short-write
+
+  genre-catalog.md:
+    path: references/shared/genre-catalog.md
+    version: v1.8
+    base_skill: write-novel-short-analyze
+
+  character-design-methods.md:
+    path: references/shared/character-design-methods.md
+    version: v1.6
+    base_skill: write-novel-short-analyze
+
+  character-basics.md:
+    path: references/shared/character-basics.md
+    version: v1.5
+    base_skill: write-novel-short-analyze
+
+  writing-craft.md:
+    path: references/shared/writing-craft.md
+    version: v1.4
+    base_skill: write-novel-short-write
+
+  state-tracking.md:
+    path: references/shared/state-tracking.md
+    version: v1.3
+    base_skill: write-novel-long-write
+    notes: long-write 版本含长篇状态追踪扩展
+
+  reversal-toolkit.md:
+    path: references/shared/reversal-toolkit.md
+    version: v1.2
+    base_skill: write-novel-short-write
+
+  plot-core-methods.md:
+    path: references/shared/plot-core-methods.md
+    version: v1.5
+    base_skill: write-novel-setup
+
+  opening-design.md:
+    path: references/shared/opening-design.md
+    version: v1.4
+    base_skill: write-novel-short-write
+
+  hooks-paragraph.md:
+    path: references/shared/hooks-paragraph.md
+    version: v1.1
+    base_skill: write-novel-short-write
+
+  emotional-methods.md:
+    path: references/shared/emotional-methods.md
+    version: v1.3
+    base_skill: write-novel-short-write
+
+  emotional-arc-design.md:
+    path: references/shared/emotional-arc-design.md
+    version: v1.6
+    base_skill: write-novel-short-write
+
+# 白名单：以下文件允许在 skill references/ 下以实体存在（非指针文件）
+# 原因：skill 特有内容，无跨 skill 重复
+whitelist_real_files:
+  - write-novel-long-write/references/artifact-protocols.md
+  - write-novel-long-write/references/checkpoint-resume.md
+  - write-novel-long-write/references/cross-book-recall.md
+  - write-novel-long-write/references/female-audience-writing.md
+  - write-novel-long-write/references/genre-writing-techniques.md
+  - write-novel-long-write/references/hooks-taxonomy.md
+  - write-novel-long-write/references/outline-conflict.md
+  - write-novel-long-write/references/outline-methods.md
+  - write-novel-long-write/references/outline-rhythm.md
+  - write-novel-long-write/references/outline-structure-theory.md
+  - write-novel-long-write/references/plot-emotion-system.md
+  - write-novel-long-write/references/plot-frameworks.md
+  - write-novel-long-write/references/plot-special-topics.md
+  - write-novel-long-write/references/strand-weave-rhythm.md
+  - write-novel-long-write/references/style-craft.md
+  - write-novel-long-write/references/workflow-daily.md
+  - write-novel-long-write/references/workflow-revision.md
+  - write-novel-long-write/references/write-gates.md
+  - write-novel-long-write/references/writing-stage-details.md
+  - write-novel-short-write/references/cross-book-recall.md
+  - write-novel-short-write/references/female-audience-writing.md
+  - write-novel-short-write/references/genre-writing-techniques.md
+  - write-novel-short-write/references/villain-and-reveal.md
+  - write-novel-short-write/references/writing-workflow.md
+  - write-novel-short-analyze/references/deconstruction-examples.md
+  - write-novel-short-analyze/references/genre-writing-techniques.md
+  - write-novel-short-analyze/references/material-decomposition.md
+  - write-novel-short-analyze/references/output-contract.md
+  - write-novel-short-analyze/references/output-templates.md
+  - write-novel-short-analyze/references/real-market-data.md
+  - write-novel-short-analyze/references/zhihu-style.md
+  - write-novel-long-analyze/references/deconstruction-notes.md
+  - write-novel-long-analyze/references/material-decomposition.md
+  - write-novel-long-analyze/references/output-templates.md
+  - write-novel-long-analyze/references/pipeline-ops.md
+  - write-novel-long-analyze/references/style-profile-generator.md
+  - write-novel-long-analyze/references/style-profile-protocol.md
+  - write-novel-deslop/references/deai-six-gates.md
+  - write-novel-review/references/quality-rubric.md
+  - write-novel-review/references/rubrics/*.md
+  - write-novel-import/references/character-state-reverse.md
+  - write-novel-import/references/length-routing.md
+  - write-novel-import/references/structure-mapping-long.md
+  - write-novel-import/references/structure-mapping-short.md
+  - write-novel-cover/references/cover-styles.md
+  - write-novel-long-scan/references/genre-trends.md
+  - write-novel-long-scan/references/publishing-guide.md
+  - write-novel-long-scan/references/reader-profiling.md
+  - write-novel-long-scan/references/scan-output-format.md
+  - write-novel-long-scan/references/topic-decision.md
+  - write-novel-short-scan/references/real-market-data.md

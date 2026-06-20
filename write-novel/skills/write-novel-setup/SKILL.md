@@ -144,8 +144,8 @@ metadata:
 5. **迁移后校验**（无新旧并存）：
    - `Glob .claude/skills/story-*` 应零命中
    - `Glob .claude/agents/{narrative-writer,reviewer,...}.md` 应零命中（裸名）
-   - `grep -r 'subagent_type: "story-' .claude/` 应零命中
-   - `grep -r 'subagent_type: "narrative-writer"' .claude/` 应零命中
+   - grep `subagent_type:` 后接 `"story-` 的调用应零命中
+   - grep `subagent_type:` 后接裸名 `"narrative-writer"` 的调用应零命中
    - 任一校验失败 → 回滚（从备份恢复 settings.local.json，git mv 回去），报告失败原因
 6. **追加 run-ledger 迁移记录**：
    - 在 `.story-deployed` 同目录的 `.story-run-ledger`（如不存在则创建）追加一行：
@@ -255,7 +255,7 @@ metadata:
 2. 验证 rules 路径：
    - 检查 `.claude/rules/` 下的规则文件是否存在且包含 `paths` frontmatter
 3. 验证 agents：
-   - 检查 `.claude/agents/` 下的 9 个 agent 定义文件是否存在（write-novel-story-architect, character-designer, narrative-writer, reviewer, write-novel-story-researcher, deconstruction-agent, consistency-checker, write-novel-story-explorer, chapter-extractor）
+   - 检查 `.claude/agents/` 下的 9 个 agent 定义文件是否存在（write-novel-story-architect, write-novel-character-designer, write-novel-narrative-writer, write-novel-reviewer, write-novel-story-researcher, write-novel-deconstruction-agent, write-novel-consistency-checker, write-novel-story-explorer, write-novel-chapter-extractor）
 4. 验证 agent reference bundle：
    - 检查 `.claude/skills/write-novel-setup/references/agent-references/` 下 reference 文件完整
    - 检查所有 `write-novel-setup/references/agent-references/<file>.md` 都能解析到 deployed bundle
@@ -324,7 +324,7 @@ hooks 注册合并按 command 字段去重：
 | references/templates/CLAUDE.md.tmpl | 项目根 CLAUDE.md 模板 |
 | references/templates/hooks/ | 6 个 hook 脚本模板 + `lib/common.sh`/`lib/sentinel.sh` |
 | references/templates/rules/ | 4 条 path-scoped 规则模板 |
-| references/templates/agents/ | 9 个 agent 定义模板（write-novel-story-architect, character-designer, narrative-writer, reviewer, write-novel-story-researcher, deconstruction-agent, consistency-checker, write-novel-story-explorer, chapter-extractor） |
+| references/templates/agents/ | 9 个 agent 定义模板（write-novel-story-architect, write-novel-character-designer, write-novel-narrative-writer, write-novel-reviewer, write-novel-story-researcher, write-novel-deconstruction-agent, write-novel-consistency-checker, write-novel-story-explorer, write-novel-chapter-extractor） |
 | references/agent-references/ | Agent 模板自带的参考资料副本；部署到 `.claude/skills/write-novel-setup/references/agent-references/`，避免跨 skill references |
 | references/templates/settings-hooks.json | hooks 注册 JSON 片段 |
 | references/templates/上下文.md.tmpl | 写作上下文模板 |
