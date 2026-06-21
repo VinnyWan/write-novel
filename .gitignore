@@ -9,3 +9,10 @@ node_modules/
 dist/
 openspec/
 .claude/
+.vscode/
+.idea/
+.DS_Store
+*.log
+*.env
+.github/
+.gitignore
