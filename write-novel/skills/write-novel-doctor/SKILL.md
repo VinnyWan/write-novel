@@ -36,10 +36,10 @@ allowed-tools: Read Glob Bash
 | 检查项 | 诊断方式 |
 |--------|----------|
 | 目录结构 | Glob 检查 `设定/` `大纲/` `正文/` `追踪/` 是否存在 |
-| 核心文件 | Read 检查 `设定/MASTER_SETTING.md` `追踪/state.md` `追踪/context.md` |
+| 核心文件 | Read 检查 `设定/MASTER_SETTING.md` `追踪/状态.md` `追踪/上下文.md` |
 | 章节完整性 | Glob 检查正文章节是否连续，Read 抽查 YAML frontmatter |
-| 伏笔状态 | Read `追踪/foreshadowing.md` 检查逾期伏笔 |
-| 角色一致性 | Read `追踪/characters.md` 与 Glob `设定/角色/` 交叉验证 |
+| 伏笔状态 | Read `追踪/状态.md` 伏笔 section 检查逾期伏笔 |
+| 角色一致性 | Read `追踪/状态.md` 角色状态 section 与 Glob `设定/角色/` 交叉验证 |
 | 律条合规 | 标记近期章节中未登记实体和设定违反 |
 | 模式记忆 | Read `追踪/project_memory.json`（如存在）检查文件完整性、各类条目数、去重有效性 |
 | 合约系统 | Read `.story-system/contracts/` 检查合约覆盖率和 commit 连续完整性 |
@@ -53,7 +53,7 @@ allowed-tools: Read Glob Bash
 | 断链检测 | 运行 `bash scripts/static-check.sh`，读取输出中的 FAIL 项 | 按报告指引修复断链路径 |
 | 共享引用指针一致性 | 运行 `bash scripts/check-shared-files.sh`，读取 Pointer/Whitelist/Namespace/Deploy 段错误数 | 指针文件格式错误 → 重新生成指针；命名空间违例 → 运行 `/write-novel-setup` 迁移 |
 | hooks 配置完整性 | Read `.claude/settings.local.json` 检查 hooks 注册；Glob `.claude/hooks/*.sh` 检查脚本存在 + 执行权限；Read `.claude/hooks/lib/common.sh` `.claude/hooks/lib/sentinel.sh` 检查 lib 存在 | hooks 缺失 → 运行 `/write-novel-setup` 重新部署 |
-| agent 定义完整性 | Glob `.claude/agents/write-novel-*.md` 检查 9 个 agent 文件存在 | agent 缺失 → 运行 `/write-novel-setup` 重新部署 |
+| agent 定义完整性 | Glob `.claude/agents/write-novel-*.md` 检查 8 个 agent 文件存在 | agent 缺失 → 运行 `/write-novel-setup` 重新部署 |
 | 命名空间一致性 | 检查 `.claude/skills/story-*` 目录是否残留；检查 `.claude/agents/` 下裸名 agent 文件（无 `write-novel-` 前缀的旧文件名）是否残留 | 残留旧命名 → 运行 `/write-novel-setup` 触发 Phase 2.0a 迁移 |
 | 部署标记版本 | Read `.story-deployed` 检查 `agents_version` 字段；< 12 → 提示升级 | 版本过旧 → 运行 `/write-novel-setup` 升级到 v12 |
 
@@ -95,7 +95,7 @@ Agent 直接执行以下诊断步骤：
 ### 执行流程
 
 1. 确定当前项目根目录
-2. 读取 `追踪/state.md` 获取当前进度作为上下文
+2. 读取 `追踪/状态.md` 获取当前进度作为上下文
 3. 解析用户输入，归类 `pattern_type`：hook/pacing/dialogue/payoff/emotion/format/other
 4. 将模式写入 `.claude/memory/` 目录下的对应记忆文件
 

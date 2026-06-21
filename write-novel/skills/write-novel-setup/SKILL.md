@@ -27,7 +27,7 @@ metadata:
 3. 检查 `.claude/settings.local.json` → 存在则读取待合并，不存在则后续创建
 4. 检查 `.active-book` → 存在则显示当前活跃书目
 5. 检查 `.story-config.json` → 存在则展示配置摘要，AskUserQuestion「是否修改配置？」（是→Phase 1.5 预填已有值；否→跳过 Phase 1.5）；不存在或无书名目录→进入 Phase 1.5 全新收集
-6. **旧命名部署迁移检测**（v0.4.0 命名空间统一后）：扫描 `.claude/skills/story-*` 目录和 `.claude/agents/{narrative-writer,reviewer,character-designer,consistency-checker,deconstruction-agent,chapter-extractor,story-architect,story-explorer,story-researcher}.md` 裸名/旧名文件 → 检测到旧命名进入 Phase 2.0a 迁移；未检测到跳过迁移按正常 Phase 2 部署
+6. **旧命名部署迁移检测**（v0.4.0 命名空间统一后）：扫描 `.claude/skills/story-*` 目录和 `.claude/agents/{narrative-writer,reviewer,character-designer,consistency-checker,deconstruction-agent,story-architect,story-explorer,story-researcher}.md` 裸名/旧名文件 → 检测到旧命名进入 Phase 2.0a 迁移；未检测到跳过迁移按正常 Phase 2 部署
 
 > **run-ledger**：Phase 1 完成后追加 `{timestamp} | phase-1-detect | {项目状态摘要} | success`。
 
@@ -63,7 +63,7 @@ metadata:
 ## Phase 1.6：世界观初始化（D8 新增）
 
 > 在配置向导完成后、Phase 2 部署前执行。产出 `设定/世界观.md` 和 `设定/题材定位.md`，建立故事的基础时空框架。
-> 后续 story-long-write Phase 2 在此基础上细化角色和核心冲突，不再从零构建世界观。
+> 后续 write-novel-long-write Phase 2 在此基础上细化角色和核心冲突，不再从零构建世界观。
 
 ### 1.6.1 触发条件
 
@@ -121,10 +121,10 @@ metadata:
 
 **迁移原则**：dry-run 列出变更 → 用户确认 → 原子迁移 → 迁移后无新旧并存。
 
-1. **扫描旧命名部署**：`Glob .claude/skills/story-*` + `Glob .claude/agents/{裸名/旧名}.md`（9 个 agent）+ 读 `.claude/settings.local.json` 扫描 hooks 中引用旧 skill 名的 command 字段
-2. **生成 dry-run 变更清单**（不执行修改）：skill 目录重命名映射（`story-X`→`write-novel-X`，14 项）、agent 文件重命名映射（裸名→`write-novel-` 前缀，9 项）、settings.local.json hook command 路径更新项（`/story-X`→`/write-novel-X`）、列出将被删除的旧路径
+1. **扫描旧命名部署**：`Glob .claude/skills/story-*` + `Glob .claude/agents/{裸名/旧名}.md`（8 个 agent）+ 读 `.claude/settings.local.json` 扫描 hooks 中引用旧 skill 名的 command 字段
+2. **生成 dry-run 变更清单**（不执行修改）：skill 目录重命名映射（`story-X`→`write-novel-X`，14 项）、agent 文件重命名映射（裸名→`write-novel-` 前缀，8 项）、settings.local.json hook command 路径更新项（`/story-X`→`/write-novel-X`）、列出将被删除的旧路径
 3. **AskUserQuestion 确认迁移**：「确认」→继续步骤 4；「取消」→跳过迁移仅执行 Phase 2 全新部署（旧命名文件保留，后续由 write-novel-doctor 标记）
-4. **执行迁移**（顺序敏感）：4a 备份 `.claude/settings.local.json`→`.bak.{timestamp}`；4b `git mv`/`mv` 14 个 skill 目录 `story-X`→`write-novel-X`；4c `git mv`/`mv` 9 个 agent 文件裸名→`write-novel-` 前缀；4d 更新 `.claude/settings.local.json` hook command 路径引用；4e 如 `.story-deployed` 存在更新 `agents_version: 12`、`setup_skill_version: 1.2.0`
+4. **执行迁移**（顺序敏感）：4a 备份 `.claude/settings.local.json`→`.bak.{timestamp}`；4b `git mv`/`mv` 14 个 skill 目录 `story-X`→`write-novel-X`；4c `git mv`/`mv` 8 个 agent 文件裸名→`write-novel-` 前缀；4d 更新 `.claude/settings.local.json` hook command 路径引用；4e 如 `.story-deployed` 存在更新 `agents_version: 12`、`setup_skill_version: 1.2.0`
 5. **迁移后校验**（无新旧并存）：`Glob .claude/skills/story-*` 零命中；`Glob .claude/agents/{裸名}.md` 零命中；grep `subagent_type:` 后接 `"story-` 或裸名调用零命中；任一失败→回滚（从备份恢复 + git mv 回去）报告失败原因
 6. **追加 run-ledger 迁移记录**：在 `.story-deployed` 同目录的 `.story-run-ledger`（不存在则创建）追加：
    ```
@@ -137,9 +137,9 @@ metadata:
 | Source path | Target path | Owner class | Merge mode | Validation check |
 |-------------|-------------|-------------|------------|------------------|
 | `skills/write-novel-setup/references/templates/CLAUDE.md.tmpl` | `CLAUDE.md` | user+managed | marker/section merge | contains story skill routing sections |
-| `skills/write-novel-setup/references/templates/hooks/` | `.claude/hooks/` | managed | recursive replace | `session-*.sh`, `detect-story-gaps.sh`, `validate-story-commit.sh`, `lib/common.sh`, `lib/sentinel.sh` exist |
+| `skills/write-novel-setup/references/templates/hooks/` | `.claude/hooks/` | managed | recursive replace | `session-*.sh`, `detect-story-gaps.sh`, `validate-story-commit.sh`, `post-compact.sh`, `pre-compact.sh`, `lib/common.sh`, `lib/sentinel.sh` exist |
 | `skills/write-novel-setup/references/templates/rules/*.md` | `.claude/rules/*.md` | managed | replace | every rule contains `paths` frontmatter |
-| `skills/write-novel-setup/references/templates/agents/*.md` | `.claude/agents/*.md` | managed | replace | 9 agent files exist |
+| `skills/write-novel-setup/references/templates/agents/*.md` | `.claude/agents/*.md` | managed | replace | 8 agent files exist |
 | `skills/write-novel-setup/references/agent-references/*.md` | `.claude/skills/write-novel-setup/references/agent-references/*.md` | managed | replace | every agent-references ref resolves |
 | `skills/write-novel-setup/references/templates/settings-hooks.json` | `.claude/settings.local.json` | user+managed | merge by hook command | hook JSON valid, commands deduped |
 | `skills/write-novel-setup/references/templates/上下文.md.tmpl` | `{书名}/追踪/上下文.md` | user state | create only if absent | never overwrite existing context |
@@ -157,7 +157,7 @@ metadata:
 - **2.4.2 Agent References**：复制 `references/agent-references/`→`.claude/skills/write-novel-setup/references/agent-references/`（主路径），可同步复制到项目本地 `skills/` 作 fallback，但不得只复制 fallback 遗漏主路径；校验源包与目标包文件均存在
 - **2.5 Session State 模板**：仅当长篇书目且 `{书名}/追踪/` 已存在时创建缺失的 `{书名}/追踪/上下文.md`，已存在不覆盖，短篇不创建 `追踪/`
 - **2.6 合并 Hooks 注册**：读 `settings-hooks.json` + 用户 `.claude/settings.local.json`，按 command 去重合并 hooks（用户已有 command 保留，模板新 command append，用户独有 permissions/env 完整保留），写入 `.claude/settings.local.json`
-- **2.7 部署标记**：创建 `.story-deployed`（YAML）：`deployed_at`/`agents_version: 11`/`setup_skill_version: 1.2.0`/`target_cli: claude-code`/`resolver_strategy: project-local-skill-reference`/`references_dir: .claude/skills/write-novel-setup/references/agent-references`。已存在但 `agents_version` < 10 → 提示重新运行 setup 更新
+- **2.7 部署标记**：创建 `.story-deployed`（YAML）：`deployed_at`/`agents_version: 12`/`setup_skill_version: 1.2.0`/`target_cli: claude-code`/`resolver_strategy: project-local-skill-reference`/`references_dir: .claude/skills/write-novel-setup/references/agent-references`。已存在但 `agents_version` < 10 → 提示重新运行 setup 更新
 - **2.8 Dashboard wrapper**：项目根生成 `start-dashboard.sh`（`exec "<tool-root>/bin/novel-dashboard" "$@"`，`<tool-root>` 为 skill 向上两级绝对路径），`chmod +x`
 
 > **run-ledger**：Phase 2 完成后追加 `{timestamp} | phase-2-deploy | {部署文件数} files | success`。
@@ -168,9 +168,9 @@ metadata:
 
 1. **hooks 注册**：`.claude/settings.local.json` hooks 字段正确；`.claude/hooks/` 脚本存在且有执行权限；`lib/common.sh`+`lib/sentinel.sh` 存在
 2. **rules 路径**：`.claude/rules/*.md` 存在且含 `paths` frontmatter
-3. **agents**：`.claude/agents/` 下 9 个 agent 文件存在（write-novel-story-architect, write-novel-character-designer, write-novel-narrative-writer, write-novel-reviewer, write-novel-story-researcher, write-novel-deconstruction-agent, write-novel-consistency-checker, write-novel-story-explorer, write-novel-chapter-extractor）
+3. **agents**：`.claude/agents/` 下 8 个 agent 文件存在（write-novel-story-architect, write-novel-character-designer, write-novel-narrative-writer, write-novel-reviewer, write-novel-story-researcher, write-novel-deconstruction-agent, write-novel-consistency-checker, write-novel-story-explorer）
 4. **agent reference bundle**：`.claude/skills/write-novel-setup/references/agent-references/` 文件完整，所有引用可解析到 deployed bundle
-5. **部署标记**：`.story-deployed` 存在且含 `agents_version: 11`/`setup_skill_version: 1.2.0`/`target_cli`/`resolver_strategy`/`references_dir`
+5. **部署标记**：`.story-deployed` 存在且含 `agents_version: 12`/`setup_skill_version: 1.2.0`/`target_cli`/`resolver_strategy`/`references_dir`
 6. **项目配置**：`.story-config.json` 存在且必填字段（`author_name`/`book_name`/`target_platform`/`target_words`）非空；缺失输出警告
 7. **Dashboard wrapper**：`start-dashboard.sh` 存在且可执行，含正确 `novel-dashboard` 绝对路径
 8. **世界观文件**（长篇项目）：`设定/世界观.md` 存在且 frontmatter 含 `era`/`world_type`/`power_system`/`target_words` 字段；`设定/题材定位.md` 存在且含「核心梗三分法」段落。短篇项目跳过本项
@@ -186,7 +186,7 @@ metadata:
 
 **settings-hooks.json 合并**：按 command 字段去重——用户已有 hook command 保留不重复，模板新 command append 到对应 event，用户独有 permissions/env 完整保留。
 
-**重新部署**：`.story-deployed` 不存在→全新安装执行 Phase 2；存在且 `agents_version: 11`→AskUserQuestion 确认是否重新部署；存在但 `< 11`→提示需更新，重新执行 Phase 2 覆盖 bundle，CLAUDE.md/settings 走合并策略。
+**重新部署**：`.story-deployed` 不存在→全新安装执行 Phase 2；存在且 `agents_version: 12`→AskUserQuestion 确认是否重新部署；存在但 `< 12`→提示需更新，重新执行 Phase 2 覆盖 bundle，CLAUDE.md/settings 走合并策略。
 
 ---
 
@@ -197,7 +197,7 @@ metadata:
 | references/templates/CLAUDE.md.tmpl | 项目根 CLAUDE.md 模板 |
 | references/templates/hooks/ | hook 脚本模板 + `lib/common.sh`/`lib/sentinel.sh` |
 | references/templates/rules/ | path-scoped 规则模板 |
-| references/templates/agents/ | 9 个 agent 定义模板（write-novel-story-architect, write-novel-character-designer, write-novel-narrative-writer, write-novel-reviewer, write-novel-story-researcher, write-novel-deconstruction-agent, write-novel-consistency-checker, write-novel-story-explorer, write-novel-chapter-extractor） |
+| references/templates/agents/ | 8 个 agent 定义模板（write-novel-story-architect, write-novel-character-designer, write-novel-narrative-writer, write-novel-reviewer, write-novel-story-researcher, write-novel-deconstruction-agent, write-novel-consistency-checker, write-novel-story-explorer） |
 | references/agent-references/ | Agent 参考资料；部署到 `.claude/skills/write-novel-setup/references/agent-references/` |
 | references/templates/settings-hooks.json | hooks 注册 JSON 片段 |
 | references/templates/上下文.md.tmpl | 写作上下文模板 |

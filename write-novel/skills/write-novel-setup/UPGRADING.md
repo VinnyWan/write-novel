@@ -48,7 +48,7 @@
 - `agents_version: 8` → 旧版，需重新部署以获取 hook lib、reference bundle、root-aware hook 与短篇无副作用修复
 - `agents_version: 9` → 旧版，需重新部署以获取新版写作 Agent
 - `agents_version: 10` → 旧版，需重新部署以获取 v0.3.0 统一 agent 架构
-- `agents_version: 11` → 当前版本
+- `agents_version: 12` → 当前版本
 
 ## 版本变更
 
@@ -124,10 +124,10 @@
 
 ### v12 (当前)
 
-**v0.4.0: 命名空间统一为 write-novel-* 前缀。** 14 个 skill + 9 个 agent 全部从 `story-*` / 裸名改为 `write-novel-*` 前缀，与工具仓库目录名、CLAUDE.md 标题对齐。
+**v0.4.0: 命名空间统一为 write-novel-* 前缀。** 14 个 skill + 8 个 agent 全部从 `story-*` / 裸名改为 `write-novel-*` 前缀，与工具仓库目录名、CLAUDE.md 标题对齐。
 - skill：`story-doctor` → `write-novel-doctor`（共 14 个，含路由器 `story` → `write-novel`）。
-- agent：`narrative-writer` → `write-novel-narrative-writer`、`reviewer` → `write-novel-reviewer`（共 9 个，含 `story-architect` → `write-novel-story-architect`）。
+- agent：`narrative-writer` → `write-novel-narrative-writer`、`reviewer` → `write-novel-reviewer`（共 8 个，含 `story-architect` → `write-novel-story-architect`）。
 - 斜杠命令同步改名：`/story-doctor` → `/write-novel-doctor`（共 14 个）。
 - 旧命名兼容：`story-*` / `webnovel-*` / 旧长形式 `write-novel-*` 三套别名保留在 write-novel 路由器兼容表中，至少保留一个版本；下个大版本清理 `webnovel-*`。
 - **BREAKING（部署态）**：已部署项目的 `.claude/skills/story-*` 目录、`.claude/agents/{narrative-writer,reviewer,...}.md` 裸名文件需迁移。重新运行 `/write-novel-setup` 会自动检测旧命名部署并迁移到 `write-novel-*`，同步更新 `settings.json` 的 hook command 路径，迁移前 dry-run 列出变更。
-- 顺带修复 3 个 agent 模板的 frontmatter `name:` 与文件名不一致的历史 bug（chapter-extractor/consistency-checker/story-explorer）。
+- 顺带修复 2 个 agent 模板的 frontmatter `name:` 与文件名不一致的历史 bug（consistency-checker/story-explorer）。

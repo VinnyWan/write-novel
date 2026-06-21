@@ -146,13 +146,13 @@ Phase 2 诊断完成后，按以下顺序选择执行路径：
 当输入是正文文件路径，且 Phase 3 已落盘修改后，运行本 skill 自带脚本做最后一遍确定性标点收尾：
 
 ```bash
-node scripts/normalize-punctuation.js <正文文件...>
+node "${CLAUDE_PLUGIN_ROOT}/scripts/normalize-punctuation.js" <正文文件...>
 ```
 
 作用边界：
 - 只处理正文里的 `——`、`—`、`--` 和独立行 `---`；默认不改变引号风格。
 - 知乎盐言短篇可保留 `「」`；只有用户或项目明确要求时，才加 `--quote-mode ascii` 或 `--quote-mode yan`。
-- 该脚本位于共享位置 `scripts/normalize-punctuation.js`，由 write-novel-deslop 和 write-novel-review 共用。
+- 该脚本位于插件根目录 `scripts/normalize-punctuation.js`（`${CLAUDE_PLUGIN_ROOT}/scripts/normalize-punctuation.js`），由 write-novel-deslop 和 write-novel-review 共用。
 
 ---
 

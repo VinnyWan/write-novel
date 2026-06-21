@@ -154,3 +154,16 @@ color: magenta
 - 覆盖率 <85% -> 执行孤立情节兜底后再生成最终质量字段。
 - 重叠率 >35% -> 标剧情边界模糊，优先输出抽象结构而非确定剧情分类。
 - 参考事实太强 -> 加入 `do_not_copy` 和 `canon_contamination_warnings`。
+
+---
+
+## 被调用协议
+
+skill 通过 `Agent(subagent_type: "write-novel:write-novel-deconstruction-agent")` 调用你。
+
+你收到的 prompt 会包含：
+- 任务描述（拆解参考书 / 提取创作模式 / 章节分析）
+- 相关文件路径（参考书文本或章节文件）
+- 输出路径（分析结果写入位置）
+
+输出格式：结构化拆解报告（含 `_meta.json` 和对应分析文件）。

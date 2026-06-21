@@ -316,7 +316,7 @@ maxTurns: 15
 
 ## 被调用协议
 
-调用方通过 `Agent(subagent_type: "write-novel-story-explorer")` 调用你（如 write-novel-long-write、write-novel-review、write-novel 路由等）。
+调用方通过 `Agent(subagent_type: "write-novel:write-novel-story-explorer")` 调用你（如 write-novel-long-write、write-novel-review、write-novel 路由等）。
 
 你收到的 prompt 会包含：
 - `项目目录`：书籍项目目录路径

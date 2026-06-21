@@ -195,7 +195,7 @@ memory: project
 
 ## 被调用协议
 
-skill 通过 `Agent(subagent_type: "write-novel-write-novel-story-architect")` 调用你。
+skill 通过 `Agent(subagent_type: "write-novel:write-novel-story-architect")` 调用你。
 
 你收到的 prompt 会包含：
 - 任务描述（创作 or 审查）

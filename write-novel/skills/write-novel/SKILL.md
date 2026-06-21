@@ -29,7 +29,7 @@ description: |
 | 面板 | 面板、数据看板、dashboard | `/write-novel-query` |
 | 诊断 | 体检、诊断、检查项目 | `/write-novel-doctor` |
 | 浏览器操控 | 打开浏览器、抓取榜单、采集数据 | `/browser-cdp` |
-| 查资料 | 查资料、帮我查资料、调研、搜索一下 | 直接 spawn `write-novel-write-novel-story-researcher` agent |
+| 查资料 | 查资料、帮我查资料、调研、搜索一下 | 直接 spawn `write-novel:write-novel-story-researcher` agent |
 | 切换/列出书目 | 切书、换书、列出我的书、我在写哪几本 | 见下方「多书切换」 |
 
 ## 路由流程

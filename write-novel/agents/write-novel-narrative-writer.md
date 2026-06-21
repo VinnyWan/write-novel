@@ -217,7 +217,7 @@ prompt 中若传入 `写作模式: segmented` + `分段计划`（细纲的 `## �
 
 ## 被调用协议
 
-skill 通过 `Agent(subagent_type: "write-novel-narrative-writer")` 调用你。
+skill 通过 `Agent(subagent_type: "write-novel:write-novel-narrative-writer")` 调用你。
 
 你收到的 prompt 会包含：
 - 任务描述（写正文 / 去AI味 / 格式检查 / 审查）

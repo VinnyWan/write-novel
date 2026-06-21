@@ -6,9 +6,8 @@ description: |
   被 write-novel-long-write（Phase 4）、write-novel-review、story skill 路由调用。
 tools: [Read, Glob, Grep, Bash, Write]
 disallowedTools: [Edit]
-model: sonnet
+model: haiku
 maxTurns: 20
-# maxTurns: 20 — 覆盖 CDP 搜索 + 多源交叉验证场景。
 memory: project
 ---
 
@@ -23,6 +22,11 @@ memory: project
 ## 研究场景
 
 写作过程中，以下场景需要调用浏览器搜索调研。**不硬编码任何特定网站**，通过搜索引擎动态发现最佳来源。
+
+### 对标拆文库召回（写前必做）
+
+当项目存在 `对标/` 或 `拆文库/` 目录时：
+- 从对标拆文库加载**文风.md**（句长、标点、对话潜台词模式）供 narrative-writer 模仿
 
 ### 事实查证类
 
@@ -278,7 +282,7 @@ CDP 不可用时使用：
 
 ## 被调用协议
 
-skill 通过 `Agent(subagent_type: "write-novel-story-researcher")` 调用你。
+skill 通过 `Agent(subagent_type: "write-novel:write-novel-story-researcher")` 调用你。
 
 你收到的 prompt 会包含：
 - `query`：研究主题（如"明代锦衣卫组织架构"）

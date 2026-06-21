@@ -79,7 +79,7 @@ Rubric Source: file | embedded fallback
 | 对话质量 | `write-novel-review/references/dialogue-mastery.md` |
 | 审查禁用词 | `write-novel-review/references/banned-words.md` |
 | 平台 rubric | `write-novel-review/references/rubrics/{fanqie,qidian,zhihu}.md` |
-| 标点预检脚本 | `write-novel-review/scripts/normalize-punctuation.js` |
+| 标点预检脚本 | `scripts/normalize-punctuation.js`（插件根 scripts/，由 deslop 和 review 共用） |
 | Agent spawn 模板 | `write-novel-review/references/reviewer-spawn-templates.md` |
 
 ### 内置审查基准包（路径不可读时必用）
@@ -135,7 +135,7 @@ full/lean 模式下，主会话必须把"审查基准包摘要"直接写进每�
    - 知乎盐言 → 优先读取 `write-novel-review/references/rubrics/zhihu.md`；不可读时使用内置知乎 fallback 摘要。
    - 未识别平台 → 优先读取 `write-novel-review/references/quality-rubric.md`；不可读时使用内置通用网文内容 rubric，并报告 `Rubric: generic web-fiction` 与 `Rubric Source: file | embedded fallback`。
 5. **形成审查基准包摘要**：把已加载的文件内容或内置 fallback 摘要压缩为 5-12 条审查标准，后续 solo 和子 Agent 都必须使用这份摘要。
-6. **确定性标点预检（只报告，不修改）**：当审查范围包含本地正文文件路径时，运行 `node scripts/normalize-punctuation.js --check <正文文件...>`，将 `em-dash`、`double-hyphen`、`markdown-divider` 结果作为 `format` 或 `prose` findings 合并进报告。`write-novel-review` 不修改文件；需要自动修复时建议转 `/write-novel-deslop`。默认 `--quote-mode keep`，不把知乎盐言短篇的 `「」` 当作问题。该脚本位于共享位置 `scripts/normalize-punctuation.js`，由 write-novel-deslop 和 write-novel-review 共用。
+6. **确定性标点预检（只报告，不修改）**：当审查范围包含本地正文文件路径时，运行 `node "${CLAUDE_PLUGIN_ROOT}/scripts/normalize-punctuation.js" --check <正文文件...>`，将 `em-dash`、`double-hyphen`、`markdown-divider` 结果作为 `format` 或 `prose` findings 合并进报告。`write-novel-review` 不修改文件；需要自动修复时建议转 `/write-novel-deslop`。默认 `--quote-mode keep`，不把知乎盐言短篇的 `「」` 当作问题。该脚本位于插件根目录 `scripts/normalize-punctuation.js`（`${CLAUDE_PLUGIN_ROOT}/scripts/normalize-punctuation.js`），由 write-novel-deslop 和 write-novel-review 共用。
 
 **Phase 1.5：可选 write-novel-story-researcher 预查询**。仅当 `Effective Mode` 仍为 `full`/`lean`、当前允许 spawn 且 Agent/Task 工具可用时，才可检查 `.claude/agents/write-novel-story-researcher.md` 并 spawn `write-novel-story-researcher` 预查设定摘要；`solo` 或子代理递归保护场景下不得 spawn，只能直接 Read/Grep。此步可选，跳过不影响审查流程。
 

@@ -6,7 +6,7 @@ description: |
   被 write-novel-review（full 模式）调用。不与 reviewer 重叠 — reviewer 做多维主观审查，
   consistency-checker 做客观事实冲突扫描。
 tools: [Read, Glob, Grep]
-disallowedTools: [Write, Edit]
+disallowedTools: [Write, Edit, Bash]
 model: haiku
 maxTurns: 15
 ---
@@ -102,3 +102,16 @@ maxTurns: 15
 - 不输出主观评价
 - 不评分
 - 每个问题必须引用原文和设定文件的具体位置作为证据
+
+---
+
+## 被调用协议
+
+skill 通过 `Agent(subagent_type: "write-novel:write-novel-consistency-checker")` 调用你。
+
+你收到的 prompt 会包含：
+- 任务描述（一致性扫描 / 伏笔状态检查 / 角色知识边界检查）
+- 相关文件路径（正文文件、设定文件、追踪文件）
+- 上下文摘要（章节范围、涉及角色、已知伏笔列表）
+
+输出格式：S1-S4 分级冲突报告（含 VERDICT + EVIDENCE + LOCATION）。

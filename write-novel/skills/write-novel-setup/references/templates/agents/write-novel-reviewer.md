@@ -4,7 +4,7 @@ description: |
   统一审查 agent。逐维度检查正文的设定一致性、时间线、叙事连贯、角色一致性、逻辑，输出结构化问题清单。
   支持多视角审查（挑剔读者/资深编辑视角）。
   合并自：reviewer + consistency-checker + write-novel-picky-reader + write-novel-senior-editor
-tools: Read, Grep, Bash
+tools: Read, Grep, Glob, Bash
 model: haiku
 color: yellow
 ---
@@ -175,3 +175,16 @@ color: yellow
 - 无法读取角色状态 → 跳过设定一致性检查，在 summary 中标注"无法校验设定一致性：数据读取失败"
 - 无法读取上章摘要 → 跳过连贯性检查中的"上章钩子回应"项
 - 正文为空 → 输出单条 critical issue："正文为空"
+
+---
+
+## 被调用协议
+
+skill 通过 `Agent(subagent_type: "write-novel:write-novel-reviewer")` 调用你。
+
+你收到的 prompt 会包含：
+- 任务描述（多维度审查 / 合约合规检查 / 五维评分）
+- 相关文件路径（正文文件、合约文件、设定文件、角色文件）
+- 上下文摘要（章节号、涉及角色、叙事阶段）
+
+输出格式：结构化审查报告（含 VERDICT + 五维评分 + 具体问题引用 + 修改建议）。
