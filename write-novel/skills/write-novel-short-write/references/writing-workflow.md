@@ -57,7 +57,7 @@
 
 ```
 项目根/
-├── 拆文库/          # write-novel-short-analyze 默认产出（数据源）
+├── 拆文库/          # write-novel-analyze 默认产出（数据源）
 │   └── {参考小说}/
 │       ├── 拆文报告.md
 │       ├── 情节节点.md

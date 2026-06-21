@@ -1,7 +1,7 @@
 # 拆文输出模板
 按需加载，配合 SKILL.md 和 material-decomposition.md 使用。
 
-本文件按 write-novel-long-analyze 唯一管道的阶段编号组织：Stage 0-5 各阶段输出模板 + 停靠点「快速预览报告」模板 + 跨阶段通用速查。
+本文件按 write-novel-analyze 唯一管道的阶段编号组织：Stage 0-5 各阶段输出模板 + 停靠点「快速预览报告」模板 + 跨阶段通用速查。
 
 ---
 

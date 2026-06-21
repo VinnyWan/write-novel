@@ -10,8 +10,8 @@
   "plugins": [
     {
       "name": "write-novel",
-      "description": "中文长篇网文创作工作台——扫榜、拆文、大纲、正文、审查、去AI味，14 个 Skills + 6 个 Agents 全流程覆盖。",
-      "version": "2.3.0",
+      "description": "中文长篇网文创作工作台——扫榜、拆文、大纲、正文、审查、去AI味，13 个 Skills + 8 个 Agents 全流程覆盖。",
+      "version": "2.3.2",
       "author": {
         "name": "VinnyWan"
       },

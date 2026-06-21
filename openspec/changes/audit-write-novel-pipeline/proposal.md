@@ -1,62 +1,35 @@
 ## Why
 
-write-novel 插件经过多次迭代合并（长篇/短篇 skill 统一、agent 合并、命名空间迁移），累积了链路断裂、文件缺失、引用不一致等隐性债务。上一轮修复解决了表层问题（9→8 agent、共享指针创建、命名格式统一），但深度全链路审计发现了 **21 个新问题**，分布在 agent 模板滞后、版本号冲突、路由错误、MANIFEST 缺失、wrapper 死代码等关键领域。
-
-本次审计覆盖 16 个 skill + 8 个 agent 的端到端链路，按 4 个维度并行扫描。
+`write-novel` 插件经过多轮合并演进（`long/short-analyze → analyze`、`long/short-scan → scan`、`plan → long-write`，8 个 agent 由更多旧 agent 合并而来）。合并后散落了大量**失效交叉引用**、**面向用户的已部署模板仍把废弃命令当作主命令**、**插件运行态 hooks 与部署模板 hooks 双份漂移**、以及**清单元数据与真实文件不符**。目前没有任何可重复运行的自动校验，链路断裂只能靠人工巡检发现——这正是本次需要系统梳理「每个 skill 与 agent 从头到尾链路」并查漏补缺的根因。
 
 ## What Changes
 
-### 阻断级 (CRITICAL) — 4 项
+- **新增 `pipeline-audit-tooling` 能力**：一个确定性、可重复运行的审计脚本（落在 `write-novel/scripts/`），校验下列五条链路不变量并输出结构化报告，可被 `/write-novel-doctor` 与静态检查复用。
+- **修复初次审计发现的全部具体缺口**（证据见下，均已实地核查）：
 
-1. **主路由 agent 名称双前缀错误**：`write-novel/SKILL.md` 第 32 行 `write-novel-write-novel-story-researcher` → `write-novel:write-novel-story-researcher`
-2. **agents_version 三方冲突**：setup 迁移写 v12、全新部署写 v11、doctor 检查 <12，导致无限循环误报"需要升级"
-3. **Agent 模板严重滞后于实际 agent**（4/8 模板缺 D8 新增能力）：story-architect、character-designer、narrative-writer、story-researcher 的模板缺失关键能力章节
-4. **story-explorer 实际 agent 严重缩水**：68 行 vs 模板 327 行，缺失 benchmark_style_load 等 6 种查询类型
+  1. **Agent 元数据失效调用方** — `agents/write-novel-deconstruction-agent.md:5` 写「被 write-novel-long-analyze 和 write-novel-import 调用」，而 `write-novel-long-analyze` 已是废弃别名（合并进 `write-novel-analyze`）。调用方引用已死。
+  2. **已部署的用户级模板把废弃命令当主命令**：
+     - `skills/write-novel-setup/references/templates/CLAUDE.md.tmpl:22-25` 的路由表把 `/write-novel-long-analyze`、`/write-novel-short-analyze`、`/write-novel-long-scan`、`/write-novel-short-scan` 列为规范命令。
+     - 已部署 hooks `templates/hooks/session-start.sh:96`、`detect-story-gaps.sh:84` 提示用户运行 `/write-novel-long-analyze`、`/write-novel-short-analyze`（废弃）。
+     - 已部署 agent 模板 `templates/agents/write-novel-deconstruction-agent.md:5` 携带同样失效调用方。
+  3. **插件运行态 hooks 与部署模板 hooks 双份漂移**：插件 `hooks/` 用下划线命名（`session_start.sh`、`detect_story_gaps.sh`、`post_compact.sh`、`pre_compact.sh`、`session_end.sh`、`validate_story_commit.sh`），部署模板 `templates/hooks/` 用连字符命名（与 `settings-hooks.json` 自洽）。两份副本 + 两套命名，仅 `scripts/check-hook-regex-sync.sh` 部分护栏；改一份易漏另一份。
+  4. **清单/市场元数据与现实不符**：`.claude-plugin/marketplace.json` 写 version `2.3.0`、描述「14 Skills + 6 Agents」；`write-novel/.claude-plugin/plugin.json` 写 version `2.3.2`；真实为 17 个 skill 目录（13 个规范 + 4 个废弃别名）+ 8 个 agent。计数与版本均失同步。
+  5. **参考文档大面积在正文里使用废弃 skill 名**（多个 `references/*.md` 仍写「write-novel-long-analyze Stage 6」等）。优先级较低（内部文档），但会扩散困惑并在重生成产物时回流。
 
-### 高级 (HIGH) — 9 项
-
-5. Setup line 30：`chapter-extractor` 幽灵引用（旧名检测列表 9 个名，应为 8）
-6. Agent 模板 `subagent_type` 命名不一致：模板使用无前缀格式，实际使用 `write-novel:` 前缀格式（story-explorer 例外，实际也无前缀）
-7. story-researcher 模型不匹配：实际使用 `haiku`，模板使用 `sonnet`
-8. deslop/review 的 `report-template.md` 指针路径差一级 `../`
-9. short-write 缺失 `references/shared/report-template.md` 指针文件
-10. story-explorer `maxTurns` 不匹配：实际=8，模板=15
-11. UPGRADING.md v12 节误写"9 个 agent"（实际 8 个）
-12. story-architect 引用 `references/shared/pattern-schema.md` —— 文件不存在
-13. agent 文件 `被调用协议` 章节缺失：deconstruction-agent、consistency-checker(实际)、reviewer、story-explorer(实际) 无此章节
-
-### 中级 (MEDIUM) — 7 项
-
-14. 4 个 wrapper skill 含 ~316KB 僵尸文件（references/ + scripts/）
-15. MANIFEST.yaml 多处缺失：genre-writing-techniques.md 路径错误、5 个真实文件未列入白名单、7 个 shared/ 文件未录入 shared_sources
-16. `workflow-daily.md` 在 long-write 和 shared/ 之间内容已分化
-17. Setup line 66：`story-long-write` 应改为 `write-novel-long-write`
-18. Setup line 140：Hook 验证未覆盖 `post-compact.sh` / `pre-compact.sh`
-19. reviewer agent（实际+模板）tools 字段声明 Glob 但未列入 tools 列表
-20. consistency-checker 实际 agent 缺少 `disallowedTools: [Bash]`（模板有，实际只有 Write/Edit）
-
-### 低级 (LOW) — 1 项
-
-21. 跨 skill 脚本路径格式不统一（`node scripts/...` vs `node "${CLAUDE_PLUGIN_ROOT}/scripts/..."`）
+- **确立命名规范策略**：废弃别名只允许出现在显式「重定向/兼容表」中，**严禁**出现在用户级部署模板、hooks 提示、agent 调用方元数据里。
 
 ## Capabilities
 
+### New Capabilities
+- `pipeline-audit-tooling`: 对 write-novel 全部 skill 与 agent 做确定性链路审计的工具能力——校验文件引用可解析、交叉引用指向存活（非废弃）目标、部署模板使用规范命令名、双份 hooks 同步、清单计数/版本与文件系统一致，并输出可追溯的结构化报告。
+
 ### Modified Capabilities
-- `write-novel` 主路由：修正 agent 名称双前缀
-- `write-novel-setup`：修正 agents_version 统一为 12、移除 chapter-extractor 幽灵引用、补全 hook 验证清单、修正命名空间引用
-- `write-novel-doctor`：修正 agents_version 检查阈值为 <12（与 setup v12 对齐）
-- `write-novel-review`：修正 report-template 指针路径
-- `write-novel-deslop`：修正 report-template 指针路径
-- `write-novel-short-write`：创建缺失的 report-template 共享指针
-- `Agent 模板（4个）`：同步 D8 新增能力到 story-architect/character-designer/narrative-writer/story-researcher 模板
-- `story-explorer agent`：将实际 agent 对齐到丰富模板（补全 6 种查询类型和 benchmark_style_load）
-- `MANIFEST.yaml`：补全缺失条目
-- `UPGRADING.md`：修正 agent 数量 9→8
-- `清理 4 个 wrapper skill`：删除僵尸 references/ 和 scripts/ 目录
+<!-- openspec/specs/ 当前为空，无既有 spec 需要改动 -->
+（无）
 
 ## Impact
 
-- 受影响目录：`write-novel/skills/write-novel/`、`write-novel/skills/write-novel-setup/`、`write-novel/skills/write-novel-doctor/`、`write-novel/skills/write-novel-review/`、`write-novel/skills/write-novel-deslop/`、`write-novel/skills/write-novel-short-write/`、`write-novel/agents/`、`write-novel/references/shared/`
-- 受影响模板：`write-novel/skills/write-novel-setup/references/templates/agents/`（4 个文件）
-- 受影响配置：`MANIFEST.yaml`、`UPGRADING.md`
-- 无 API 变更，无数据迁移，全部为修正性改动
+- **新增**：`write-novel/scripts/audit-pipeline.*`（审计脚本）+ 其在 `/write-novel-doctor` 或 `scripts/static-check.sh` 中的接入点。
+- **修改（修复）**：`agents/write-novel-deconstruction-agent.md`、`skills/write-novel-setup/references/templates/CLAUDE.md.tmpl`、`templates/hooks/session-start.sh`、`templates/hooks/detect-story-gaps.sh`、`templates/agents/write-novel-deconstruction-agent.md`、`.claude-plugin/marketplace.json`、`write-novel/.claude-plugin/plugin.json`、`hooks/` 与 `templates/hooks/` 同步、多个 `references/*.md` 正文废弃名清理。
+- **无破坏性变更**：废弃别名 skill（`write-novel-long-analyze` 等）继续保留为兼容入口；本次只修正「把废弃名当规范名」的引用，不删除别名本身。
+- **依赖**：审计脚本仅依赖 Python3 / 标准 shell，无新增外部依赖。

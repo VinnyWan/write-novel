@@ -1,6 +1,6 @@
 # 文风协议
 
-> **何时加载**：write-novel-long-analyze Stage 6 执行前。下游写作 skill 直接读 `文风.md`，不加载本协议。
+> **何时加载**：write-novel-analyze Stage 6 执行前。下游写作 skill 直接读 `文风.md`，不加载本协议。
 
 ## 产物定义
 

@@ -1,111 +1,26 @@
-## 1. 阻断级 (CRITICAL) — 4 项
+## 1. 审计工具实现（pipeline-audit-tooling）
 
-### 1.1 主路由 agent 名称双前缀修复
-- [x] 修正 `write-novel/skills/write-novel/SKILL.md` line 32：`write-novel-write-novel-story-researcher` → `write-novel:write-novel-story-researcher`
+- [x] 1.1 在 `write-novel/scripts/audit-pipeline.py` 实现审计脚本骨架：以插件根为基准，枚举全部 `skills/*/SKILL.md` 与 `agents/*.md`，集中定义废弃别名常量（`write-novel-long-analyze`/`write-novel-short-analyze`/`write-novel-long-scan`/`write-novel-short-scan`/`write-novel-plan`）。
+- [x] 1.2 实现「文件引用可解析」校验（spec 不变量 1）：提取相对路径，按「文件目录/skill 根/插件根」解析，缺失报 `BROKEN_REF`（含来源文件+行号）。
+- [x] 1.3 实现「交叉引用指向存活」校验（不变量 2）：检测元数据/调用方中废弃别名，区分重定向表白名单上下文，违例报 `STALE_CALLER`。
+- [x] 1.4 实现「部署模板使用规范命令名」校验（不变量 3）：扫描 `templates/CLAUDE.md.tmpl`、`templates/hooks/*.sh`、`templates/agents/*.md`，违例报 `DEPLOY_STALE_CMD`。
+- [x] 1.5 实现「双份 hooks 同步」校验（不变量 4）：命名映射对齐 `hooks/` 与 `templates/hooks/`，比对 `settings-hooks.json` 引用一一对应，违例报 `HOOK_NAME_MISMATCH`/`HOOK_DRIFT`。
+- [x] 1.6 实现「清单计数与版本一致性」校验（不变量 5）：比对 `marketplace.json`/`plugin.json` 声明与真实 skill(规范/别名)/agent 计数及版本，违例报 `MANIFEST_COUNT_MISMATCH`/`VERSION_MISMATCH`。
+- [x] 1.7 实现结构化报告 + 退出码（不变量 6）：分类汇总、来源行号、修复建议；存在高优先级问题时非零退出。
+- [x] 1.8 对当前仓库跑首轮审计，核对报告与 proposal 枚举的缺口一致，确认零误报。
 
-### 1.2 agents_version 三方统一为 12
-- [x] 修正 `write-novel/skills/write-novel-setup/SKILL.md` Phase 2 step 2.7：`agents_version: 11` → `agents_version: 12`
-- [x] 修正 `write-novel/skills/write-novel-setup/SKILL.md` Phase 3 step 5 验证：`agents_version: 11` → `agents_version: 12`
-- [x] 修正 `write-novel/skills/write-novel-setup/SKILL.md` Phase 3 re-deploy gate：`agents_version: 11` → `agents_version: 12`
-- [x] 修正 `write-novel/skills/write-novel-setup/UPGRADING.md` line 51：移除 `agents_version: 11 = 当前版本` 过期映射
+## 2. 修复具体缺口
 
-### 1.3 Agent 模板同步 D8 新增能力（4 个模板滞后于实际 agent）
-- [x] 同步 `write-novel/skills/write-novel-setup/references/templates/agents/write-novel-story-architect.md`：补全世界观构建、剧情线设计、渐进式大纲策略、模式检索、情绪先行、degrade 字段
-- [x] 同步 `write-novel/skills/write-novel-setup/references/templates/agents/write-novel-character-designer.md`：补全 OOC Guardrails、羁绊图输出、配角数量上限、Phase 3b 增量模式、degrade 字段
-- [x] 同步 `write-novel/skills/write-novel-setup/references/templates/agents/write-novel-narrative-writer.md`：补全前置检查（防幻觉律条）、最小记忆包加载、分段写作模式、CHAPTER_COMMIT、上下文.md 自动更新、正文格式协议、degrade 字段、memory 字段
-- [x] 同步 `write-novel/skills/write-novel-setup/references/templates/agents/write-novel-story-researcher.md`：补全对标拆文库召回、degrade 字段、模型修正为 haiku
+- [x] 2.1 修 `agents/write-novel-deconstruction-agent.md` 调用方：`write-novel-long-analyze` → `write-novel-analyze`（并修正正文 `/webnovel-init` 失效引用）。
+- [x] 2.2 修 `skills/write-novel-setup/references/templates/agents/write-novel-deconstruction-agent.md` 同一 stale caller（及正文 `/webnovel-init`）。
+- [x] 2.3 修 `templates/CLAUDE.md.tmpl` 路由表：4 行废弃命令收敛为 `/write-novel-analyze`、`/write-novel-scan` 两行规范命令。
+- [x] 2.4 修部署 hook 提示文案：`templates/hooks/session-start.sh`、`templates/hooks/detect-story-gaps.sh` 中废弃命令 → 规范命令。
+- [x] 2.5 校验双份 hooks 的「配置引用可解析」：`settings-hooks.json`→`templates/hooks/`、`hooks.json`→`hooks/` 引用全部存在。经核查两套 hooks 按角色分化（运行态含额外脚本），非简单副本，**不做内容强同步**（spec 已据此修订）。同步修正运行态 `hooks/detect_story_gaps.sh` 残留废弃命令提示。
+- [x] 2.6 修清单元数据：`marketplace.json` 描述计数改为 13 Skills + 8 Agents、版本与 `plugin.json` 对齐到 `2.3.2`。
+- [x] 2.7 清理用户可见/会回流到产物的 `references/*.md` 废弃名（低优先级 WARN 项中影响产物的部分）。14 个参考文档批量更正，byte-equal 同步对（output-contract.md analyze↔short-write）保持一致；审计 DOC_STALE_NAME 清零。
 
-### 1.4 story-explorer 实际 agent 对齐模板
-- [x] 将 `write-novel/agents/write-novel-story-explorer.md` 从 68 行扩展到模板 327 行：补全 11 种查询类型、benchmark_style_load 流程、结构化 JSON 输出、文件结构知识、被调用协议
-- [x] 修正 frontmatter `name` → `write-novel:write-novel-story-explorer`（加 namespace 前缀）
-- [x] 修正 `maxTurns: 8` → `maxTurns: 15`
+## 3. 接入与验证
 
-## 2. 高级 (HIGH) — 9 项
-
-### 2.1 Setup 移除 chapter-extractor 幽灵引用
-- [x] 修正 `write-novel/skills/write-novel-setup/SKILL.md` line 30：旧名检测列表移除 chapter-extractor，9→8
-- [x] 修正 `write-novel/skills/write-novel-setup/SKILL.md` line 124：`9 项` → `8 项`
-
-### 2.2 Agent 模板 subagent_type 命名统一为 `write-novel:` 前缀格式
-- [x] 修正模板 `write-novel-story-architect.md` 被调用协议：→ `write-novel:write-novel-story-architect`
-- [x] 修正模板 `write-novel-story-researcher.md` 被调用协议：→ `write-novel:write-novel-story-researcher`
-- [x] 修正模板 `write-novel-character-designer.md` 被调用协议：→ `write-novel:write-novel-character-designer`
-- [x] 修正模板 `write-novel-narrative-writer.md` 被调用协议：→ `write-novel:write-novel-narrative-writer`
-- [x] 修正模板 `write-novel-consistency-checker.md` 被调用协议：→ `write-novel:write-novel-consistency-checker`
-
-### 2.3 补全 agent 缺失的「被调用协议」章节
-- [x] 为 `write-novel/agents/write-novel-deconstruction-agent.md` 添加被调用协议（`write-novel:write-novel-deconstruction-agent`）
-- [x] 为 `write-novel/agents/write-novel-consistency-checker.md` 添加被调用协议（`write-novel:write-novel-consistency-checker`）
-- [x] 为 `write-novel/agents/write-novel-reviewer.md` 添加被调用协议（`write-novel:write-novel-reviewer`）
-- [x] 为 `write-novel/agents/write-novel-story-explorer.md` 添加被调用协议（`write-novel:write-novel-story-explorer`）
-
-### 2.4 共享指针路径修正
-- [x] 修正 `write-novel/skills/write-novel-deslop/references/shared/report-template.md`：指针路径 `../../../` → `../../../../`
-- [x] 修正 `write-novel/skills/write-novel-review/references/shared/report-template.md`：指针路径 `../../../` → `../../../../`
-
-### 2.5 short-write 创建缺失的 report-template 共享指针
-- [x] 创建 `write-novel/skills/write-novel-short-write/references/shared/` 目录
-- [x] 创建 `write-novel/skills/write-novel-short-write/references/shared/report-template.md` 指针文件，指向 `../../../../references/shared/report-template.md`
-
-### 2.6 story-researcher 模型修正
-- [x] 修正模板 `write-novel-story-researcher.md`：`model: sonnet` → `model: haiku`（与实际对齐）
-
-### 2.7 UPGRADING.md agent 数量修正
-- [x] 修正 `write-novel/skills/write-novel-setup/UPGRADING.md` line 129：`9 个 agent` → `8 个 agent`
-
-### 2.8 story-architect 引用 pattern-schema.md 缺失
-- [x] 确认 `references/shared/pattern-schema.md` 是否存在于 `write-novel/references/shared/` —— 文件存在，审计漏检
-- [x] 在 `write-novel/references/shared/MANIFEST.yaml` 中补录 `pattern-schema.md`
-- [x] pattern-schema.md 已存在，无需创建
-
-### 2.9 reviewer agent tools 字段修正
-- [x] 修正 `write-novel/agents/write-novel-reviewer.md`：tools 列表添加 `Glob`
-- [x] 同步修正模板 `write-novel-reviewer.md`
-
-## 3. 中级 (MEDIUM) — 7 项
-
-### 3.1 清理 4 个 wrapper skill 的僵尸文件
-- [ ] ⚠ 删除 `write-novel/skills/write-novel-long-analyze/references/` 目录（7 文件，~90KB）— 需手动执行 `rm -rf`
-- [ ] ⚠ 删除 `write-novel/skills/write-novel-short-analyze/references/` 目录（20 文件，~115KB）— 需手动执行
-- [ ] ⚠ 删除 `write-novel/skills/write-novel-long-scan/references/` 目录（6 文件，~32KB）— 需手动执行
-- [ ] ⚠ 删除 `write-novel/skills/write-novel-long-scan/scripts/` 目录（6 文件，~52KB）— 需手动执行
-- [ ] ⚠ 删除 `write-novel/skills/write-novel-short-scan/references/` 目录（2 文件，~7KB）— 需手动执行
-- [ ] ⚠ 删除 `write-novel/skills/write-novel-short-scan/scripts/` 目录（3 文件，~20KB）— 需手动执行
-
-### 3.2 MANIFEST.yaml 补全
-- [x] 修正 `genre-writing-techniques.md` 路径：`write-novel-long-write` → `write-novel-short-write`（从白名单移除错误条目）
-- [x] 白名单补录 long-write 3 个真实文件：`commercial-core-methods.md`、`style-combat-face.md`、`style-genre-modules.md`
-- [x] 白名单补录 short-write 2 个真实文件：`output-contract.md`、`short-writing-stage-details.md`
-- [x] shared_sources 补录核心文档条目：`contract-schema.md`、`pattern-schema.md`、`report-template.md`（JSON 文件为数据文件非 shared_sources 标准条目）
-
-### 3.3 Setup 命名空间引用修正
-- [x] 修正 `write-novel/skills/write-novel-setup/SKILL.md` line 66：`story-long-write` → `write-novel-long-write`
-
-### 3.4 Setup hook 验证清单补全
-- [x] 修正 `write-novel/skills/write-novel-setup/SKILL.md` line 140：验证清单添加 `post-compact.sh`、`pre-compact.sh`
-
-### 3.5 consistency-checker 实际 agent 补全 disallowedTools
-- [x] 修正 `write-novel/agents/write-novel-consistency-checker.md`：`disallowedTools` 添加 `Bash`（与模板对齐）
-
-### 3.6 workflow-daily.md 双版本对齐
-- [x] 比较 `write-novel/skills/write-novel-long-write/references/workflow-daily.md` vs `write-novel/references/shared/workflow-daily.md`
-- [x] 以 shared 版本为准更新 long-write 本地版本
-- [x] workflow-daily.md 已在 MANIFEST whitelist 中（line 140）
-
-### 3.7 补全 story-architect 缺失的 pattern-schema.md 引用
-- [x] 读取 story-architect line 51 引用上下文 — pattern-schema.md 已存在
-- [x] pattern-schema.md 已存在于 shared/，已录入 MANIFEST
-
-## 4. 低级 (LOW) — 1 项
-
-### 4.1 跨 skill 脚本路径格式统一（评估后决定）
-- [x] 评估：两种格式通过 symlink 均可解析，变更低收益，保留现状
-- [x] 保留现状，脚本路径格式均通过 symlink 可解析
-
-## 5. 最终校验
-
-- [x] 运行 `bash scripts/static-check.sh` — 16 pass, 3 fail (均为已有问题: analyze-short.md 裸引用, workflow-daily.md 双前缀, narrative-writer contract.md 引用)
-- [x] 运行 `bash scripts/check-shared-files.sh` — 10 errors (review/references/ 指针文件路径模式问题，非本次引入)
-- [x] Glob 验证 8 个 agent 与 8 个模板文件名一致性 — 完全匹配
-- [x] 验证 wrapper skill SKILL.md stubs 仍完整存在（僵尸文件清理被权限阻止，不阻塞发布）
-- [x] 更新 `write-novel/.claude-plugin/plugin.json` 版本号为 2.3.2
+- [x] 3.1 把 `audit-pipeline.py` 接入 `scripts/static-check.sh`（新增 Check 14 `run_pipeline_audit`，在 reference-audit 之后运行，按退出码计入 PASS/FAIL）。
+- [x] 3.2 修复后重跑审计，达到高优先级问题清零（PASS / 零退出码）：`python3 scripts/audit-pipeline.py` → `结果：PASS — 全部链路不变量通过`（EXIT=0）；static-check Check 14 → `[PASS] all pipeline invariants hold`。
+- [x] 3.3 运行既有回归检查确认无回归：`check-version-consistency.sh` → `[PASS] plugin.json=2.3.2 marketplace.json=2.3.2 CHANGELOG=v2.3.2`；`check-shared-files.sh` 退出 0（8 处 shared 不匹配均在 review/deslop/short-write 未编辑文件，为既存项，非本次回归）。注：`check-hook-regex-sync.sh` 不存在于仓库（任务原始引用有误），实际 hook 同步由 `check-shared-files.sh` Deploy State 段覆盖（错误 0）。

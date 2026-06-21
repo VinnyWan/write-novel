@@ -1,6 +1,6 @@
 # Stage 2 并行 Agent 策略详解
 
-> 本文是 write-novel-long-analyze SKILL.md「Stage 2 并行 Agent 策略」的展开参考。SKILL.md 只保留决策点（spawn 条件、降级触发、硬门控存在性、升级重试）；本文件给出完整 spawn prompt、批量策略、可机械校验的硬门控 grep 模式、sonnet 升级重试调用、最终落盘规则、agent 不可用降级。
+> 本文是 write-novel-analyze SKILL.md「Stage 2 并行 Agent 策略」的展开参考。SKILL.md 只保留决策点（spawn 条件、降级触发、硬门控存在性、升级重试）；本文件给出完整 spawn prompt、批量策略、可机械校验的硬门控 grep 模式、sonnet 升级重试调用、最终落盘规则、agent 不可用降级。
 
 Stage 2 使用 deconstruction-agent agent 并行处理每章，替代原来的串行分块。
 

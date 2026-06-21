@@ -1,6 +1,6 @@
 # 文风生成 SOP
 
-> **何时加载**：write-novel-long-analyze Stage 6 执行时。前置依赖：Stage 0-5 已完成，`拆文报告.md` + `章节/*_摘要.md` + `章节/第1-3章_深度拆解.md` + `原文/原文.txt`（或 `.md`）齐全。
+> **何时加载**：write-novel-analyze Stage 6 执行时。前置依赖：Stage 0-5 已完成，`拆文报告.md` + `章节/*_摘要.md` + `章节/第1-3章_深度拆解.md` + `原文/原文.txt`（或 `.md`）齐全。
 >
 > **输出**：`拆文库/{书名}/文风.md`（模板见 [style-profile-protocol.md](style-profile-protocol.md)）。
 
@@ -155,5 +155,5 @@ PYEOF
 
 旧 `拆文库/{书名}/` 没有文风文件时：
 
-- **完整重跑** `/write-novel-long-analyze`：开销大，会重跑 Stage 0-5（不必要）
+- **完整重跑** `/write-novel-analyze`：开销大，会重跑 Stage 0-5（不必要）
 - **仅跑 Stage 6**：用户直接说 "为对标书 X 生成文风" 或 "重生 文风"，主会话/agent 直接按本 SOP 跑 6 步，无需重做拆文。这是推荐路径

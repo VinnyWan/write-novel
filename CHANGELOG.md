@@ -2,6 +2,18 @@
 
 这里记录每个正式版本对作者和维护者的影响。发布说明优先面向中文网文作者：先说写作体验有什么变化，再补维护者关心的技术细节。
 
+## v2.3.2 (2026-06-21) — 全链路审计：废弃命令清理 + 清单对齐 + 链路审计工具
+
+### 变更
+
+- **写作体验**：
+  - **部署模板不再指向废弃命令**：`setup` 部署的 `CLAUDE.md.tmpl` 路由表把 4 条废弃命令（`/write-novel-long-analyze`、`/write-novel-short-analyze`、`/write-novel-long-scan`、`/write-novel-short-scan`）收敛为规范命令 `/write-novel-analyze`、`/write-novel-scan`；会话启动与缺口检测 hook 的提示文案、参考文档中的命令引导同步改为规范命令——新建项目不再被引导去跑已合并的旧命令。
+
+- **稳定性与可维护性**：
+  - **新增链路审计工具** `scripts/audit-pipeline.py`：确定性校验全部 skill/agent 的五类链路不变量（文件引用可解析、交叉引用指向存活目标、部署模板使用规范命令名、配置引用的 hook 存在、清单计数/版本一致），输出结构化报告并以退出码表达高优先级问题；已接入 `static-check.sh`。
+  - **修复失效交叉引用**：`deconstruction-agent`（含部署模板副本）调用方元数据从废弃别名 `write-novel-long-analyze` 更正为 `write-novel-analyze`，正文 `/webnovel-init` 失效引用一并修正；14 个参考文档正文的废弃 skill 名批量更正为规范名（byte-equal 同步对保持一致）。
+  - **清单元数据对齐**：`marketplace.json` 描述计数由「14 Skills + 6 Agents」更正为真实的「13 Skills + 8 Agents」，版本号 plugin.json / marketplace.json / CHANGELOG 三处对齐至 v2.3.2。
+
 ## v2.3.0 (2026-06-20) — 文档清理 + 静态检查盲区补齐 + Skill 流程瘦身
 
 ### 变更

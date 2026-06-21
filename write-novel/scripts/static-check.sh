@@ -594,6 +594,35 @@ run_reference_audit() {
   done <<< "$audit_output"
 }
 
+# ---------- Check 14: 链路审计（audit-pipeline.py）----------
+# 五类链路不变量：文件引用可解析 / 交叉引用指向存活 / 部署模板规范命令名 /
+# 配置引用 hook 存在 / 清单计数与版本一致。脚本以退出码表达高优先级问题。
+run_pipeline_audit() {
+  local audit_script="$PLUGIN_ROOT/scripts/audit-pipeline.py"
+  TOTAL=$((TOTAL + 1))
+  echo ""
+  echo "--- Check 14: pipeline audit (链路不变量) ---"
+  if [ ! -f "$audit_script" ]; then
+    echo "  [SKIP] audit-pipeline.py not found"
+    PASS=$((PASS + 1))
+    return
+  fi
+
+  local audit_output audit_rc=0
+  audit_output="$(python3 "$audit_script" 2>&1)" || audit_rc=$?
+
+  if [ "$audit_rc" -eq 0 ]; then
+    # 透传 WARN 行（若有），但不阻断
+    echo "$audit_output" | grep -E '⚠️|WARN' || true
+    echo "  [PASS] all pipeline invariants hold"
+    PASS=$((PASS + 1))
+  else
+    echo "$audit_output" | grep -E '❌|⚠️|:[0-9]+' || true
+    echo "  [FAIL] pipeline audit reported high-priority issues"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ---------- main ----------
 
 echo "Skill Static Check (write-novel)"
@@ -607,6 +636,7 @@ done
 # 跨 skill 顶层检查（在 per-skill 循环之后）
 check_shared_references
 run_reference_audit
+run_pipeline_audit
 
 echo ""
 echo "================================="

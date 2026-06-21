@@ -1,6 +1,6 @@
 # 采集质量门控 + 平台采集目标
 
-> 本文是 write-novel-long-scan SKILL.md「Phase 1.5 采集质量检查」与「各平台采集目标」的展开参考。SKILL.md 只保留采集流程入口、合并 agent context 决策点、按需读指引；本文件给出采集质量四项检查、文件头质量状态模板、各平台榜单采集目标表（URL + 核心字段）。
+> 本文是 write-novel-scan SKILL.md「Phase 1.5 采集质量检查」与「各平台采集目标」的展开参考。SKILL.md 只保留采集流程入口、合并 agent context 决策点、按需读指引；本文件给出采集质量四项检查、文件头质量状态模板、各平台榜单采集目标表（URL + 核心字段）。
 
 ---
 

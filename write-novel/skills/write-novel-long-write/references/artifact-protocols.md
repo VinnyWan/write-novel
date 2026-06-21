@@ -23,7 +23,7 @@
 
 > **拆文库/对标关系**：`拆文库/` = analyze skill 的原始产出（数据源）。`对标/` = 写作项目的引用视图。首次引用时从 `拆文库/` 复制到 `对标/`。
 
-此文件由 `write-novel-long-analyze` 拆解管道输出（快速预览报告或完整拆文报告）。write skill 的职责是**读取**，不创建。
+此文件由 `write-novel-analyze` 拆解管道输出（快速预览报告或完整拆文报告）。write skill 的职责是**读取**，不创建。
 
 如需手动创建简版对标摘要（未使用 analyze skill 时）：
 
@@ -166,7 +166,7 @@ target_words: 0
 {本章完整原文内容}
 
 ---
-> 来源：{手动输入 / write-novel-long-analyze 导入}
+> 来源：{手动输入 / write-novel-analyze 导入}
 > 原始字数：{约N字}
 ```
 

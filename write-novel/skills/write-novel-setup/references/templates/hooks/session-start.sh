@@ -93,7 +93,7 @@ fi
 if [ -d "$ROOT/拆文库" ]; then
   PROGRESS_COUNT=$(find "$ROOT/拆文库" -name "_progress.md" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$PROGRESS_COUNT" -gt 0 ]; then
-    OUTPUT+="[INFO] 拆文库/ 中有 $PROGRESS_COUNT 个未完成拆文。运行 /write-novel-long-analyze 或 /write-novel-short-analyze。\n"
+    OUTPUT+="[INFO] 拆文库/ 中有 $PROGRESS_COUNT 个未完成拆文。运行 /write-novel-analyze。\n"
     HAS_CONTENT=true
   fi
 fi

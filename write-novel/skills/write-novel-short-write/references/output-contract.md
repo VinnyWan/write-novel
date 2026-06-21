@@ -1,18 +1,18 @@
 ---
 name: output-contract
 description: |
-  write-novel-short-analyze 输出契约。定义 Stage → 文件映射、_meta.json schema、
+  write-novel-analyze 输出契约。定义 Stage → 文件映射、_meta.json schema、
   下游消费规范（write-novel-short-write 读全套 markdown + 原文 + _meta.json 写新短篇）。
 sync-source: skills/write-novel-short-analyze/references/output-contract.md
 sync-policy: |
-  本文件在 write-novel-short-analyze 与 write-novel-short-write 之间需保持字节一致（byte-equal）。
+  本文件在 write-novel-analyze 与 write-novel-short-write 之间需保持字节一致（byte-equal）。
   修改任一副本后，必须同步另一副本，并通过 bash scripts/check-shared-files.sh 验证。
   禁止把本文件加入 IGNORE_NAMES 列表——它必须保持同步，不属于 intentional differences。
 ---
 
-# 输出契约：write-novel-short-analyze ↔ write-novel-short-write
+# 输出契约：write-novel-analyze ↔ write-novel-short-write
 
-`write-novel-short-analyze` 拆完一篇短篇后，产物落盘到 `拆文库/{书名}/`。`write-novel-short-write`
+`write-novel-analyze` 拆完一篇短篇后，产物落盘到 `拆文库/{书名}/`。`write-novel-short-write`
 写下一篇同题材短篇时，**同时**读这个目录下的全部产出。
 
 ---
