@@ -17,11 +17,9 @@ description: |
 |---------|-----------|--------|
 | 写长篇（含规划） | 开书、写大纲、长篇、连载、续写、日更、修改、回炉、重写、规划、卷纲、章纲 | `/write-novel-long-write` |
 | 写短篇 | 短篇、盐言、一万字 | `/write-novel-short-write` |
-| 长篇拆文 | 拆文、分析这本书、黄金三章 | `/write-novel-long-analyze` |
-| 短篇拆文 | 拆短篇、分析这个故事 | `/write-novel-short-analyze` |
-| 长篇扫榜 | 长篇排行、什么火、起点/番茄/晋江、扫榜 | `/write-novel-long-scan` |
-| 选题决策 | 写什么能爆、帮我选题、选题方向 | `/write-novel-long-scan` |
-| 短篇扫榜 | 短篇排行、知乎盐言排行 | `/write-novel-short-scan` |
+| 扫榜 | 排行、什么火、起点/番茄/晋江、知乎盐言、扫榜 | `/write-novel-scan` |
+| 选题决策 | 写什么能爆、帮我选题、选题方向 | `/write-novel-scan` |
+| 拆文 | 拆文、拆书、分析这本书、拆短篇、黄金三章 | `/write-novel-analyze` |
 | 去 AI 味 | 去 AI 味、太 AI、去味、deslop | `/write-novel-deslop` |
 | 审查 | 审查、审稿、review、审一下 | `/write-novel-review` |
 | 封面 | 封面、封面图、做封面 | `/write-novel-cover` |
@@ -54,8 +52,8 @@ description: |
 - "审查" "帮我审一下" 匹配 `write-novel-review`
 - "搭环境" "准备写书" "初始化" 匹配 `write-novel-setup`
 - "查角色" "查伏笔" "什么状态" "写到哪了" 匹配 `write-novel-query`
-- "拆文" "分析这本书" "黄金三章" 匹配 `write-novel-long-analyze`
-- "扫榜" "排行" "什么火" 匹配 `write-novel-long-scan`
+- "拆文" "分析这本书" "黄金三章" "拆短篇" 匹配 `write-novel-analyze`（自动按字数分流）
+- "扫榜" "排行" "什么火" "知乎盐言" 匹配 `write-novel-scan`（自动按篇幅/平台分流）
 - "导入" "反向解析" "把我的书导进来" 匹配 `write-novel-import`
 - "面板" "dashboard" 匹配 `write-novel-query`（原 story-dashboard 已合并至 write-novel-query）
 - "体检" "诊断" 匹配 `write-novel-doctor`
@@ -69,10 +67,10 @@ description: |
 |---------|---------|---------|
 | write-novel-long-write | /write-novel-long-write | write-novel-long-write |
 | write-novel-short-write | /write-novel-short-write | write-novel-short-write |
-| write-novel-long-analyze | /write-novel-long-analyze | write-novel-long-analyze |
-| write-novel-short-analyze | /write-novel-short-analyze | write-novel-short-analyze |
-| write-novel-long-scan | /write-novel-long-scan | write-novel-long-scan |
-| write-novel-short-scan | /write-novel-short-scan | write-novel-short-scan |
+| write-novel-long-analyze | /write-novel-long-analyze | write-novel-analyze |
+| write-novel-short-analyze | /write-novel-short-analyze | write-novel-analyze |
+| write-novel-long-scan | /write-novel-long-scan | write-novel-scan |
+| write-novel-short-scan | /write-novel-short-scan | write-novel-scan |
 | write-novel-deslop | /write-novel-deslop | write-novel-deslop |
 | write-novel-review | /write-novel-review | write-novel-review |
 | write-novel-cover | /write-novel-cover | write-novel-cover |
@@ -88,8 +86,8 @@ description: |
 | write-novel-review（旧长形式） | /write-novel-review | write-novel-review |
 | write-novel-setup（旧长形式） | /write-novel-setup | write-novel-setup |
 | write-novel-cover（旧长形式） | /write-novel-cover | write-novel-cover |
-| write-novel-analyze | /write-novel-analyze | write-novel-long-analyze |
-| write-novel-scan | /write-novel-scan | write-novel-long-scan |
+| write-novel-analyze | /write-novel-analyze | write-novel-analyze |
+| write-novel-scan | /write-novel-scan | write-novel-scan |
 | write-novel-import（旧长形式） | /write-novel-import | write-novel-import |
 | webnovel-write | /webnovel-write | write-novel-long-write |
 | webnovel-plan | /webnovel-plan | write-novel-long-write |
@@ -124,10 +122,8 @@ description: |
 | Skill 名称 | 功能 |
 |-----------|------|
 | `write-novel-setup` | 项目初始化与环境部署 |
-| `write-novel-long-scan` | 长篇扫榜分析 |
-| `write-novel-short-scan` | 短篇扫榜分析 |
-| `write-novel-long-analyze` | 长篇拆文分析 |
-| `write-novel-short-analyze` | 短篇拆文分析 |
+| `write-novel-scan` | 网文扫榜分析（长篇+短篇统一入口，按篇幅自动分流） |
+| `write-novel-analyze` | 网文拆文分析（长篇+短篇统一入口，按字数自动分流） |
 | `write-novel-long-write` | 长篇写作（含规划/日更/大修） |
 | `write-novel-short-write` | 短篇写作 |
 | `write-novel-import` | 反向解析导入 |

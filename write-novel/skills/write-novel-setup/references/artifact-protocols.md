@@ -1,0 +1,1 @@
+../../write-novel-long-write/references/artifact-protocols.md

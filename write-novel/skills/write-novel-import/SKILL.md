@@ -4,7 +4,7 @@ version: 1.0.0
 description: |
   逆向导入已有小说。将已写好的小说（半成品或完本）反向解析为标准项目目录结构，
   兼容 write-novel-long-write / write-novel-short-write 后续写作流程。内部复用 write-novel-long-analyze /
-  write-novel-short-analyze 的拆解管道，按篇幅自动分流。
+  write-novel-analyze 的拆解管道，按篇幅自动分流。
   触发方式：/write-novel-import、「导入小说」「反向解析」「导入」「把我的书导进来」（旧触发词：/story-import）
   合并自：write-novel-import + write-novel-import
 metadata:
@@ -25,7 +25,7 @@ metadata:
 ## 核心原则
 
 1. **先分析后迁移**：先用拆解管道完整拆解小说（输出到 `拆文库/`），再将分析结果迁移为项目结构。`拆文库/` 是写作工程的一部分（分析资产，喂给项目 `对标/`），保留不丢弃。
-2. **复用不重复**：深度分析阶段调用现成的拆解管道，不重新发明——长篇运行 `/write-novel-long-analyze`，短篇运行 `/write-novel-short-analyze`。拆解方法论与输出模板由对应 analyze skill 自带，write-novel-import 不执行拆解方法论、不维护这些文件。
+2. **复用不重复**：深度分析阶段调用现成的拆解管道，不重新发明——运行 `/write-novel-analyze`（自动按字数分流长/短管道）。拆解方法论与输出模板由 analyze skill 自带，write-novel-import 不执行拆解方法论、不维护这些文件。
 
 ---
 
@@ -40,7 +40,7 @@ metadata:
 > 「你是想把这本书做成可续写的写作工程（设定/大纲/正文/追踪，能接着写第 N+1 章），还是只要一份拆文库分析？」
 
 - 要可续写工程 → 走完整 write-novel-import（Phase 2 拆 + Phase 3 迁移）。
-- 只要分析 / 拆文库 → 直接用 `/write-novel-long-analyze`（短篇 `/write-novel-short-analyze`），到拆文库为止，不进 Phase 3 迁移。
+- 只要分析 / 拆文库 → 直接用 `/write-novel-analyze`（短篇 `/write-novel-analyze`），到拆文库为止，不进 Phase 3 迁移。
 
 ### 输入方式识别
 
@@ -85,30 +85,29 @@ metadata:
 
 | 篇幅 | 调用的拆解管道 | 产物目录 |
 |------|--------------|---------|
-| 长篇 | write-novel-long-analyze 的 6 阶段管道（Stage 0-6） | `拆文库/{书名}/` |
-| 短篇 | write-novel-short-analyze 的拆解管道（Stage 2-6） | `拆文库/{书名}/` |
+| 长篇 | write-novel-analyze 的长篇管道（Stage 0-6，scope=long） | `拆文库/{书名}/` |
+| 短篇 | write-novel-analyze 的短篇管道（Stage 2-6，scope=short） | `拆文库/{书名}/` |
 
 ### 调用契约
 
 <!--
-  契约说明：write-novel-import 依赖 write-novel-long-analyze 的「跳过询问」机制
-  （对应 write-novel-long-analyze「Stage 1 停靠点」的「跳过询问的情形」）。
-  若 write-novel-long-analyze 后续重构改动了该机制的触发措辞，需同步检查并更新本契约。
+  契约说明：write-novel-import 依赖 write-novel-analyze 的「跳过询问」机制
+  （对应 write-novel-analyze long scope「Stage 1 停靠点」的「跳过询问的情形」）。
+  若 write-novel-analyze 后续重构改动了该机制的触发措辞，需同步检查并更新本契约。
 -->
 
 #### 长篇：自动续跑过 Stage 1 停靠点
 
-write-novel-long-analyze 在 Stage 0+1（黄金三章）后会**自动停靠**并用 AskUserQuestion 询问是否继续全量拆解。但导入场景需要 Stage 2-6 的全套产物（逐章摘要 / 聚合分析 / 设定关系 / 汇总报告 / 文风），缺一不可——否则 Phase 3 迁移会拿到半成品。
+write-novel-analyze 在 long scope Stage 0+1（黄金三章）后会**自动停靠**并用 AskUserQuestion 询问是否继续全量拆解。但导入场景需要 Stage 2-6 的全套产物——否则 Phase 3 迁移会拿到半成品。
 
-因此调用 write-novel-long-analyze 时**必须在一开始就以「完整拆解、一次跑完、不要停下询问」模式驱动管道**，命中其「跳过询问」路径（用户开头明确说「完整拆解 / 一次跑完 / 系统拆解 / 别问」时不停靠），让管道自动从 Stage 2 续跑到 Stage 6。
+因此调用 write-novel-analyze 时**必须在一开始就以「完整拆解、一次跑完、不要停下询问」模式驱动管道**，命中其「跳过询问」路径。
 
-- 措辞示例：启动深度分析时声明「以『完整拆解、一次跑完、不要停下询问』模式拆解本书，确保 Stage 2-6 全部产出」。
+- 措辞示例：启动深度分析时声明「以『完整拆解、一次跑完、不要停下询问』模式拆解本书」。
 - **兜底**：若运行环境实际仍停在 Stage 1 询问处，write-novel-import 自动选择「继续全量拆解」，**绝不把停靠询问透传给用户**。
-- 环境检测（Phase 1）发现未部署 deconstruction-agent agent 且用户选择「继续导入」时，Stage 2 逐章摘要降级为串行处理，产物仍完整，仅速度变慢。
 
 #### 短篇：单一全量管道
 
-write-novel-short-analyze 是单一全量拆解管道（Stage 2-6），**无 Stage 1 停靠点**，契约较简单：调用后让其跑完 Stage 2-6 即可，无需声明跳过询问。
+write-novel-analyze 在 short scope 是单一全量拆解管道（Stage 2-6），**无 Stage 1 停靠点**，契约较简单：调用后让其跑完 Stage 2-6 即可，无需声明跳过询问。
 
 ### 输出目录
 
@@ -119,7 +118,7 @@ write-novel-short-analyze 是单一全量拆解管道（Stage 2-6），**无 Sta
 
 ### 长篇 6 阶段管道概要
 
-> 管道详细说明见 write-novel-long-analyze（运行 `/write-novel-long-analyze`），此处仅列概要。
+> 管道详细说明见 write-novel-analyze（运行 `/write-novel-analyze`），此处仅列概要。
 
 | 阶段 | 名称 | 输出 | 完成标志 |
 |------|------|------|----------|
@@ -133,13 +132,13 @@ write-novel-short-analyze 是单一全量拆解管道（Stage 2-6），**无 Sta
 
 ### 短篇拆文管道
 
-> 管道详细说明见 write-novel-short-analyze，此处仅列概要。
+> 管道详细说明见 write-novel-analyze，此处仅列概要。
 
 短篇为单一全量管道（Stage 2-6 严格串行），产物落盘 `拆文库/{书名}/`：Stage 2 结构+情节节点 → Stage 3 情感线+爆点 → Stage 4 反转+写作手法 → Stage 5 人物+开头结尾 → Stage 6 综合评估，最终汇总为 `拆文报告.md`、`情节节点.md`、`写作手法.md`。
 
 ### 分块策略（长篇）
 
-沿用 write-novel-long-analyze 的分块策略（Stage 2 使用 deconstruction-agent agent 并行）：
+沿用 write-novel-analyze 的分块策略（Stage 2 使用 deconstruction-agent agent 并行）：
 
 | 规模 | 策略 | 块大小 |
 |------|------|--------|
@@ -150,11 +149,11 @@ write-novel-short-analyze 是单一全量拆解管道（Stage 2-6），**无 Sta
 ### 恢复机制
 
 - 中断时通过进度文件追踪进度；新会话读取进度文件定位断点；从断点所在块的起始章节恢复
-- 长篇进度文件格式沿用 write-novel-long-analyze 拆解管道的进度段落约定（当前阶段、最后处理章节、已完成阶段列表、更新时间）
+- 长篇进度文件格式沿用 write-novel-analyze 拆解管道的进度段落约定（当前阶段、最后处理章节、已完成阶段列表、更新时间）
 
 ### 质量门控
 
-长篇阶段 3-4 完成前执行质量检查（置信度 >= 0.85，覆盖率 85%-95%，重叠率 <= 35%），由 write-novel-long-analyze 拆解管道自带的质量门控负责。短篇质量门控见 write-novel-short-analyze 各阶段的完成标志。
+长篇阶段 3-4 完成前执行质量检查（置信度 >= 0.85，覆盖率 85%-95%，重叠率 <= 35%），由 write-novel-analyze 拆解管道自带的质量门控负责。短篇质量门控见 write-novel-analyze 各阶段的完成标志。
 
 ---
 
@@ -232,9 +231,9 @@ frontmatter 完整性校验**异步化**，不阻断主流程：
 | Phase | 场景 | 加载文件 / 相关 skill |
 |-------|------|----------------------|
 | 1 | 篇幅分流判定 | `references/length-routing.md` |
-| 1 | 章节格式识别 | 由 write-novel-long-analyze 拆解管道的阶段 1 负责 |
-| 2 | 长篇深度分析 | 运行 `/write-novel-long-analyze`（方法论/质量门控/输出模板均自带） |
-| 2 | 短篇深度分析 | 运行 `/write-novel-short-analyze`（方法论/质量门控/输出模板均自带） |
+| 1 | 章节格式识别 | 由 write-novel-analyze 拆解管道的阶段 1 负责 |
+| 2 | 长篇深度分析 | 运行 `/write-novel-analyze`（方法论/质量门控/输出模板均自带） |
+| 2 | 短篇深度分析 | 运行 `/write-novel-analyze`（方法论/质量门控/输出模板均自带） |
 | 3 | 长篇迁移逐步骤 | `references/import-stage-details.md`（Phase 3-L） + `references/structure-mapping-long.md`（映射规则） |
 | 3 | 短篇迁移逐步骤 | `references/import-stage-details.md`（Phase 3-S） + `references/structure-mapping-short.md`（映射规则） |
 | 3 | 角色状态反推规则（长篇） | `references/character-state-reverse.md` |
@@ -267,8 +266,7 @@ frontmatter 完整性校验**异步化**，不阻断主流程：
 | 导入完想继续写（长篇） | write-novel-long-write | `/write-novel-long-write` + "日更" |
 | 导入完想继续写（短篇） | write-novel-short-write | `/write-novel-short-write` |
 | 导入完想审查质量 | write-novel-review | `/write-novel-review` |
-| 想深入分析对标（长篇） | write-novel-long-analyze | `/write-novel-long-analyze` |
-| 想深入分析对标（短篇） | write-novel-short-analyze | `/write-novel-short-analyze` |
+| 想深入分析对标 | write-novel-analyze | `/write-novel-analyze` |
 | 从零开新书（长篇） | write-novel-long-write | `/write-novel-long-write` + "开书" |
 | 从零开新书（短篇） | write-novel-short-write | `/write-novel-short-write` |
 | 项目未部署环境 | write-novel-setup | `/write-novel-setup` |

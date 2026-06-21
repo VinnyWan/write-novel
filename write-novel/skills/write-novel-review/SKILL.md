@@ -314,7 +314,7 @@ Rubric Source: file | embedded fallback
 |---|---|---|
 | 要修改查出的问题 | write-novel-long-write / write-novel-short-write | 返回对应写作 skill 修改 |
 | 发现 AI 味需清理 | write-novel-deslop | `/write-novel-deslop` |
-| 需要重新拆解对标书 | write-novel-long-analyze / write-novel-short-analyze | `/write-novel-long-analyze` 或 `/write-novel-short-analyze` |
+| 需要重新拆解对标书 | write-novel-analyze | `/write-novel-analyze` |
 
 ---
 

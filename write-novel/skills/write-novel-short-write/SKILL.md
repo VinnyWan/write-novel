@@ -58,7 +58,7 @@ metadata:
 
 ### Phase 2：构思核心框架
 
-> 如果用户有参考小说，先用 `/write-novel-short-analyze` 拆解。默认输出存入项目根目录 `拆文库/{书名}/`；如用户指定当前短篇引用目录，则可输出/同步到 `{短篇标题}/对标/{书名}/`。写作时会自动查找并读取这些拆文结果，不需要用户手动复制到 prompt。
+> 如果用户有参考小说，先用 `/write-novel-analyze` 拆解。默认输出存入项目根目录 `拆文库/{书名}/`；如用户指定当前短篇引用目录，则可输出/同步到 `{短篇标题}/对标/{书名}/`。写作时会自动查找并读取这些拆文结果，不需要用户手动复制到 prompt。
 
 #### 对标上下文加载
 
@@ -71,7 +71,7 @@ metadata:
 1. 按上述顺序查找 `拆文报告.md`、`情节节点.md`、`写作手法.md`
 2. 读取核心发现：结构段落、情绪曲线、反转位置、铺垫方式、句式节奏、可借鉴技法
 3. 写入本篇 `设定.md` 的"对标摘要"区，写作时每个场景从中召回 1-2 个相关技法
-4. 如只找到原文、未找到拆文报告，提示用户先运行 `/write-novel-short-analyze`；如用户要求继续，也可只按原文做弱参考
+4. 如只找到原文、未找到拆文报告，提示用户先运行 `/write-novel-analyze`；如用户要求继续，也可只按原文做弱参考
 
 > **拆文产出格式**：analyze 落盘的完整文件树、`_meta.json` schema、Stage→文件映射，以及「本 skill 怎么读这些产出」的下游消费规范，见 [references/output-contract.md](references/output-contract.md)。
 
@@ -150,10 +150,10 @@ metadata:
 
 | 时机 | 跳转到 | 命令 |
 |---|---|---|
-| 有参考小说想对标 | write-novel-short-analyze | `/write-novel-short-analyze` → 输出存入 `拆文库/{书名}/` |
+| 有参考小说想对标 | write-novel-analyze | `/write-novel-analyze` |
 | 写完，去 AI 味 | write-novel-deslop | `/write-novel-deslop` |
 | 想自检 | 本 skill 质量自检 | 用 Phase 4 自检流程 + `references/quality-checklist.md` 逐项核对 |
-| 需要市场方向 | write-novel-short-scan | `/write-novel-short-scan` |
+| 需要市场方向 | write-novel-scan | `/write-novel-scan` |
 | 设定太大，适合长篇 | write-novel-long-write | `/write-novel-long-write` |
 
 ---

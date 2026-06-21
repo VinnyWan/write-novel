@@ -146,19 +146,21 @@ whitelist_real_files:
   - write-novel-short-write/references/genre-writing-techniques.md
   - write-novel-short-write/references/villain-and-reveal.md
   - write-novel-short-write/references/writing-workflow.md
+  - write-novel-analyze/references/analyze-common.md
+  - write-novel-analyze/references/analyze-long.md
+  - write-novel-analyze/references/analyze-short.md
+  - write-novel-analyze/references/deconstruction-notes.md
+  - write-novel-analyze/references/material-decomposition.md
+  - write-novel-analyze/references/output-contract.md
+  - write-novel-analyze/references/output-templates.md
+  - write-novel-analyze/references/pipeline-ops.md
+  - write-novel-analyze/references/stage2-agent-strategy.md
+  - write-novel-analyze/references/style-profile-generator.md
+  - write-novel-analyze/references/style-profile-protocol.md
   - write-novel-short-analyze/references/deconstruction-examples.md
   - write-novel-short-analyze/references/genre-writing-techniques.md
-  - write-novel-short-analyze/references/material-decomposition.md
-  - write-novel-short-analyze/references/output-contract.md
-  - write-novel-short-analyze/references/output-templates.md
   - write-novel-short-analyze/references/real-market-data.md
   - write-novel-short-analyze/references/zhihu-style.md
-  - write-novel-long-analyze/references/deconstruction-notes.md
-  - write-novel-long-analyze/references/material-decomposition.md
-  - write-novel-long-analyze/references/output-templates.md
-  - write-novel-long-analyze/references/pipeline-ops.md
-  - write-novel-long-analyze/references/style-profile-generator.md
-  - write-novel-long-analyze/references/style-profile-protocol.md
   - write-novel-deslop/references/deai-six-gates.md
   - write-novel-review/references/quality-rubric.md
   - write-novel-review/references/rubrics/*.md
@@ -167,9 +169,13 @@ whitelist_real_files:
   - write-novel-import/references/structure-mapping-long.md
   - write-novel-import/references/structure-mapping-short.md
   - write-novel-cover/references/cover-styles.md
-  - write-novel-long-scan/references/genre-trends.md
-  - write-novel-long-scan/references/publishing-guide.md
-  - write-novel-long-scan/references/reader-profiling.md
-  - write-novel-long-scan/references/scan-output-format.md
-  - write-novel-long-scan/references/topic-decision.md
-  - write-novel-short-scan/references/real-market-data.md
+  - write-novel-scan/references/genre-trends.md
+  - write-novel-scan/references/publishing-guide.md
+  - write-novel-scan/references/reader-profiling.md
+  - write-novel-scan/references/scan-output-format.md
+  - write-novel-scan/references/topic-decision.md
+  - write-novel-scan/references/real-market-data.md
+  - write-novel-scan/references/scan-common.md
+  - write-novel-scan/references/scan-long.md
+  - write-novel-scan/references/scan-short.md
+  - write-novel-scan/references/scan-quality-gates.md

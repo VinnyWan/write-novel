@@ -225,7 +225,7 @@ node scripts/normalize-punctuation.js <正文文件...>
 | 时机 | 跳转到 | 命令 |
 |---|---|---|
 | 继续写作 | write-novel-long-write / write-novel-short-write | `/write-novel-long-write` 或 `/write-novel-short-write` |
-| 发现结构问题 | write-novel-long-analyze / write-novel-short-analyze | `/write-novel-long-analyze` 或 `/write-novel-short-analyze` |
+| 发现结构问题 | write-novel-analyze | `/write-novel-analyze` |
 | 准备做封面 | write-novel-cover | `/write-novel-cover` |
 
 ---
