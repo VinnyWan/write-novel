@@ -7,3 +7,5 @@ __pycache__/
 # Node / 前端依赖与构建产物
 node_modules/
 dist/
+openspec/
+.claude/
