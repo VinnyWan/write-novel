@@ -12,11 +12,11 @@
 
 ### 优先路径：write-novel-story-explorer agent
 
-如果项目已部署 write-novel-write-novel-story-explorer agent（检查 `.claude/agents/write-novel-write-novel-story-explorer.md` 是否存在），使用 Agent 工具 spawn 执行 context_load 查询，一次性获取全部写作上下文：
+如果项目已部署 write-novel-story-explorer agent（检查 `.claude/agents/write-novel-story-explorer.md` 是否存在），使用 Agent 工具 spawn 执行 context_load 查询，一次性获取全部写作上下文：
 
 ```
 Agent(
-  subagent_type: "write-novel-write-novel-story-explorer",
+  subagent_type: "write-novel-story-explorer",
   prompt: "项目目录：{dir}\n查询类型：context_load\n查询参数：准备写第 {N} 章"
 )
 ```
@@ -38,7 +38,7 @@ spawn 返回后直接使用其 results，跳过下方手动加载步骤。如果
 
 ### 按需加载创作公式
 
-当写作中需要引用创作公式约束时（如期待感公式、爽点公式、信息差公式），加载 `references/methodology/genre-writing-formulas.md`。默认不加载，避免无条件加载 1500+ 行文件浪费 token。
+当写作中需要引用创作公式约束时（如期待感公式、爽点公式、信息差公式），加载 `references/shared/genre-writing-formulas.md`。默认不加载，避免无条件加载 1500+ 行文件浪费 token。
 
 ### 首次日更兜底
 

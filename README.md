@@ -1,11 +1,11 @@
 # write-novel
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen.svg)](write-novel/.claude-plugin/plugin.json)
+[![Version](https://img.shields.io/badge/version-2.3.2-brightgreen.svg)](write-novel/.claude-plugin/plugin.json)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://claude.ai/claude-code)
 [![Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-black.svg)](.claude-plugin/marketplace.json)
 
-AI 辅助中文长篇网络小说创作插件。从扫榜、拆文、大纲到正文日更，覆盖超长篇网文创作全流程。内置 15 个 Skills、9 个 Agents、10 个 Hooks，纯 Markdown 驱动，所有状态文件均可直接阅读编辑。
+AI 辅助中文长篇网络小说创作插件。从扫榜、拆文、大纲到正文日更，覆盖超长篇网文创作全流程。内置 13 个 Skills、8 个 Agents、9 个 Hook 条目（覆盖 5 类事件），纯 Markdown 驱动，所有状态文件均可直接阅读编辑。
 
 ## 安装
 
@@ -43,66 +43,64 @@ claude --plugin-dir ./write-novel
 安装插件后，在 Claude Code 中：
 
 ```bash
-/write-novel:story-setup       # 1. 部署项目基础设施（首次必执行）
-/write-novel:story-long-scan   # 2. 扫榜选方向
-/write-novel:story-long-analyze # 3. 拆解对标书
-/write-novel:story-long-write  # 4. 开书写正文
-/write-novel:story-review      # 5. 审查已写章节
-/write-novel:story-deslop      # 6. 去AI味
+/write-novel:write-novel-setup       # 1. 部署项目基础设施（首次必执行）
+/write-novel:write-novel-scan        # 2. 扫榜选方向
+/write-novel:write-novel-analyze     # 3. 拆解对标书
+/write-novel:write-novel-long-write  # 4. 开书写正文
+/write-novel:write-novel-review      # 5. 审查已写章节
+/write-novel:write-novel-deslop      # 6. 去AI味
 ```
 
-也可以直接说「我想写小说」，story skill 会自动路由到对应子 skill。
+也可以直接说「我想写小说」，`write-novel` 路由 skill 会自动分发到对应子 skill。
 
 **完整流水线**：`扫榜 → 拆文 → 写作 → 审查 → 去AI味 → 封面`。详细流程见 [USAGE.md](USAGE.md)。
 
-## Skill 体系（14 个）
+## Skill 体系（13 个）
 
 | Skill | 使用方式 | 功能 |
 |-------|---------|------|
-| `story` | `/write-novel:story` | 路由入口，按意图自动分发 |
-| `story-setup` | `/write-novel:story-setup` | 环境部署 + 模板安装 |
-| `story-long-scan` | `/write-novel:story-long-scan` | 多平台扫榜 + 选题决策 |
-| `story-short-scan` | `/write-novel:story-short-scan` | 短篇选题扫描 |
-| `story-long-analyze` | `/write-novel:story-long-analyze` | 6 阶段深度拆文 |
-| `story-short-analyze` | `/write-novel:story-short-analyze` | 短篇拆文分析 |
-| `story-long-write` | `/write-novel:story-long-write` | 长篇写作：开书 → 大纲 → 正文 → 日更 |
-| `story-short-write` | `/write-novel:story-short-write` | 短篇写作 |
-| `story-import` | `/write-novel:story-import` | 逆向导入已有小说 |
-| `story-deslop` | `/write-novel:story-deslop` | 去 AI 味：六关检测 + 3-pass 润色 |
-| `story-review` | `/write-novel:story-review` | 多视角对抗式审查 |
-| `story-cover` | `/write-novel:story-cover` | 封面生成 |
-| `story-query` | `/write-novel:story-query` | 角色/伏笔/设定/进度查询 |
-| `story-doctor` | `/write-novel:story-doctor` | 项目诊断 + 模式学习 |
+| `write-novel` | `/write-novel:write-novel` | 路由入口，按意图自动分发 |
+| `write-novel-setup` | `/write-novel:write-novel-setup` | 环境部署 + 模板安装 |
+| `write-novel-scan` | `/write-novel:write-novel-scan` | 多平台扫榜 + 选题决策（长/短篇统一） |
+| `write-novel-analyze` | `/write-novel:write-novel-analyze` | 深度拆文分析（长/短篇统一） |
+| `write-novel-long-write` | `/write-novel:write-novel-long-write` | 长篇写作：开书 → 大纲 → 正文 → 日更 |
+| `write-novel-short-write` | `/write-novel:write-novel-short-write` | 短篇写作 |
+| `write-novel-import` | `/write-novel:write-novel-import` | 逆向导入已有小说 |
+| `write-novel-deslop` | `/write-novel:write-novel-deslop` | 去 AI 味：六关检测 + 3-pass 润色 |
+| `write-novel-review` | `/write-novel:write-novel-review` | 多视角对抗式审查 |
+| `write-novel-cover` | `/write-novel:write-novel-cover` | 封面生成 |
+| `write-novel-query` | `/write-novel:write-novel-query` | 角色/伏笔/设定/进度查询 + 数据面板 |
+| `write-novel-doctor` | `/write-novel:write-novel-doctor` | 项目诊断 + 模式学习 |
 | `browser-cdp` | `/write-novel:browser-cdp` | 浏览器操控，CDP 协议复用登录态采集数据 |
 
-## Agent 体系（9 个）
+> 另保留 4 个向后兼容别名 skill（`write-novel-long-scan`、`write-novel-short-scan`、`write-novel-long-analyze`、`write-novel-short-analyze`），已分别合并至 `write-novel-scan` / `write-novel-analyze`，不计入规范 13 个。
+
+## Agent 体系（8 个）
 
 | 层级 | Agent | 职责 |
 |------|-------|------|
-| 架构级 | `story-architect` | 故事架构、大纲结构、钩子/反转设计 |
-| 创作级 | `narrative-writer` | 正文起草、去 AI 味、格式合规 |
-| 创作级 | `character-designer` | 角色设计、语言风格、对话创作 |
-| 创作级 | `deconstruction-agent` | 拆文分析、章节摘要提取 |
-| 检查级 | `reviewer` | 多维主观审查（结构/角色/文字/平台适配） |
-| 检查级 | `consistency-checker` | 客观事实冲突扫描（时间线/战力/地点/伏笔） |
-| 检查级 | `story-researcher` | 外部资料搜索 + 多源交叉验证 |
-| 查询级 | `story-explorer` | 项目内只读查询（角色/伏笔/进度） |
-| 提取级 | `chapter-extractor` | 章节摘要提取 + 情节点 + 角色提及（并行拆文） |
+| 架构级 | `write-novel-story-architect` | 故事架构、大纲结构、钩子/反转设计 |
+| 创作级 | `write-novel-narrative-writer` | 正文起草、去 AI 味、格式合规 |
+| 创作级 | `write-novel-character-designer` | 角色设计、语言风格、对话创作 |
+| 创作级 | `write-novel-deconstruction-agent` | 拆文分析、章节摘要提取（含原 chapter-extractor 并行拆文） |
+| 检查级 | `write-novel-reviewer` | 多维主观审查（结构/角色/文字/平台适配） |
+| 检查级 | `write-novel-consistency-checker` | 客观事实冲突扫描（时间线/战力/地点/伏笔） |
+| 检查级 | `write-novel-story-researcher` | 外部资料搜索 + 多源交叉验证 |
+| 查询级 | `write-novel-story-explorer` | 项目内只读查询（角色/伏笔/进度） |
 
 ## Hooks（自动化守护）
 
-| Hook | 触发时机 | 功能 |
-|------|---------|------|
-| SessionStart | 会话启动 | 显示大纲缓冲、伏笔状态、上次操作 |
-| SessionEnd | 会话结束 | 保存会话状态 |
-| PreCompact | Compact 前 | 保存写作状态到追踪文件 |
-| PostCompact | Compact 后 | 恢复上下文状态 |
-| PreToolUse | 写操作前 | 运行时写作守护校验 |
-| PreCompact | Compact 前 | 保存写作状态到追踪文件 |
-| PostCompact | Compact 后 | 恢复上下文状态 |
-| guard-outline-before-prose | 正文写入前 | 阻断式检查：无对应细纲则拒绝写入 |
-| detect-story-gaps | 会话启动 | 设定/大纲/伏笔缺口检测 |
-| PreCommit | Git commit 前 | YAML frontmatter 必填字段检查 |
+按 `hooks/hooks.json` 实际配置，覆盖 5 类事件、9 个 hook 条目：
+
+| 事件 | 触发时机 | 挂载脚本 | 功能 |
+|------|---------|---------|------|
+| SessionStart | 会话启动 | `session_start.py` / `session_start.sh` / `detect_story_gaps.sh` | 显示大纲缓冲/伏笔状态/上次操作 + 设定/大纲/伏笔缺口检测 |
+| SessionEnd | 会话结束 | `session_end.sh` | 保存会话状态 |
+| PreCompact | Compact 前 | `pre_compact.sh` | 保存写作状态到追踪文件 |
+| PostCompact | Compact 后 | `post_compact.sh` | 恢复上下文状态 |
+| PreToolUse | 写操作/Bash 前 | `guard_runtime_write.py` / `guard-outline-before-prose.sh` | 运行时写作守护 + 无对应细纲则阻断正文写入 |
+
+> `hooks/validate_story_commit.sh` 为 Git 提交校验脚本（YAML frontmatter 必填字段检查），由 Git pre-commit 调用，不在 Claude Code `hooks.json` 条目内。
 
 ## 核心能力
 
@@ -158,19 +156,19 @@ write-novel/                          # 仓库根（市场根）
 └── write-novel/                      # 插件根
     ├── .claude-plugin/
     │   └── plugin.json               # 插件清单
-    ├── skills/                       # 14 个 skill（SKILL.md）
-    ├── agents/                       # 9 个 agent 定义
+    ├── skills/                       # 13 个规范 skill + 4 个兼容别名（SKILL.md）
+    ├── agents/                       # 8 个 agent 定义
     ├── hooks/                        # hooks.json + 脚本
     ├── references/                   # 方法论与参考数据
     ├── templates/                    # 37 题材模板 + 输出模板
     ├── scripts/                      # 静态检查链 + 行为 eval 运行器（发版与 CI 守护）
-    ├── dashboard/                    # Web 可视化面板
+    ├── dashboard/                    # Web 可视化面板（前端依赖不入库，首次运行需 cd dashboard/frontend && npm install && npm run build）
     └── evals/                        # 行为评估契约 + fixtures
 ```
 
 ### 用户写作项目
 
-安装插件后，`story-setup` 会在你的小说目录下创建：
+安装插件后，`write-novel-setup` 会在你的小说目录下创建：
 
 ```
 {书名}/

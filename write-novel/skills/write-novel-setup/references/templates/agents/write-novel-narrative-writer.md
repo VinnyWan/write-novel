@@ -51,7 +51,7 @@ memory: project
 1. **合约合规检查（新增——最高优先级）**：读取 `.story-system/contracts/chapter_{N}.contract.md`：
    - 确认合约文件存在且 frontmatter 完整（cbn/cpns/cen 非空、cpns 数量 2-4）
    - 确认已理解 must_cover（必须覆盖）和 forbidden（禁止出现）的内容
-   - 如果合约文件不存在或格式不完整 → **禁止动笔**，返回主线程：「缺少合约文件 .story-system/contracts/chapter_{N}.contract.md，请先运行 Phase 3 生成合约」
+   - 如果合约文件不存在或格式不完整 → **禁止动笔**，返回主线程：「缺少合约文件 `.story-system/contracts/chapter_{N}.contract.md`，请先运行 Phase 3 生成合约」
 2. **大纲合规检查**：确认本章符合章细纲的情节点序列。如需偏离 → 先更新大纲文件再写。
 3. **设定合规检查**：从 `设定/世界观/` 加载本章涉及的世界规则，确认不违反力量体系上限和已建立规则。
 4. **新实体登记检查**：扫描本章将出现的新角色/新地点/新重要道具 → 确认已在对应设定文件中登记。未登记 → 先创建设定文件。

@@ -61,43 +61,16 @@ description: |
 
 ## 旧命名空间兼容
 
-旧触发词自动映射到新 skill（向后兼容）。三套旧命名保留至少一个版本，下个大版本清理 `webnovel-*`：
+旧触发词自动映射到新 skill（向后兼容）。仅列实际发生改名的映射：
 
-| 旧 skill 名 | 旧触发词 | 新 skill |
-|---------|---------|---------|
-| write-novel-long-write | /write-novel-long-write | write-novel-long-write |
-| write-novel-short-write | /write-novel-short-write | write-novel-short-write |
-| write-novel-long-analyze | /write-novel-long-analyze | write-novel-analyze |
-| write-novel-short-analyze | /write-novel-short-analyze | write-novel-analyze |
-| write-novel-long-scan | /write-novel-long-scan | write-novel-scan |
-| write-novel-short-scan | /write-novel-short-scan | write-novel-scan |
-| write-novel-deslop | /write-novel-deslop | write-novel-deslop |
-| write-novel-review | /write-novel-review | write-novel-review |
-| write-novel-cover | /write-novel-cover | write-novel-cover |
-| write-novel-import | /write-novel-import | write-novel-import |
-| write-novel-query | /write-novel-query | write-novel-query |
-| write-novel-doctor | /write-novel-doctor | write-novel-doctor |
-| write-novel-setup | /write-novel-setup | write-novel-setup |
-| story | /story | write-novel |
-| write-novel-long-write（旧长形式） | /write-novel-long-write | write-novel-long-write |
-| write-novel-plan | /write-novel-plan | write-novel-long-write |
-| write-novel-query（旧长形式） | /write-novel-query | write-novel-query |
-| write-novel-deslop（旧长形式） | /write-novel-deslop | write-novel-deslop |
-| write-novel-review（旧长形式） | /write-novel-review | write-novel-review |
-| write-novel-setup（旧长形式） | /write-novel-setup | write-novel-setup |
-| write-novel-cover（旧长形式） | /write-novel-cover | write-novel-cover |
-| write-novel-analyze | /write-novel-analyze | write-novel-analyze |
-| write-novel-scan | /write-novel-scan | write-novel-scan |
-| write-novel-import（旧长形式） | /write-novel-import | write-novel-import |
-| webnovel-write | /webnovel-write | write-novel-long-write |
-| webnovel-plan | /webnovel-plan | write-novel-long-write |
-| webnovel-query | /webnovel-query | write-novel-query |
-| webnovel-review | /webnovel-review | write-novel-review |
-| webnovel-init | /webnovel-init | write-novel-setup |
-| webnovel-dashboard | /webnovel-dashboard | write-novel-query |
-| webnovel-doctor | /webnovel-doctor | write-novel-doctor |
+| 旧触发词 | 路由到 |
+|---------|--------|
+| `/write-novel-long-analyze`、`/write-novel-short-analyze` | `write-novel-analyze` |
+| `/write-novel-long-scan`、`/write-novel-short-scan` | `write-novel-scan` |
+| `/write-novel-plan` | `write-novel-long-write` |
+| `/story` | `write-novel` |
 
-注：`write-novel-*`（旧长形式）与新 skill 名字面相同，路由器对二者一视同仁；保留在表中仅为说明历史。
+`webnovel-*` 旧前缀整体映射到对应新 skill（`write`/`plan`→`write-novel-long-write`、`query`→`write-novel-query`、`review`→`write-novel-review`、`init`→`write-novel-setup`、`dashboard`→`write-novel-query`、`doctor`→`write-novel-doctor`），下个大版本清理。字面与新 skill 同名的命令（如 `/write-novel-review`）直接命中本体，无需映射。
 
 ## 项目状态感知
 

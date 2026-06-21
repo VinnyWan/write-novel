@@ -623,6 +623,30 @@ run_pipeline_audit() {
   fi
 }
 
+run_repo_hygiene() {
+  local hygiene_script="$PLUGIN_ROOT/scripts/check-repo-hygiene.sh"
+  TOTAL=$((TOTAL + 1))
+  echo ""
+  echo "--- Check 15: repo hygiene (依赖/构建/缓存产物不入库) ---"
+  if [ ! -f "$hygiene_script" ]; then
+    echo "  [SKIP] check-repo-hygiene.sh not found"
+    PASS=$((PASS + 1))
+    return
+  fi
+
+  local hygiene_output hygiene_rc=0
+  hygiene_output="$(bash "$hygiene_script" 2>&1)" || hygiene_rc=$?
+
+  if [ "$hygiene_rc" -eq 0 ]; then
+    echo "  [PASS] repo hygiene clean — 无依赖/构建/缓存产物被跟踪"
+    PASS=$((PASS + 1))
+  else
+    echo "$hygiene_output" | grep -E '\[FAIL\]|e\.g\.' || true
+    echo "  [FAIL] repo hygiene 校验发现被跟踪的产物目录"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ---------- main ----------
 
 echo "Skill Static Check (write-novel)"
@@ -637,6 +661,7 @@ done
 check_shared_references
 run_reference_audit
 run_pipeline_audit
+run_repo_hygiene
 
 echo ""
 echo "================================="

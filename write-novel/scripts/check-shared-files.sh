@@ -262,8 +262,29 @@ if [ -d "$PROJECT_CLAUDE_DIR/skills" ]; then
 fi
 echo "Deploy state errors: $deploy_errors"
 
+# 11.6 单一来源校验：references/methodology/ 不得出现与 references/shared/ 同名的非指针全文副本
+# 写作方法论每个文件唯一权威副本在 shared/，methodology/ 仅保留其独有文件。
+echo ""
+echo "--- Single Source Validation (methodology vs shared) ---"
+single_source_errors=0
+METHOD_DIR="$PLUGIN_ROOT/references/methodology"
+if [ -d "$METHOD_DIR" ] && [ -d "$SHARED_DIR" ]; then
+  for mfile in "$METHOD_DIR"/*.md; do
+    [ -f "$mfile" ] || continue
+    base="$(basename "$mfile")"
+    if [ -f "$SHARED_DIR/$base" ]; then
+      first_line="$(head -1 "$mfile" 2>/dev/null)"
+      if [[ "$first_line" != *"*共享参考文件*"* ]]; then
+        echo "  [FAIL] references/methodology/$base: 与 shared/ 同名的非指针全文副本（方法论知识应在 shared/ 单一存放）"
+        single_source_errors=$((single_source_errors + 1))
+      fi
+    fi
+  done
+fi
+echo "Single source errors: $single_source_errors"
+
 # 汇总
-total_errors=$((mismatches + pointer_errors + whitelist_errors + namespace_errors + deploy_errors))
+total_errors=$((mismatches + pointer_errors + whitelist_errors + namespace_errors + deploy_errors + single_source_errors))
 
 echo ""
 echo "============================================="

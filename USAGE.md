@@ -17,22 +17,22 @@
 第一次使用，按以下顺序执行：
 
 ```
-/write-novel:story-setup          # 1. 部署基础设施（必须，仅一次）
-/write-novel:story                # 2. 路由入口，说出你的意图即可
+/write-novel:write-novel-setup          # 1. 部署基础设施（必须，仅一次）
+/write-novel:write-novel                # 2. 路由入口，说出你的意图即可
 ```
 
-之后只需用 `/write-novel:story` 或用自然语言描述意图，路由会自动分发到对应 skill。也可以直接调用具体 skill：
+之后只需用 `/write-novel:write-novel` 或用自然语言描述意图，路由会自动分发到对应 skill。也可以直接调用具体 skill：
 
 | 想做什么 | 命令 |
 |----------|------|
-| 扫榜看市场 | `/write-novel:story-long-scan` |
-| 拆解对标书 | `/write-novel:story-long-analyze` |
-| 开书写长篇 | `/write-novel:story-long-write` |
-| 写短篇 | `/write-novel:story-short-write` |
-| 审查已写章节 | `/write-novel:story-review` |
-| 去 AI 味 | `/write-novel:story-deslop` |
-| 导入已有小说 | `/write-novel:story-import` |
-| 查角色/伏笔/进度 | `/write-novel:story-query` |
+| 扫榜看市场 | `/write-novel:write-novel-scan` |
+| 拆解对标书 | `/write-novel:write-novel-analyze` |
+| 开书写长篇 | `/write-novel:write-novel-long-write` |
+| 写短篇 | `/write-novel:write-novel-short-write` |
+| 审查已写章节 | `/write-novel:write-novel-review` |
+| 去 AI 味 | `/write-novel:write-novel-deslop` |
+| 导入已有小说 | `/write-novel:write-novel-import` |
+| 查角色/伏笔/进度 | `/write-novel:write-novel-query` |
 
 ## 完整流水线
 
@@ -44,9 +44,9 @@
 
 | 步骤 | 命令 | 产出 | 耗时 |
 |------|------|------|------|
-| 1. 扫榜 | `/write-novel:story-long-scan` | 扫榜报告 + `选题决策.md` | 10-30 分钟 |
-| 2. 拆文 | `/write-novel:story-long-analyze` | `拆文库/{书名}/`（含拆文报告、角色、剧情、设定、文风） | 30 分钟 - 3 小时 |
-| 3. 写作 | `/write-novel:story-long-write` | 卷纲 → 章细纲 → 正文（渐进式推进） | 持续进行 |
+| 1. 扫榜 | `/write-novel:write-novel-scan` | 扫榜报告 + `选题决策.md` | 10-30 分钟 |
+| 2. 拆文 | `/write-novel:write-novel-analyze` | `拆文库/{书名}/`（含拆文报告、角色、剧情、设定、文风） | 30 分钟 - 3 小时 |
+| 3. 写作 | `/write-novel:write-novel-long-write` | 卷纲 → 章细纲 → 正文（渐进式推进） | 持续进行 |
 
 写作阶段内循环：
 
@@ -64,9 +64,9 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 | 步骤 | 命令 | 产出 |
 |------|------|------|
-| 1. 扫榜 | `/write-novel:story-short-scan` | 扫榜报告 + 选题匹配 |
-| 2. 拆文 | `/write-novel:story-short-analyze` | `拆文库/{书名}/`（拆文报告 + 情节节点 + 写作手法） |
-| 3. 写作 | `/write-novel:story-short-write` | 核心框架 → 小节大纲 → 正文（单文件 ~8000+ 字） |
+| 1. 扫榜 | `/write-novel:write-novel-scan` | 扫榜报告 + 选题匹配 |
+| 2. 拆文 | `/write-novel:write-novel-analyze` | `拆文库/{书名}/`（拆文报告 + 情节节点 + 写作手法） |
+| 3. 写作 | `/write-novel:write-novel-short-write` | 核心框架 → 小节大纲 → 正文（单文件 ~8000+ 字） |
 
 ### 共享收尾
 
@@ -74,25 +74,25 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 | 步骤 | 命令 | 说明 |
 |------|------|------|
-| 审查 | `/write-novel:story-review` | 多视角对抗式审查（full/lean/solo） |
-| 去 AI 味 | `/write-novel:story-deslop` | 六关检测 + 3-pass 润色 |
-| 封面 | `/write-novel:story-cover` | 生成网文封面图 |
+| 审查 | `/write-novel:write-novel-review` | 多视角对抗式审查（full/lean/solo） |
+| 去 AI 味 | `/write-novel:write-novel-deslop` | 六关检测 + 3-pass 润色 |
+| 封面 | `/write-novel:write-novel-cover` | 生成网文封面图 |
 
 ## Skill 详解
 
 ### 基础设施
 
-#### `story-setup` — 环境部署
+#### `write-novel-setup` — 环境部署
 
 ```
-/write-novel:story-setup
+/write-novel:write-novel-setup
 ```
 
 **做什么：** 将 hooks、rules、agents、CLAUDE.md 等基础设施部署到项目目录。**新项目必须先执行此命令。**
 
 **部署内容：**
-- `.claude/hooks/` — 6 个自动化 hook 脚本（会话启动、Compact 前后、缺口检测、提交校验）
-- `.claude/agents/` — 7 个 agent 定义文件
+- `.claude/hooks/` — 全套自动化 hook 脚本（会话生命周期、Compact 前后、缺口检测、提交校验）
+- `.claude/agents/` — 8 个 agent 定义文件
 - `.claude/rules/` — 4 条 path-scoped 规则
 - `.claude/settings.local.json` — hooks 注册
 - `CLAUDE.md` — 项目指令（合并策略，不覆盖已有内容）
@@ -103,10 +103,10 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 ### 市场研究
 
-#### `story-long-scan` — 长篇扫榜
+#### `write-novel-scan`（长篇模式）— 长篇扫榜
 
 ```
-/write-novel:story-long-scan
+/write-novel:write-novel-scan
 ```
 
 **做什么：** 分析起点、番茄、晋江、七猫等平台的排行榜数据，识别市场趋势和热门题材，输出选题决策。
@@ -119,10 +119,10 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 **关键原则：** 单本排名不是结论，跨样本重复模式才是信号。可行性上限受样本量约束（<15 条强制降级）。
 
-#### `story-short-scan` — 短篇扫榜
+#### `write-novel-scan`（短篇模式）— 短篇扫榜
 
 ```
-/write-novel:story-short-scan
+/write-novel:write-novel-scan
 ```
 
 **做什么：** 分析知乎盐言、点众、黑岩等平台短篇数据，捕捉风口题材和情绪方向。
@@ -133,10 +133,10 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 ### 拆文分析
 
-#### `story-long-analyze` — 长篇拆文
+#### `write-novel-analyze`（长篇模式）— 长篇拆文
 
 ```
-/write-novel:story-long-analyze
+/write-novel:write-novel-analyze
 ```
 
 **做什么：** 深度拆解爆款长篇小说的黄金三章、人设架构、爽点设计、节奏控制。6 阶段管道。
@@ -157,24 +157,24 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 **耗时参考：** <50 章 30-60 分钟；50-200 章 1-3 小时；>200 章需多轮会话。
 
-#### `story-short-analyze` — 短篇拆文
+#### `write-novel-analyze`（短篇模式）— 短篇拆文
 
 ```
-/write-novel:story-short-analyze
+/write-novel:write-novel-analyze
 ```
 
 **做什么：** 拆解爆款短篇的故事核、结构、情感线、反转设计、写作手法。5 阶段全量管道（Stage 2-6）。
 
-**与长篇拆文的区别：** 短篇靠共鸣和爆点驱动，管道更精简。产出包括 `_meta.json`（结构计数）供下游 `story-short-write` 消费。字数 ≥ 15000 时进入灰区询问用户。
+**与长篇拆文的区别：** 短篇靠共鸣和爆点驱动，管道更精简。产出包括 `_meta.json`（结构计数）供下游 `write-novel-short-write` 消费。字数 ≥ 15000 时进入灰区询问用户。
 
 ---
 
 ### 写作
 
-#### `story-long-write` — 长篇写作
+#### `write-novel-long-write` — 长篇写作
 
 ```
-/write-novel:story-long-write
+/write-novel:write-novel-long-write
 ```
 
 **触发场景：**
@@ -207,10 +207,10 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 - 前 10 章细纲锁定，后续滚动细纲可微调
 - 每连续写完 3 章执行中途快照
 
-#### `story-short-write` — 短篇写作
+#### `write-novel-short-write` — 短篇写作
 
 ```
-/write-novel:story-short-write
+/write-novel:write-novel-short-write
 ```
 
 **做什么：** 完成一篇完整短篇小说（8000-20000 字），从情绪目标出发，以反转为核心。
@@ -235,13 +235,13 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 ### 导入
 
-#### `story-import` — 逆向导入
+#### `write-novel-import` — 逆向导入
 
 ```
-/write-novel:story-import
+/write-novel:write-novel-import
 ```
 
-**做什么：** 将已有小说（半成品或完本）反向解析为标准项目结构，使其可无缝接入 `story-long-write` / `story-short-write` 续写。
+**做什么：** 将已有小说（半成品或完本）反向解析为标准项目结构，使其可无缝接入 `write-novel-long-write` / `write-novel-short-write` 续写。
 
 **流程：**
 1. 确认导入源（文件路径 / 直接贴文本）
@@ -256,18 +256,18 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 ### 质量控制
 
-#### `story-review` — 多视角审查
+#### `write-novel-review` — 多视角审查
 
 ```
-/write-novel:story-review [full|lean|solo]
+/write-novel:write-novel-review [full|lean|solo]
 ```
 
 **三种模式：**
 
 | 模式 | Agent 配置 | 适用场景 |
 |------|-----------|----------|
-| full | story-architect + character-designer + narrative-writer + reviewer | 批次完成后的全面审查 |
-| lean | story-architect + reviewer | 快速结构+事实审查 |
+| full | write-novel-story-architect + write-novel-character-designer + write-novel-narrative-writer + write-novel-reviewer | 批次完成后的全面审查 |
+| lean | write-novel-story-architect + write-novel-reviewer | 快速结构+事实审查 |
 | solo | 不 spawn Agent | 单章快速自检、Agent 不可用时 |
 
 **审查维度：** 结构 / 角色 / 文字 / 一致性 / 平台适配 / 事实冲突 / 格式
@@ -276,10 +276,10 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 **降级策略：** Agent 缺失或异常时自动降级为 solo，报告中明确标注 fallback 原因。
 
-#### `story-deslop` — 去 AI 味
+#### `write-novel-deslop` — 去 AI 味
 
 ```
-/write-novel:story-deslop
+/write-novel:write-novel-deslop
 ```
 
 **做什么：** 检测并清除文本中的 AI 写作痕迹，让文字回归自然。
@@ -315,10 +315,10 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 ### 实用工具
 
-#### `story-query` — 状态查询
+#### `write-novel-query` — 状态查询
 
 ```
-/write-novel:story-query
+/write-novel:write-novel-query
 ```
 
 **支持查询：**
@@ -330,20 +330,20 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 **原则：** 只提取相关字段，不加载完整文件，用作者语言简短回复。
 
-#### `story-doctor` — 项目诊断
+#### `write-novel-doctor` — 项目诊断
 
 ```
-/write-novel:story-doctor
+/write-novel:write-novel-doctor
 ```
 
 **两大功能：**
 - **项目体检：** 只读诊断目录结构、核心文件、章节完整性、伏笔状态、角色一致性、律条合规
-- **模式学习：** 从会话中提取成功写作模式并写入项目记忆（`/write-novel:story-doctor` + 描述模式）
+- **模式学习：** 从会话中提取成功写作模式并写入项目记忆（`/write-novel:write-novel-doctor` + 描述模式）
 
-#### `story-cover` — 封面生成
+#### `write-novel-cover` — 封面生成
 
 ```
-/write-novel:story-cover
+/write-novel:write-novel-cover
 ```
 
 **做什么：** 根据书名、作者名、目标平台，调用 GPT-Image-2 直接生成含标题和署名的专业网文封面。
@@ -354,70 +354,70 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 ### 路由入口
 
-#### `story` — 智能路由
+#### `write-novel` — 智能路由
 
 ```
-/story
+/write-novel:write-novel
 ```
 
 **做什么：** 根据自然语言意图自动分发到对应 skill。不知道该用哪个命令时，直接说你想做什么即可。
 
 **路由示例：**
 - "我想写小说" → 询问长篇/短篇后路由
-- "帮我审一下第 5 章" → `/write-novel:story-review`
-- "这段太 AI 了" → `/write-novel:story-deslop`
-- "查一下林动的境界" → `/write-novel:story-query`
+- "帮我审一下第 5 章" → `/write-novel:write-novel-review`
+- "这段太 AI 了" → `/write-novel:write-novel-deslop`
+- "查一下林动的境界" → `/write-novel:write-novel-query`
 
 ## 常见场景
 
 ### 场景一：从零开始写一本长篇
 
 ```
-/write-novel:story-setup                    # 部署环境
-/write-novel:story-long-scan                # 扫榜，确定写什么方向
-/write-novel:story-long-analyze             # 拆 1-2 本对标书
-/write-novel:story-long-write + "开书"      # 从选题到大纲到正文
+/write-novel:write-novel-setup                    # 部署环境
+/write-novel:write-novel-scan                # 扫榜，确定写什么方向
+/write-novel:write-novel-analyze             # 拆 1-2 本对标书
+/write-novel:write-novel-long-write + "开书"      # 从选题到大纲到正文
 # ... 写到第 5 章 ...
-/write-novel:story-review                   # 审查已写章节
-/write-novel:story-deslop                   # 去 AI 味
-/write-novel:story-long-write + "日更"      # 继续写
+/write-novel:write-novel-review                   # 审查已写章节
+/write-novel:write-novel-deslop                   # 去 AI 味
+/write-novel:write-novel-long-write + "日更"      # 继续写
 ```
 
 ### 场景二：续写已有长篇
 
 ```
-/write-novel:story + "日更"                 # 自动定位当前进度，加载上下文，写下一章
+/write-novel:write-novel + "日更"                 # 自动定位当前进度，加载上下文，写下一章
 ```
 
 ### 场景三：导入已有作品继续写
 
 ```
-/write-novel:story-import                   # 导入原文 → 分析 → 重建项目
-/write-novel:story-long-write + "续写"      # 从断点继续
+/write-novel:write-novel-import                   # 导入原文 → 分析 → 重建项目
+/write-novel:write-novel-long-write + "续写"      # 从断点继续
 ```
 
 ### 场景四：写一篇知乎盐言短篇
 
 ```
-/write-novel:story-short-scan               # 看什么情绪方向火
-/write-novel:story-short-analyze            # 拆 1 篇对标短篇
-/write-novel:story-short-write              # 从情绪目标到成稿
-/write-novel:story-review                   # 审查
+/write-novel:write-novel-scan               # 看什么情绪方向火
+/write-novel:write-novel-analyze            # 拆 1 篇对标短篇
+/write-novel:write-novel-short-write              # 从情绪目标到成稿
+/write-novel:write-novel-review                   # 审查
 ```
 
 ### 场景五：修改已写章节
 
 ```
-/write-novel:story-long-write + "修改第 8 章"  # 进入大修流程
+/write-novel:write-novel-long-write + "修改第 8 章"  # 进入大修流程
 ```
 
 ### 场景六：批量质量检查
 
 ```
-/write-novel:story-review full              # 全面审查
+/write-novel:write-novel-review full              # 全面审查
 # 根据 S1/S2 问题修改
-/write-novel:story-deslop                   # 去 AI 味
-/write-novel:story-query + "进度"           # 确认状态
+/write-novel:write-novel-deslop                   # 去 AI 味
+/write-novel:write-novel-query + "进度"           # 确认状态
 ```
 
 ## 文件体系
@@ -481,45 +481,47 @@ Phase 1: 选题方向 → Phase 2: 核心设定 → Phase 3: 大纲搭建 → Ph
 
 ```
 write-novel/references/
-├── methodology/                 # ★ 权威共享副本（唯一事实来源）
-│   ├── banned-words.md          #   各 skill 通过 symlink 引用
-│   ├── anti-ai-writing.md       #   不再维护多份拷贝
+├── shared/                      # ★ 写作方法论唯一权威来源（26 个文件）
+│   ├── banned-words.md          #   各 skill 的 references/ 以「指针文件」引用
+│   ├── anti-ai-writing.md       #   指针仅含共享源路径 + 版本指纹，正文在此
 │   ├── quality-checklist.md
-│   ├── hooks-chapter.md
-│   ├── ... (28 个文件)
-│   ├── banned-words-star-rating.md
-│   ├── toxic-sentence-patterns.md
-│   └── genre-profile-configs.md
-├── shared/                      # 共享约定与格式
+│   ├── hooks-paragraph.md
+│   ├── genre-writing-formulas.md
+│   ├── ... (共 26 个)
 │   ├── run-ledger-format.md
 │   └── context-format.md
+├── methodology/                 # 仅保留 14 个 shared/ 不含的独有方法论文件
 ├── rules/                       # 项目规则
 ├── taxonomy/                    # 分类体系
+├── csv/                         # 数据表
+├── agent-protocol.md
 └── 索引.md
 ```
 
-**原则：** `references/methodology/` 是唯一权威来源。各 skill 的 `references/` 目录通过 symlink 引用权威副本。仅在 skill 确有定制需求（如短篇专用质量检查清单）时才保留独立副本。
+**原则：** `references/shared/` 是写作方法论的唯一权威来源；各 skill 的 `references/<file>.md` 是**指针文件**（首行 `> **共享参考文件**`，含 `共享源：references/shared/<file>` 与版本指纹），真实内容只在 shared/ 维护一份，杜绝副本漂移。`references/methodology/` 仅保留与 shared/ 不同名的 14 个独有文件。一致性由 `check-shared-files.sh`（指针校验 + 单一来源校验）守护。
 
 ## Agent 体系
 
-7 个 Agent，三级模型分配，由 skill 按需 spawn：
+8 个 Agent，三级模型分配，由 skill 按需 spawn（subagent_type 均带 `write-novel-` 前缀）：
 
 | 层级 | Agent | 模型 | 职责 | 调用者 |
 |------|-------|------|------|--------|
-| 架构 | story-architect | Opus→Sonnet | 架构、大纲、钩子/反转设计 | story-long-write, story-review |
-| 创作 | narrative-writer | Sonnet→Haiku | 正文起草、去AI味、格式合规 | story-long-write, story-short-write |
-| 创作 | character-designer | Sonnet→Haiku | 角色设计、对话创作 | story-long-write, story-short-write |
-| 创作 | deconstruction-agent | Sonnet→Haiku | 拆文分析、章节摘要提取 | story-long-analyze |
-| 检查 | reviewer | Haiku | 事实冲突扫描、S1-S4 分级 | story-review |
-| 检查 | story-researcher | Haiku | 项目只读查询 + 外部资料搜索 | 按需 |
+| 架构 | write-novel-story-architect | Opus→Sonnet | 架构、大纲、钩子/反转设计 | write-novel-long-write, write-novel-short-write, write-novel-review |
+| 创作 | write-novel-narrative-writer | Sonnet→Haiku | 正文起草、去AI味、格式合规 | write-novel-long-write, write-novel-short-write |
+| 创作 | write-novel-character-designer | Sonnet→Haiku | 角色设计、语言风格、对话创作 | write-novel-long-write, write-novel-short-write |
+| 创作 | write-novel-deconstruction-agent | Sonnet→Haiku | 拆文分析、章节摘要提取（含并行拆文） | write-novel-analyze, write-novel-import |
+| 检查 | write-novel-reviewer | Haiku | 多维主观审查、S1-S4 分级 | write-novel-review |
+| 检查 | write-novel-consistency-checker | Haiku | 客观事实冲突扫描（时间线/战力/地点/伏笔） | write-novel-review |
+| 检查 | write-novel-story-researcher | Haiku | 外部资料搜索 + 多源交叉验证 | write-novel-long-write, write-novel-review, 按需 |
+| 查询 | write-novel-story-explorer | Haiku | 项目内只读查询（角色/伏笔/进度） | write-novel-long-write, write-novel-review, 按需 |
 
-Agent 由 `story-setup` 部署到 `.claude/agents/`，skill 使用前先检查 agent 文件是否存在，缺失时自动降级为主线程执行。
+Agent 由 `write-novel-setup` 部署到 `.claude/agents/`，skill 使用前先检查 agent 文件是否存在，缺失时自动降级为主线程执行。
 
 ## FAQ
 
 ### 不知道用什么命令怎么办？
 
-直接用 `/write-novel:story` + 自然语言描述意图，路由会自动分发。例如：`/write-novel:story` + "我想写一本修仙小说"。
+直接用 `/write-novel:write-novel` + 自然语言描述意图，路由会自动分发。例如：`/write-novel:write-novel` + "我想写一本修仙小说"。
 
 ### 长篇和短篇怎么选？
 
@@ -542,11 +544,11 @@ Agent 由 `story-setup` 部署到 `.claude/agents/`，skill 使用前先检查 a
 
 ### 已有项目想迁移进来？
 
-使用 `/write-novel:story-import`，支持单文件/多文件/目录导入，自动分析并重建标准项目结构。
+使用 `/write-novel:write-novel-import`，支持单文件/多文件/目录导入，自动分析并重建标准项目结构。
 
 ### 想写多本书怎么管理？
 
-项目支持多书并存。`/write-novel:story` + "切书" 列出所有书，选择即可切换。`.active-book` 文件记录当前活跃书。
+项目支持多书并存。`/write-novel:write-novel` + "切书" 列出所有书，选择即可切换。`.active-book` 文件记录当前活跃书。
 
 ## 开发与质量检查
 
@@ -562,7 +564,7 @@ bash write-novel/scripts/check-version-consistency.sh # plugin.json / marketplac
 bash write-novel/scripts/run-behavior-evals.sh      # 行为 eval 契约（17 条 case：frontmatter/契约短语/执行顺序/anti-AI/schema/错误目录/术语表/链接完整性）
 ```
 
-解析规则：每个 skill 自带 `references/` 目录，链接相对该目录解析；跨 skill 形式 `story-X/references/Y.md` 相对插件根解析；部署根 `references/methodology|shared/<base>` 作回退。运行态项目路径（`追踪/`、`设定/`、`大纲/`、`正文/` 等）不计入断链。
+解析规则：每个 skill 自带 `references/` 目录，链接相对该目录解析；跨 skill 形式 `write-novel-X/references/Y.md` 相对插件根解析；部署根 `references/methodology|shared/<base>` 作回退。运行态项目路径（`追踪/`、`设定/`、`大纲/`、`正文/` 等）不计入断链。
 
 **行为 eval 契约**：`write-novel/evals/fixtures/behavior/fast.json` 以结构化 JSON 声明 17 条可验证断言（skill frontmatter 合规、关键契约短语存在、prewrite→commit→postwrite 执行顺序、anti-AI 参考齐全、合约 schema 字段、错误目录覆盖已知失败模式、术语表映射、报告模板引用资产、agent 模板齐全、链接完整性等），由 `run-behavior-evals.sh` 逐条执行。新增失败模式或契约字段时同步在 eval 契约登记，避免回归。
 
